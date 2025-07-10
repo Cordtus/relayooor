@@ -1,6 +1,10 @@
 # Relayooor - IBC Relayer Monorepo
 
-A comprehensive monorepo for IBC relayer operations, monitoring, and management. This project provides tools for running, monitoring, and managing IBC relayers (Hermes and Go Relayer) with a focus on operational excellence.
+A comprehensive monorepo for IBC relayer operations, monitoring, and management. This project consists of three main components:
+
+1. **Relayer Middleware**: Dockerized setup for running multiple IBC relayers (Hermes and Go Relayer)
+2. **Monitoring**: Chainpulse-based monitoring and metrics collection for IBC networks
+3. **Web App**: User-friendly dashboard for viewing metrics and clearing stuck packets via wallet connection
 
 ## Repository Structure
 
@@ -25,51 +29,52 @@ The Rust implementation of the IBC relayer by Informal Systems.
 The official Go implementation of the IBC relayer.
 
 ### 3. Relayer Middleware (`/relayer-middleware`)
-Go-based API server that provides:
-- Unified interface for managing both relayers
-- WebSocket support for real-time updates
-- Authentication and authorization
-- Metrics collection and aggregation
+Dockerized setup containing:
+- Hermes relayer (with support for legacy versions)
+- Go relayer (cosmos/relayer)
+- Configuration management
+- Automated deployment scripts
 
 ### 4. Monitoring (`/monitoring`)
-Chainpulse monitoring tool for tracking relayer performance and IBC network health.
+Chainpulse-based monitoring system:
+- Real-time IBC packet tracking
+- Stuck packet detection
+- Channel performance metrics
+- Prometheus metrics export
+- Extensible for custom metrics
 
 ### 5. Web Application (`/webapp`)
 React-based dashboard for:
-- Real-time packet flow visualization
-- Stuck packet detection and clearing
-- Channel and chain management
-- Configuration editing
-- Performance metrics
+- User-friendly IBC metrics visualization
+- Wallet integration for packet clearing
+- Individual packet or entire channel clearing
+- Real-time updates via WebSocket
+- Authentication for access control
 
-## Features
+## Key Features
 
-- **Dual Relayer Support**: Manage both Hermes and Go relayer from a single interface
-- **Real-time Monitoring**: WebSocket-based live updates for packet flow and relayer status
-- **Stuck Packet Detection**: Identify and clear stuck IBC packets across channels
-- **Authentication**: JWT-based access control for secure operations
-- **Metrics Dashboard**: Visualize packet flow, channel status, and relayer performance
-- **Configuration Management**: Edit and update relayer configurations through the UI
-- **Production Ready**: Optimized for deployment on various platforms including Fly.io
+- **Multiple Relayer Support**: Run both Hermes and Go relayer with legacy version support
+- **Comprehensive Monitoring**: Real-time IBC packet flow and stuck packet detection
+- **Wallet Integration**: Connect wallet to clear packets relevant to your addresses
+- **Flexible Packet Clearing**: Clear individual packets or entire channels
+- **Production Ready**: Optimized for Fly.io deployment
+- **Extensible Architecture**: Easy to add new monitoring metrics or relayer types
+- **Secure Node Access**: Support for username/password authenticated RPC nodes
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│     Webapp      │────▶│Relayer Middleware│────▶│    Relayers     │
-│  (React + Vite) │     │   (Go API)      │     │ (Hermes + Rly)  │
+│   Web App       │────▶│   Monitoring    │────▶│  IBC Networks   │
+│ (React + Vite)  │     │  (Chainpulse)   │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-         │                       │                        │
-         │                       ▼                        │
-         │              ┌─────────────────┐               │
-         └─────────────▶│   Monitoring    │               │
-                        │  (Chainpulse)   │               │
-                        └─────────────────┘               │
-                                                          │
-                                                          ▼
-                                                 ┌─────────────────┐
-                                                 │   IBC Networks  │
-                                                 └─────────────────┘
+         │                                                │
+         │                                                │
+         ▼                                                ▼
+┌─────────────────┐                              ┌─────────────────┐
+│Relayer Middleware│                             │    Relayers     │
+│  (Docker Setup)  │────────────────────────────▶│ (Hermes + Rly)  │
+└─────────────────┘                              └─────────────────┘
 ```
 
 ## Quick Start
