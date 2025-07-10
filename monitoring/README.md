@@ -1,95 +1,115 @@
-# Monitoring - Chainpulse
+# IBC Monitoring
 
-Advanced monitoring tool for IBC relayers and blockchain networks.
+Chainpulse-based monitoring system for IBC networks with Prometheus and Grafana integration.
 
 ## Features
 
-- Real-time packet flow monitoring
-- Chain status tracking
-- Relayer performance metrics
-- Alert system for stuck packets
-- Historical data analysis
-- Prometheus metrics export
+- **Real-time IBC Monitoring**: Track packet flow, stuck packets, and channel health
+- **Multi-chain Support**: Monitor multiple IBC-enabled chains simultaneously
+- **Authenticated RPC**: Support for username/password protected RPC endpoints
+- **Prometheus Integration**: Export metrics in Prometheus format
+- **Grafana Dashboards**: Pre-configured dashboards for visualization
+- **Extensible**: Easy to add new chains and custom metrics
 
 ## Architecture
 
-Chainpulse is built in Rust for high performance and reliability. It continuously monitors:
-- IBC packet flow across channels
-- Chain health and block production
-- Relayer transaction success rates
-- Gas usage and fee optimization
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ Chainpulse  │────▶│ Prometheus  │────▶│   Grafana   │
+│  (Metrics)  │     │ (Storage)   │     │ (Visualize) │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │
+       ▼
+┌─────────────┐
+│IBC Networks │
+└─────────────┘
+```
+
+## Quick Start
+
+1. Configure your chains in `config/chainpulse.toml`
+
+2. Set environment variables:
+```bash
+# Optional RPC authentication
+export RPC_USERNAME=your_username
+export RPC_PASSWORD=your_password
+
+# Optional chain-specific WebSocket URLs
+export CHAIN_OSMOSIS_WS=wss://your-osmosis-rpc/websocket
+export CHAIN_COSMOSHUB_WS=wss://your-cosmos-rpc/websocket
+```
+
+3. Start the monitoring stack:
+```bash
+docker-compose up -d
+```
+
+4. Access the services:
+   - Grafana: http://localhost:3000 (admin/admin)
+   - Prometheus: http://localhost:9090
+   - Chainpulse metrics: http://localhost:3001/metrics
 
 ## Configuration
 
-Create a `chainpulse.toml` configuration file:
+### Adding New Chains
 
+Edit `config/chainpulse.toml`:
 ```toml
-[general]
-log_level = "info"
-metrics_port = 9090
-
-[chains]
-[[chains.cosmoshub]]
-rpc_url = "https://rpc.cosmos.network"
-grpc_url = "https://grpc.cosmos.network"
-
-[[chains.osmosis]]
-rpc_url = "https://rpc.osmosis.zone"
-grpc_url = "https://grpc.osmosis.zone"
-
-[monitoring]
-check_interval = 30
-alert_threshold = 100
+[chains.your-chain-id]
+url = "${CHAIN_YOUR_WS}"
+comet_version = "0.37"
 ```
 
-## Running
+Then set the environment variable:
+```bash
+export CHAIN_YOUR_WS=wss://your-chain-rpc/websocket
+```
 
-### Local Development
+### Custom Dashboards
+
+Add Grafana dashboard JSON files to `config/grafana/provisioning/dashboards/`
+
+### Prometheus Scrape Targets
+
+Edit `config/prometheus.yml` to add new metrics sources.
+
+## Available Metrics
+
+Chainpulse provides various IBC metrics including:
+- `ibc_stuck_packets`: Number of stuck packets per channel
+- `ibc_effected_packets`: Successfully relayed packets
+- `ibc_uneffected_packets`: Failed relay attempts
+- `ibc_frontrun_counter`: Frontrunning events by relayer
+- `ibc_handshake_states`: Channel handshake status
+
+## Environment Variables
+
+- `RPC_USERNAME`: Username for RPC authentication
+- `RPC_PASSWORD`: Password for RPC authentication
+- `CHAIN_*_WS`: WebSocket URLs for specific chains
+- `GF_ADMIN_USER`: Grafana admin username (default: admin)
+- `GF_ADMIN_PASSWORD`: Grafana admin password (default: admin)
+
+## Building from Source
 
 ```bash
-cd monitoring/chainpulse
-cargo run -- --config chainpulse.toml
+docker build -t ibc-monitoring .
 ```
 
-### Docker
+## Troubleshooting
 
-```bash
-docker build -t chainpulse .
-docker run -p 9090:9090 -v $(pwd)/chainpulse.toml:/config.toml chainpulse
-```
+### Connection Issues
+- Verify WebSocket URLs are accessible
+- Check if RPC authentication is required
+- Ensure firewall rules allow WebSocket connections
 
-## Metrics
+### Missing Metrics
+- Check chainpulse logs: `docker-compose logs chainpulse`
+- Verify chains are producing blocks
+- Ensure IBC activity exists on monitored channels
 
-Chainpulse exports Prometheus metrics on the configured port:
-
-- `ibc_packets_pending` - Number of pending packets per channel
-- `ibc_packets_stuck` - Number of stuck packets (pending > threshold)
-- `chain_latest_height` - Latest block height per chain
-- `relayer_tx_success_rate` - Transaction success rate
-- `relayer_balance` - Relayer account balances
-
-## Integration
-
-Chainpulse integrates with:
-- Prometheus for metrics collection
-- Grafana for visualization
-- Alertmanager for notifications
-- The relayer middleware API
-
-## Development
-
-### Prerequisites
-- Rust 1.70+
-- Protocol Buffers compiler
-
-### Building
-
-```bash
-cargo build --release
-```
-
-### Testing
-
-```bash
-cargo test
-```
+### Performance
+- Adjust Prometheus retention if disk usage is high
+- Reduce scrape frequency for less critical metrics
+- Consider running on dedicated monitoring infrastructure

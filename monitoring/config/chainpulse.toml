@@ -1,0 +1,33 @@
+# Chainpulse configuration for IBC monitoring
+# This file supports environment variable substitution via the entrypoint script
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+ibc_handshakes = true
+
+# Primary monitoring targets: Osmosis Hub
+[chains.osmosis-1]
+url = "${CHAIN_OSMOSIS_WS}"
+comet_version = "0.37"
+
+# Cosmos Hub
+[chains.cosmoshub-4]
+url = "${CHAIN_COSMOSHUB_WS}"
+comet_version = "0.37"
+
+# Sei Network
+[chains.pacific-1]
+url = "${CHAIN_SEI_WS}"
+comet_version = "0.37"
+
+# Additional chains can be added here
+# Example:
+# [chains.juno-1]
+# url = "${CHAIN_JUNO_WS}"
+# comet_version = "0.34"

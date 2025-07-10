@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'chainpulse'
+    static_configs:
+      - targets: ['chainpulse:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    
+  # Optional: scrape relayer metrics if available
+  - job_name: 'hermes'
+    static_configs:
+      - targets: ['relayer-middleware:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    
+  - job_name: 'go-relayer'
+    static_configs:
+      - targets: ['relayer-middleware:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
