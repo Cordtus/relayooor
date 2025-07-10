@@ -1,0 +1,21 @@
+# Chainpulse configuration for Cosmos Hub and Osmosis monitoring
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+ibc_handshakes = true
+
+# Cosmos Hub
+[chains.cosmoshub-4]
+url = "wss://rpc.cosmos.network/websocket"
+comet_version = "0.37"
+
+# Osmosis
+[chains.osmosis-1]
+url = "wss://rpc.osmosis.zone/websocket"
+comet_version = "0.37"
