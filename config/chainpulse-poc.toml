@@ -1,0 +1,24 @@
+# Minimal chainpulse config for POC
+# Monitoring osmosis-1 <> cosmoshub-4 and osmosis-1 <> pacific-1
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+
+# Monitor only the required chains
+[chains.osmosis-1]
+url = "wss://rpc.osmosis.zone/websocket"
+comet_version = "0.37"
+
+[chains.cosmoshub-4]
+url = "wss://rpc.cosmos.network/websocket"
+comet_version = "0.37"
+
+[chains.pacific-1]
+url = "wss://sei-rpc.polkachu.com/websocket"
+comet_version = "0.37"

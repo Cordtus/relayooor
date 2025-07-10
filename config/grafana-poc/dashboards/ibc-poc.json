@@ -1,0 +1,591 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "qUro79h4k"
+      },
+      "description": "Key metrics for osmosis-1 <> cosmoshub-4 and osmosis-1 <> pacific-1",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 14
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(ibc_stuck_packets{src_chain=\"osmosis-1\", dst_chain=\"cosmoshub-4\"})",
+          "legendFormat": "Stuck: Osmosis→Cosmos",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(ibc_stuck_packets{src_chain=\"cosmoshub-4\", dst_chain=\"osmosis-1\"})",
+          "legendFormat": "Stuck: Cosmos→Osmosis",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(ibc_stuck_packets{src_chain=\"osmosis-1\", dst_chain=\"pacific-1\"})",
+          "legendFormat": "Stuck: Osmosis→Sei",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(ibc_stuck_packets{src_chain=\"pacific-1\", dst_chain=\"osmosis-1\"})",
+          "legendFormat": "Stuck: Sei→Osmosis",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Stuck Packets Overview",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "qUro79h4k"
+      },
+      "description": "Packet flow rates between chains",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Packets/sec",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(ibc_effected_packets{chain_id=\"osmosis-1\", src_channel=~\"channel-0|channel-141\"}[$__rate_interval])) by (src_channel, dst_channel)",
+          "legendFormat": "{{src_channel}}→{{dst_channel}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(ibc_effected_packets{chain_id=\"cosmoshub-4\", dst_channel=~\"channel-0|channel-141\"}[$__rate_interval])) by (src_channel, dst_channel)",
+          "legendFormat": "{{src_channel}}→{{dst_channel}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Packet Flow Rate (Effected)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "qUro79h4k"
+      },
+      "description": "Success rate of packet relaying",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase(ibc_effected_packets{chain_id=\"osmosis-1\"}[$__range])) / (sum(increase(ibc_effected_packets{chain_id=\"osmosis-1\"}[$__range])) + sum(increase(ibc_uneffected_packets{chain_id=\"osmosis-1\"}[$__range])))) * 100",
+          "legendFormat": "Osmosis Success Rate",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Relayer Success Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "qUro79h4k"
+      },
+      "description": "Frontrunning events on monitored paths",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(ibc_frontrun_counter{chain_id=~\"osmosis-1|cosmoshub-4|pacific-1\"}[$__rate_interval])) by (chain_id, frontrunned_by)",
+          "legendFormat": "{{chain_id}} - {{frontrunned_by}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Frontrunning Events by Relayer",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "qUro79h4k"
+      },
+      "description": "Channel-specific metrics",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Success Rate %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 5,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Total Packets"
+          }
+        ]
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum by (src_channel, dst_channel) (increase(ibc_effected_packets{chain_id=~\"osmosis-1|cosmoshub-4|pacific-1\", src_channel=~\"channel-0|channel-141|channel-782\"}[24h]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "Effected"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qUro79h4k"
+          },
+          "editorMode": "code",
+          "expr": "sum by (src_channel, dst_channel) (increase(ibc_uneffected_packets{chain_id=~\"osmosis-1|cosmoshub-4|pacific-1\", src_channel=~\"channel-0|channel-141|channel-782\"}[24h]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "Uneffected"
+        }
+      ],
+      "title": "Channel Performance (24h)",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value #Effected": "Effected Packets",
+              "Value #Uneffected": "Uneffected Packets",
+              "dst_channel": "Destination",
+              "src_channel": "Source"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Total Packets",
+            "binary": {
+              "left": "Effected Packets",
+              "operator": "+",
+              "reducer": "sum",
+              "right": "Uneffected Packets"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Success Rate %",
+            "binary": {
+              "left": "Effected Packets",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "Total Packets"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Success Rate %",
+            "binary": {
+              "left": "Success Rate %",
+              "operator": "*",
+              "reducer": "sum",
+              "right": "100"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            },
+            "replaceFields": true
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["ibc", "monitoring", "poc"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "IBC Monitoring POC - Osmosis Paths",
+  "uid": "ibc-poc-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

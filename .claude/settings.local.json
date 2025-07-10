@@ -15,7 +15,9 @@
       "Bash(docker logs:*)",
       "Bash(curl:*)",
       "Bash(git clone:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(tree:*)"
     ],
     "deny": []
   }

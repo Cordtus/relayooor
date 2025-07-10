@@ -1,6 +1,46 @@
-# IBC Relayer Dashboard
+# Relayooor - IBC Relayer Monorepo
 
-A comprehensive dashboard for monitoring and managing IBC relayers (Hermes and Go Relayer) with a focus on clearing stuck packets.
+A comprehensive monorepo for IBC relayer operations, monitoring, and management. This project provides tools for running, monitoring, and managing IBC relayers (Hermes and Go Relayer) with a focus on operational excellence.
+
+## Repository Structure
+
+```
+relayooor/
+├── hermes/              # Hermes IBC relayer (Rust)
+├── relayer/             # Go IBC relayer
+├── relayer-middleware/  # API backend for relayer management
+├── monitoring/          # Chainpulse monitoring tool
+├── webapp/              # React dashboard frontend
+├── config/              # Shared configuration files
+├── docker/              # Docker configurations
+└── scripts/             # Utility scripts
+```
+
+## Projects
+
+### 1. Hermes (`/hermes`)
+The Rust implementation of the IBC relayer by Informal Systems.
+
+### 2. Go Relayer (`/relayer`)
+The official Go implementation of the IBC relayer.
+
+### 3. Relayer Middleware (`/relayer-middleware`)
+Go-based API server that provides:
+- Unified interface for managing both relayers
+- WebSocket support for real-time updates
+- Authentication and authorization
+- Metrics collection and aggregation
+
+### 4. Monitoring (`/monitoring`)
+Chainpulse monitoring tool for tracking relayer performance and IBC network health.
+
+### 5. Web Application (`/webapp`)
+React-based dashboard for:
+- Real-time packet flow visualization
+- Stuck packet detection and clearing
+- Channel and chain management
+- Configuration editing
+- Performance metrics
 
 ## Features
 
@@ -10,19 +50,20 @@ A comprehensive dashboard for monitoring and managing IBC relayers (Hermes and G
 - **Authentication**: JWT-based access control for secure operations
 - **Metrics Dashboard**: Visualize packet flow, channel status, and relayer performance
 - **Configuration Management**: Edit and update relayer configurations through the UI
-- **Fly.io Ready**: Optimized for deployment on Fly.io platform
+- **Production Ready**: Optimized for deployment on various platforms including Fly.io
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Web Frontend  │────▶│   API Backend   │────▶│    Relayers     │
-│     (React)     │     │      (Go)       │     │ (Hermes + Rly)  │
+│     Webapp      │────▶│Relayer Middleware│────▶│    Relayers     │
+│  (React + Vite) │     │   (Go API)      │     │ (Hermes + Rly)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │                        │
          │                       ▼                        │
          │              ┌─────────────────┐               │
-         └─────────────▶│  Redis Cache    │               │
+         └─────────────▶│   Monitoring    │               │
+                        │  (Chainpulse)   │               │
                         └─────────────────┘               │
                                                           │
                                                           ▼
