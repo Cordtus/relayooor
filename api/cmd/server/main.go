@@ -100,6 +100,10 @@ func main() {
 				metrics.GET("/summary", h.GetMetricsSummary)
 				metrics.GET("/packets", h.GetPacketMetrics)
 				metrics.GET("/channels", h.GetChannelMetrics)
+				metrics.GET("/chainpulse", h.GetChainpulseMetrics)
+				metrics.GET("/packet-flow", h.GetPacketFlowMetrics)
+				metrics.GET("/stuck-packets", h.GetStuckPackets)
+				metrics.GET("/relayer-performance", h.GetRelayerPerformance)
 			}
 		}
 	}

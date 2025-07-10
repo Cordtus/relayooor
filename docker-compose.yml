@@ -1,15 +1,42 @@
-version: '3.8'
-
 services:
+  # Chainpulse - IBC packet monitoring
+  chainpulse:
+    build:
+      context: ./chainpulse
+      dockerfile: Dockerfile
+    volumes:
+      - ./config/chainpulse.toml:/config/chainpulse.toml
+      - chainpulse-data:/data
+    ports:
+      - "3001:3001"  # Metrics port
+    command: ["--config", "/config/chainpulse.toml"]
+    networks:
+      - relayer-network
+    restart: unless-stopped
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - relayer-network
+    restart: unless-stopped
+
+  # Main dashboard application
   relayer-dashboard:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.simple
     ports:
       - "8080:80"      # Web interface
       - "3000:3000"    # API server
-      - "5184:5184"    # Go relayer metrics
-      - "5185:5185"    # Hermes REST API
     volumes:
       - ./config/hermes:/home/relayer/.hermes
       - ./config/relayer:/home/relayer/.relayer
@@ -17,13 +44,21 @@ services:
     environment:
       - API_PORT=3000
       - HERMES_REST_URL=http://localhost:5185
-      - AUTH_ENABLED=true
+      - AUTH_ENABLED=false
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080}
+      - CHAINPULSE_URL=http://chainpulse:3001
+      - PROMETHEUS_URL=http://prometheus:9090
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis123}@redis:6379
     networks:
       - relayer-network
     restart: unless-stopped
+    depends_on:
+      - redis
+      - chainpulse
+      - prometheus
 
+  # PostgreSQL database
   postgres:
     image: postgres:15-alpine
     environment:
@@ -36,6 +71,7 @@ services:
       - relayer-network
     restart: unless-stopped
 
+  # Redis cache
   redis:
     image: redis:7-alpine
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
@@ -45,10 +81,31 @@ services:
       - relayer-network
     restart: unless-stopped
 
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - relayer-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
 volumes:
   relayer-data:
   postgres-data:
   redis-data:
+  chainpulse-data:
+  prometheus-data:
+  grafana-data:
 
 networks:
   relayer-network:

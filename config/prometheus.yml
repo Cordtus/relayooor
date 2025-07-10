@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Chainpulse metrics
+  - job_name: 'chainpulse'
+    static_configs:
+      - targets: ['chainpulse:3001']
+    metrics_path: '/metrics'
+
+  # Hermes metrics (when running)
+  - job_name: 'hermes'
+    static_configs:
+      - targets: ['relayer-dashboard:3031']
+    metrics_path: '/metrics'
+
+  # Go relayer metrics (when running)
+  - job_name: 'go-relayer'
+    static_configs:
+      - targets: ['relayer-dashboard:5184']
+    metrics_path: '/relayer/metrics'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

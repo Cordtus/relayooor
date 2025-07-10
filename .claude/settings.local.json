@@ -4,7 +4,18 @@
       "Bash(git checkout:*)",
       "Bash(mkdir:*)",
       "Bash(touch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(chmod:*)",
+      "Bash(docker-compose:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(go mod:*)",
+      "Bash(docker logs:*)",
+      "Bash(curl:*)",
+      "Bash(git clone:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

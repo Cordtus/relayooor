@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -114,7 +115,7 @@ func (h *Handler) postHermesAPI(endpoint string, data interface{}) (interface{},
 	resp, err := http.Post(
 		fmt.Sprintf("%s%s", h.hermesURL, endpoint),
 		"application/json",
-		io.NopCloser(io.Reader(jsonData)),
+		bytes.NewReader(jsonData),
 	)
 	if err != nil {
 		return nil, err

@@ -1,0 +1,42 @@
+# Chainpulse configuration for monitoring popular IBC paths
+
+# Database configuration
+[database]
+path = "/data/chainpulse.db"
+
+# Metrics configuration
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+
+# Monitor popular mainnet chains
+[chains.cosmoshub-4]
+url = "wss://rpc.cosmos.network/websocket"
+comet_version = "0.37"
+
+[chains.osmosis-1]
+url = "wss://rpc.osmosis.zone/websocket"
+comet_version = "0.37"
+
+[chains.neutron-1]
+url = "wss://rpc-kralum.neutron-1.neutron.org/websocket"
+comet_version = "0.37"
+
+[chains.stride-1]
+url = "wss://stride-rpc.lavenderfive.com/websocket"
+comet_version = "0.37"
+
+[chains.noble-1]
+url = "wss://noble-rpc.lavenderfive.com/websocket"
+comet_version = "0.37"
+
+# Alternative public RPC endpoints (comment out above and use these if needed)
+# [chains.cosmoshub-4]
+# url = "wss://cosmos-rpc.publicnode.com/websocket"
+# comet_version = "0.37"
+
+# [chains.osmosis-1]
+# url = "wss://osmosis-rpc.publicnode.com/websocket"
+# comet_version = "0.37"

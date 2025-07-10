@@ -41,8 +41,8 @@ FROM golang:1.21-alpine AS backend-builder
 RUN apk add --update --no-cache git
 
 WORKDIR /app
-COPY api/ ./api/
 COPY go.mod go.sum ./
+COPY api/ ./api/
 
 RUN go mod download
 RUN go build -o relayer-dashboard ./api/cmd/server
@@ -51,8 +51,8 @@ RUN go build -o relayer-dashboard ./api/cmd/server
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
-COPY web/package*.json ./
-RUN npm ci
+COPY web/package.json ./
+RUN npm install
 
 COPY web/ ./
 RUN npm run build

@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"os/exec"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,7 +57,7 @@ func (h *Handler) GetChainStatus(c *gin.Context) {
 	}
 
 	// Check Hermes status
-	if state, err := h.callHermesAPI("/state"); err == nil {
+	if _, err := h.callHermesAPI("/state"); err == nil {
 		// Parse state to check if chain is active
 		status["hermes"] = "active"
 	}

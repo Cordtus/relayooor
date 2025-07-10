@@ -1,0 +1,41 @@
+# Chainpulse configuration with authentication support
+
+# Database configuration
+[database]
+path = "/data/chainpulse.db"
+
+# Metrics configuration
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+
+# Chain configurations with authentication
+# Format: wss://username:password@host/path
+
+# Example with Basic Auth for private nodes
+[chains.cosmoshub-4-private]
+url = "wss://${COSMOS_RPC_USER}:${COSMOS_RPC_PASS}@your-private-cosmos-node.com/websocket"
+comet_version = "0.37"
+# Optional headers for additional auth
+headers = { "Authorization" = "Bearer ${COSMOS_API_TOKEN}" }
+
+[chains.osmosis-1-private]
+url = "wss://${OSMOSIS_RPC_USER}:${OSMOSIS_RPC_PASS}@your-private-osmosis-node.com/websocket"
+comet_version = "0.37"
+
+# Public endpoints (fallback)
+[chains.cosmoshub-4]
+url = "wss://rpc.cosmos.network/websocket"
+comet_version = "0.37"
+
+[chains.osmosis-1]
+url = "wss://rpc.osmosis.zone/websocket"
+comet_version = "0.37"
+
+# Environment variable substitution is supported
+# Set these in your .env file:
+# COSMOS_RPC_USER=your-username
+# COSMOS_RPC_PASS=your-password
+# COSMOS_API_TOKEN=your-api-token

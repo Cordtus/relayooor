@@ -29,7 +29,7 @@ const darkTheme = createTheme({
   },
 })
 
-function App() {
+export default function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
