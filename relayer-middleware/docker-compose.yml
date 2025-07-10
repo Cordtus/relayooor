@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  relayer-middleware:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ACTIVE_RELAYER=${ACTIVE_RELAYER:-hermes}
+      - RPC_USERNAME=${RPC_USERNAME}
+      - RPC_PASSWORD=${RPC_PASSWORD}
+    volumes:
+      # Configuration files
+      - ./config/hermes:/config/hermes:ro
+      - ./config/hermes-legacy:/config/hermes-legacy:ro
+      - ./config/relayer:/config/relayer:ro
+      - ./config/relayer-legacy:/config/relayer-legacy:ro
+      - ./config/keys:/config/keys:ro
+      
+      # Data persistence
+      - hermes-data:/root/.hermes
+      - hermes-legacy-data:/root/.hermes-legacy
+      - relayer-data:/root/.relayer
+      - relayer-legacy-data:/root/.relayer-legacy
+      
+      # Logs
+      - ./logs:/var/log/relayers
+    ports:
+      # Hermes telemetry
+      - "3001:3001"
+      # Hermes legacy telemetry
+      - "3002:3002"
+      # Go relayer metrics
+      - "3003:3003"
+      # Go relayer legacy metrics
+      - "3004:3004"
+    restart: unless-stopped
+    networks:
+      - relayer-net
+
+volumes:
+  hermes-data:
+  hermes-legacy-data:
+  relayer-data:
+  relayer-legacy-data:
+
+networks:
+  relayer-net:
+    driver: bridge

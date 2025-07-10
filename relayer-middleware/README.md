@@ -1,77 +1,97 @@
 # Relayer Middleware
 
-API backend service that provides a unified interface for managing IBC relayers (Hermes and Go Relayer).
+Dockerized setup for running multiple IBC relayers with support for both current and legacy versions.
 
 ## Features
 
-- RESTful API for relayer operations
-- WebSocket support for real-time updates
-- JWT-based authentication
-- Prometheus metrics integration
-- Support for both Hermes and Go relayer
+- **Multiple Relayer Support**: Hermes and Go relayer (rly)
+- **Legacy Version Support**: Older versions for chains requiring them
+- **RPC Authentication**: Built-in support for username/password authenticated nodes
+- **Supervisor Management**: Reliable process management
+- **Configurable**: Easy switching between relayers via environment variables
 
-## API Endpoints
+## Available Relayers
 
-### Authentication
-- `POST /auth/login` - User authentication
-- `POST /auth/refresh` - Refresh JWT token
-- `POST /auth/logout` - Logout and invalidate token
+1. **hermes**: Latest Hermes relayer
+2. **hermes-legacy**: Hermes v1.4.1 for older chains
+3. **rly**: Latest Go relayer
+4. **rly-legacy**: Go relayer v2.3.1 for compatibility
 
-### IBC Operations
-- `GET /ibc/chains` - List all configured chains
-- `GET /ibc/channels` - List all channels
-- `GET /ibc/packets/pending` - Get pending packets
-- `POST /ibc/packets/clear` - Clear stuck packets
+## Quick Start
 
-### Relayer Management
-- `GET /relayer/status` - Get status of all relayers
-- `POST /relayer/hermes/start` - Start Hermes relayer
-- `POST /relayer/hermes/stop` - Stop Hermes relayer
-- `POST /relayer/rly/start` - Start Go relayer
-- `POST /relayer/rly/stop` - Stop Go relayer
-- `GET /relayer/config` - Get current configuration
-- `PUT /relayer/config` - Update configuration
-
-### Metrics
-- `GET /metrics` - Prometheus metrics endpoint
-- `GET /metrics/summary` - Human-readable metrics summary
-
-## Development
-
-### Prerequisites
-- Go 1.21+
-- Redis (for caching and session management)
-
-### Running Locally
-
+1. Create configuration directories:
 ```bash
-cd relayer-middleware
-go mod download
-go run api/cmd/server/main.go
+mkdir -p config/{hermes,hermes-legacy,relayer,relayer-legacy,keys}
 ```
 
-### Configuration
+2. Add your relayer configurations:
+   - Hermes: `config/hermes/config.toml`
+   - Hermes Legacy: `config/hermes-legacy/config.toml`
+   - Go Relayer: `config/relayer/config.yaml`
+   - Go Relayer Legacy: `config/relayer-legacy/config.yaml`
 
-Set the following environment variables:
-- `JWT_SECRET` - Secret key for JWT signing
-- `REDIS_URL` - Redis connection URL
-- `HERMES_CONFIG` - Path to Hermes config file
-- `RLY_CONFIG` - Path to Go relayer config file
-
-### Testing
-
+3. Set environment variables:
 ```bash
-go test ./...
+export ACTIVE_RELAYER=hermes  # or hermes-legacy, rly, rly-legacy
+export RPC_USERNAME=your_username  # Optional
+export RPC_PASSWORD=your_password  # Optional
 ```
 
-## Docker
+4. Start the middleware:
+```bash
+docker-compose up -d
+```
 
-Build the Docker image:
+## Configuration
+
+### Environment Variables
+
+- `ACTIVE_RELAYER`: Which relayer to run (hermes, hermes-legacy, rly, rly-legacy)
+- `RPC_USERNAME`: Username for RPC authentication (optional)
+- `RPC_PASSWORD`: Password for RPC authentication (optional)
+
+### RPC Authentication
+
+The middleware automatically injects authentication credentials into RPC URLs when `RPC_USERNAME` and `RPC_PASSWORD` are provided.
+
+### Metrics Endpoints
+
+- Hermes: http://localhost:3001/metrics
+- Hermes Legacy: http://localhost:3002/metrics
+- Go Relayer: http://localhost:3003/metrics
+- Go Relayer Legacy: http://localhost:3004/metrics
+
+## Managing Relayers
+
+Access the supervisor console:
+```bash
+docker exec -it relayer-middleware supervisorctl
+```
+
+Commands:
+- `status`: Show all relayer statuses
+- `start <relayer>`: Start a specific relayer
+- `stop <relayer>`: Stop a specific relayer
+- `restart <relayer>`: Restart a specific relayer
+
+## Logs
+
+Logs are stored in the `./logs` directory:
+- `hermes.out.log` / `hermes.err.log`
+- `hermes-legacy.out.log` / `hermes-legacy.err.log`
+- `rly.out.log` / `rly.err.log`
+- `rly-legacy.out.log` / `rly-legacy.err.log`
+
+## Building from Source
+
 ```bash
 docker build -t relayer-middleware .
 ```
 
-Run with Docker:
-```bash
-docker run -p 8080:8080 relayer-middleware
-```
+## Deployment
+
+For production deployment, ensure you:
+1. Use secure credentials for RPC authentication
+2. Mount configurations as read-only volumes
+3. Set up proper log rotation
+4. Configure monitoring for the metrics endpoints
