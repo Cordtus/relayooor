@@ -28,7 +28,9 @@ if [ -f "/config/hermes/config.toml" ]; then
     # Replace RPC URLs with authenticated versions if credentials are provided
     if [ -n "$RPC_USERNAME" ] && [ -n "$RPC_PASSWORD" ]; then
         echo "Configuring RPC authentication for Hermes..."
-        # This is a simplified example - in production, use proper TOML parsing
+        # Handle both http and https URLs
+        sed -i "s|rpc_addr = 'https://\([^']*\)'|rpc_addr = 'https://${RPC_USERNAME}:${RPC_PASSWORD}@\1'|g" /root/.hermes/config.toml
+        sed -i "s|grpc_addr = 'https://\([^']*\)'|grpc_addr = 'https://${RPC_USERNAME}:${RPC_PASSWORD}@\1'|g" /root/.hermes/config.toml
         sed -i "s|rpc_addr = 'http://\([^']*\)'|rpc_addr = 'http://${RPC_USERNAME}:${RPC_PASSWORD}@\1'|g" /root/.hermes/config.toml
         sed -i "s|grpc_addr = 'http://\([^']*\)'|grpc_addr = 'http://${RPC_USERNAME}:${RPC_PASSWORD}@\1'|g" /root/.hermes/config.toml
     fi

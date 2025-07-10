@@ -29,12 +29,12 @@ User-friendly dashboard for IBC monitoring and packet clearing with wallet integ
 
 1. Install dependencies:
 ```bash
-npm install
+yarn install
 ```
 
 2. Start development server:
 ```bash
-npm run dev
+yarn dev
 ```
 
 3. Open http://localhost:3000
@@ -50,7 +50,7 @@ Configure API endpoints in `vite.config.ts`.
 ## Building for Production
 
 ```bash
-npm run build
+yarn build
 ```
 
 The built files will be in the `dist` directory.

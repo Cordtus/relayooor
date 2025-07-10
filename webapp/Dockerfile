@@ -4,14 +4,14 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-RUN npm ci
+COPY package.json ./
+RUN yarn install
 
 # Copy source files
 COPY . .
 
 # Build the app
-RUN npm run build
+RUN yarn build
 
 # Runtime stage
 FROM nginx:alpine

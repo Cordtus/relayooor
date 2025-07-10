@@ -18,7 +18,8 @@
       "Bash(rm:*)",
       "Bash(mv:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(yarn install)"
     ],
     "deny": []
   }
