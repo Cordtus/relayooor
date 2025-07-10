@@ -2,7 +2,7 @@ services:
   # Chainpulse - IBC packet monitoring
   chainpulse:
     build:
-      context: ./chainpulse
+      context: ./monitoring/chainpulse
       dockerfile: Dockerfile
     volumes:
       - ./config/chainpulse.toml:/config/chainpulse.toml
