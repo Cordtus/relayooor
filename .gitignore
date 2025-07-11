@@ -1,84 +1,303 @@
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.env
+env.sh
+env.bash
+env.zsh
 
 # Dependencies
 node_modules/
 vendor/
 dist/
 build/
+target/
 
-# Go binaries
+# Go
+# Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+bin/
 /relayer-dashboard
+/api/api
+/api/server
 
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool
 *.out
+*.coverprofile
+coverage.txt
+coverage.html
 
-# Go workspace file
+# Go workspace files
 go.work
+go.work.sum
+
+# Go module cache
+go.sum.backup
+
+# Node.js / React / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+*.local
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
 
 # IDE files
 .idea/
+*.iml
 .vscode/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.c9/
+*.sublime-workspace
+*.sublime-project
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Logs
-*.log
 logs/
+*.log
+*.log.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
 # Docker
 docker-compose.override.yml
+.dockerignore.local
 
-# Relayer configs (may contain sensitive data)
-config/hermes/*
-config/relayer/*
-!config/hermes/.gitkeep
-!config/relayer/.gitkeep
-
-# Data volumes
+# Docker volumes and data
 relayer-data/
 postgres-data/
 redis-data/
+grafana-data/
+prometheus-data/
+hermes-home/
+data/
+volumes/
+
+# Relayer specific
+# Keep example configs but ignore actual configs with potential secrets
+config/hermes/config.toml
+config/hermes/keys/
+config/relayer/*
+!config/hermes/config.toml.example
+!config/hermes/.gitkeep
+!config/relayer/.gitkeep
+
+# Configuration files that might contain credentials
+# Allow tracked configs with placeholders, but ignore any local overrides
+*.local.toml
+*.local.yaml
+*.local.yml
+*.local.json
+*.local.conf
+config.local.*
+*-local.toml
+*-local.yaml
+*-local.yml
+*-local.json
+
+# Wallet keys and mnemonics
+*.mnemonic
+*.mnemonic.txt
+*.seed
+*.seed.txt
+*.keystore
+*.keyfile
+wallet.json
+keystore/
+keys/
+wallets/
+
+# Authentication and secrets
+*-auth.json
+*-creds.json
+*-credentials.json
+*.secret
+*.secrets
+.secrets/
+secrets/
+credentials/
+
+# Database connection files
+*.pgpass
+.pgpass
+*.my.cnf
+.my.cnf
+dbconfig.json
+database.json
+db.json
+
+# API keys and tokens
+apikeys.json
+tokens.json
+*.apikey
+*.token
+.netrc
+
+# Kubernetes secrets
+*-secret.yaml
+*-secret.yml
+secrets.yaml
+secrets.yml
+
+# Terraform state (might contain secrets)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Ansible vault files
+*.vault
+vault.yml
+vault.yaml
+
+# Config overrides that might have real values
+config.override.*
+override.config.*
+*.override.toml
+*.override.yaml
+*.override.yml
+*.override.json
+
+# Monitoring
+monitoring/chainpulse/target/
+monitoring/grafana/data/
+monitoring/prometheus/data/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
 
 # Fly.io
 fly.toml.backup
+.fly/
 
-# Coverage
-coverage/
-*.lcov
+# Python (for any monitoring scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+venv/
+ENV/
+env/
 
-# Misc
-.cache/
-.parcel-cache/
-.next/
-out/
-.nuxt/
-.vuepress/dist/
-.serverless/
-.fusebox/
-.dynamodb/
-.tern-port
+# Rust (for chainpulse)
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Archives
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+
+# Backup files
+*.backup
+*.bak
+*.swp
+*.orig
+
+# Claude/Cursor/LLM specific
+.claude/
+.cursor/
+.cursorrules
+CLAUDE.md
+CLAUDE.local.md
+PROJECT_STATUS.md
+PROJECT_STATUS.local.md
+PROJECT_CONTEXT.md
+.aider*
+.copilot*
+
+# Project specific
+notes.md
+TODO.md
+scratch/
+.todos.json

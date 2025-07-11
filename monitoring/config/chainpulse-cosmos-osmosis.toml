@@ -14,8 +14,14 @@ ibc_handshakes = true
 [chains.cosmoshub-4]
 url = "wss://rpc-cosmoshub-ia.cosmosapi.com/websocket"
 comet_version = "0.37"
+# Authentication will be injected via environment variables
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
 
 # Osmosis
 [chains.osmosis-1]
 url = "wss://rpc-osmosis-ia.cosmosapi.com/websocket"
 comet_version = "0.37"
+# Authentication will be injected via environment variables
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"

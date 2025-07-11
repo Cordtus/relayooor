@@ -7,6 +7,7 @@ interface WalletState {
   client: SigningStargateClient | null
   connect: () => Promise<void>
   disconnect: () => void
+  signMessage: (message: string) => Promise<string>
 }
 
 export const useWalletStore = create<WalletState>((set) => ({
@@ -43,5 +44,26 @@ export const useWalletStore = create<WalletState>((set) => ({
       address: null,
       client: null,
     })
+  },
+
+  signMessage: async (message: string) => {
+    if (!window.keplr) {
+      throw new Error('Keplr wallet not found')
+    }
+    
+    const { address } = useWalletStore.getState()
+    if (!address) {
+      throw new Error('Wallet not connected')
+    }
+
+    // Sign arbitrary message with Keplr
+    const signed = await window.keplr.signArbitrary(
+      'osmosis-1',
+      address,
+      message
+    )
+    
+    // Return base64 encoded signature
+    return signed.signature
   },
 }))

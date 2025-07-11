@@ -9,15 +9,20 @@ process_config() {
     if [ -f "$config_file" ]; then
         cp "$config_file" "$processed_file"
         
-        # Replace WebSocket URLs with authenticated versions if credentials provided
+        # Replace authentication placeholders
         if [ -n "$RPC_USERNAME" ] && [ -n "$RPC_PASSWORD" ]; then
             echo "Configuring RPC authentication..."
-            # Replace ws:// and wss:// URLs with authenticated versions
-            sed -i "s|ws://\([^/]*\)|ws://${RPC_USERNAME}:${RPC_PASSWORD}@\1|g" "$processed_file"
-            sed -i "s|wss://\([^/]*\)|wss://${RPC_USERNAME}:${RPC_PASSWORD}@\1|g" "$processed_file"
+            # Replace the placeholders in the config
+            sed -i "s|\${RPC_USERNAME}|$RPC_USERNAME|g" "$processed_file"
+            sed -i "s|\${RPC_PASSWORD}|$RPC_PASSWORD|g" "$processed_file"
+        else
+            echo "Warning: RPC authentication credentials not provided"
+            # Remove the authentication lines if no credentials
+            sed -i '/username = "\${RPC_USERNAME}"/d' "$processed_file"
+            sed -i '/password = "\${RPC_PASSWORD}"/d' "$processed_file"
         fi
         
-        # Replace any environment variable placeholders
+        # Replace any other environment variable placeholders
         while IFS='=' read -r name value; do
             if [[ $name =~ ^CHAIN_ ]]; then
                 sed -i "s|\${$name}|$value|g" "$processed_file"

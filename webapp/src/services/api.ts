@@ -33,6 +33,36 @@ export interface StuckPacket {
   sender?: string
 }
 
+export interface UserTransfer {
+  id: string
+  channelId: string
+  sequence: number
+  sourceChain: string
+  destinationChain: string
+  amount: string
+  denom: string
+  sender: string
+  receiver: string
+  status: 'pending' | 'stuck' | 'completed'
+  timestamp: string
+  txHash: string
+  stuckDuration?: string
+}
+
+export interface ClearPacketRequest {
+  packetIds: string[]
+  wallet: string
+  signature: string
+}
+
+export interface ClearPacketResponse {
+  status: string
+  txHash?: string
+  cleared: string[]
+  failed: string[]
+  message?: string
+}
+
 export const fetchMetrics = async (): Promise<Metric> => {
   const { data } = await api.get('/metrics')
   return data
@@ -49,6 +79,17 @@ export const fetchStuckPackets = async (walletAddress?: string): Promise<StuckPa
   return data
 }
 
-export const clearPackets = async (packetIds: string[]): Promise<void> => {
-  await api.post('/packets/clear', { packetIds })
+export const fetchUserTransfers = async (walletAddress: string): Promise<UserTransfer[]> => {
+  const { data } = await api.get(`/user/${walletAddress}/transfers`)
+  return data
+}
+
+export const fetchUserStuckPackets = async (walletAddress: string): Promise<UserTransfer[]> => {
+  const { data } = await api.get(`/user/${walletAddress}/stuck`)
+  return data
+}
+
+export const clearPackets = async (request: ClearPacketRequest): Promise<ClearPacketResponse> => {
+  const { data } = await api.post('/packets/clear', request)
+  return data
 }

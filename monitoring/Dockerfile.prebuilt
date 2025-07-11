@@ -1,0 +1,30 @@
+# Use pre-built chainpulse binary approach
+FROM debian:bullseye-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# For now, we'll use the mock chainpulse until we can get a pre-built binary
+# In production, replace this with downloading the actual pre-built binary
+# Example: 
+# RUN curl -L https://github.com/cordtus/chainpulse/releases/download/v0.4.0/chainpulse-linux-amd64 -o /usr/local/bin/chainpulse && \
+#     chmod +x /usr/local/bin/chainpulse
+
+# Create data directory
+RUN mkdir -p /data
+
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose metrics port
+EXPOSE 3001
+
+VOLUME ["/data", "/config"]
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["chainpulse", "--config", "/config/chainpulse.toml"]

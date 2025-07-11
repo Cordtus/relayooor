@@ -1,31 +1,29 @@
-FROM rust:1-bookworm AS builder
+# Build stage - using Rust 1.70 which should avoid the futures-util issue
+FROM rust:1.70-slim-bullseye as builder
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    protobuf-compiler \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install git to clone the repository
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Clone and build chainpulse
-WORKDIR /build
-RUN git clone https://github.com/informalsystems/chainpulse.git
-WORKDIR /build/chainpulse
+WORKDIR /usr/src
+
+# Clone the forked chainpulse
+RUN git clone https://github.com/cordtus/chainpulse.git
+WORKDIR /usr/src/chainpulse
 
 # Build the binary
 RUN cargo build --release
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:bullseye-slim
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /app
+
 # Copy binary from builder
-COPY --from=builder /build/chainpulse/target/release/chainpulse /usr/local/bin/chainpulse
+COPY --from=builder /usr/src/chainpulse/target/release/chainpulse /usr/local/bin/chainpulse
 
 # Create data directory
 RUN mkdir -p /data

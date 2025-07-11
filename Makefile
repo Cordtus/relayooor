@@ -1,106 +1,97 @@
-.PHONY: help build test clean install dev up down logs
+# Relayooor Makefile
 
-# Default target
-help:
-	@echo "Relayooor Monorepo Commands:"
-	@echo "  make build       - Build all projects"
-	@echo "  make test        - Run all tests"
-	@echo "  make clean       - Clean all build artifacts"
-	@echo "  make install     - Install dependencies for all projects"
-	@echo "  make dev         - Start development environment"
-	@echo "  make up          - Start all services with docker-compose"
-	@echo "  make down        - Stop all services"
-	@echo "  make logs        - Show logs from all services"
+.PHONY: help
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-# Build all projects
-build: build-hermes build-relayer build-middleware build-monitoring build-webapp
+.PHONY: docs
+docs: ## Open documentation files for editing
+	@echo "Opening documentation files..."
+	@${EDITOR:-code} CLAUDE.md PROJECT_STATUS.md
 
-build-hermes:
-	@echo "Building Hermes..."
-	cd hermes && cargo build --release
+.PHONY: status
+status: ## Show project status
+	@echo "📊 Project Status"
+	@echo "================"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  CLAUDE.md - Last modified: $$(stat -c %y CLAUDE.md 2>/dev/null || stat -f %Sm CLAUDE.md)"
+	@echo "  PROJECT_STATUS.md - Last modified: $$(stat -c %y PROJECT_STATUS.md 2>/dev/null || stat -f %Sm PROJECT_STATUS.md)"
+	@echo ""
+	@echo "Services:"
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(relayooor|grafana|prometheus|monitor)" || echo "  No services running"
+	@echo ""
+	@echo "Recent commits:"
+	@git log --oneline -5
 
-build-relayer:
-	@echo "Building Go Relayer..."
-	cd relayer && go build -o build/rly main.go
+.PHONY: check-docs
+check-docs: ## Check if docs are up to date
+	@echo "📅 Checking documentation freshness..."
+	@bash -c 'if [[ $$(git diff --name-only | grep -E "(CLAUDE\.md|PROJECT_STATUS\.md)" | wc -l) -gt 0 ]]; then \
+		echo "❌ Documentation has uncommitted changes"; \
+	else \
+		echo "✅ Documentation is committed"; \
+	fi'
+	@echo ""
+	@echo "Last documentation updates:"
+	@git log -1 --pretty=format:"%h %s (%cr)" -- CLAUDE.md PROJECT_STATUS.md
 
-build-middleware:
-	@echo "Building Relayer Middleware..."
-	cd relayer-middleware && go build -o build/relayer-middleware api/cmd/server/main.go
+.PHONY: update-context
+update-context: ## Update all context documentation
+	@echo "📝 Updating context documentation..."
+	@echo ""
+	@echo "Current tasks from PROJECT_STATUS.md:"
+	@grep -E "^- \[ \]" PROJECT_STATUS.md | head -5 || echo "No pending tasks found"
 
-build-monitoring:
-	@echo "Building Chainpulse..."
-	cd monitoring/chainpulse && cargo build --release
+.PHONY: start
+start: ## Start all services
+	./start.sh
 
-build-webapp:
-	@echo "Building Webapp..."
-	cd webapp/web && npm run build
+.PHONY: start-monitoring
+start-monitoring: ## Start just monitoring stack
+	docker-compose -f docker-compose.minimal.yml up -d
 
-# Run tests
-test: test-hermes test-relayer test-middleware test-monitoring test-webapp
-
-test-hermes:
-	@echo "Testing Hermes..."
-	cd hermes && cargo test
-
-test-relayer:
-	@echo "Testing Go Relayer..."
-	cd relayer && go test ./...
-
-test-middleware:
-	@echo "Testing Relayer Middleware..."
-	cd relayer-middleware && go test ./...
-
-test-monitoring:
-	@echo "Testing Chainpulse..."
-	cd monitoring/chainpulse && cargo test
-
-test-webapp:
-	@echo "Testing Webapp..."
-	cd webapp/web && npm test
-
-# Clean build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf hermes/target
-	rm -rf monitoring/chainpulse/target
-	rm -rf relayer/build
-	rm -rf relayer-middleware/build
-	rm -rf webapp/web/dist
-
-# Install dependencies
-install: install-webapp
-
-install-webapp:
-	@echo "Installing webapp dependencies..."
-	cd webapp/web && npm install
-
-# Development environment
-dev:
-	@echo "Starting development environment..."
-	docker-compose -f docker-compose.yml up -d
-
-# Docker compose commands
-up:
-	docker-compose up -d
-
-down:
-	docker-compose down
-
-logs:
+.PHONY: logs
+logs: ## Show logs from all services
 	docker-compose logs -f
 
-# Individual service commands
-hermes-start:
-	cd hermes && cargo run -- start
+.PHONY: stop
+stop: ## Stop all services
+	docker-compose down
+	docker stop $$(docker ps -q --filter name=relayooor) 2>/dev/null || true
 
-relayer-start:
-	cd relayer && ./build/rly start
+.PHONY: clean
+clean: stop ## Stop services and clean up volumes
+	docker-compose down -v
+	rm -rf hermes-home chainpulse-data
+	docker rmi $$(docker images -q --filter reference=relayooor*) 2>/dev/null || true
 
-middleware-start:
-	cd relayer-middleware && go run api/cmd/server/main.go
+.PHONY: build
+build: ## Build all Docker images
+	docker-compose build
 
-monitoring-start:
-	cd monitoring/chainpulse && cargo run
+.PHONY: test-monitor
+test-monitor: ## Test monitoring endpoints
+	@echo "🔍 Testing monitoring endpoints..."
+	@curl -s http://localhost:3002/metrics > /dev/null && echo "✅ IBC Monitor: OK" || echo "❌ IBC Monitor: Failed"
+	@curl -s http://localhost:9090/-/healthy > /dev/null && echo "✅ Prometheus: OK" || echo "❌ Prometheus: Failed"
+	@curl -s http://localhost:3000/api/health > /dev/null && echo "✅ Grafana: OK" || echo "❌ Grafana: Failed"
 
-webapp-dev:
-	cd webapp/web && npm run dev
+# Development workflow commands
+.PHONY: dev-backend
+dev-backend: ## Start backend development
+	@echo "Starting backend development..."
+	@echo "Remember to update CLAUDE.md with any architecture changes!"
+	cd api && go run cmd/server/main.go
+
+.PHONY: dev-frontend
+dev-frontend: ## Start frontend development
+	@echo "Starting frontend development..."
+	@echo "Remember to update PROJECT_STATUS.md when completing features!"
+	cd webapp && yarn dev
+
+.PHONY: commit
+commit: check-docs ## Commit with documentation check
+	@git add -A
+	@git commit
+

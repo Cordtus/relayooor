@@ -17,7 +17,9 @@ relayooor/
 ├── webapp/              # React dashboard frontend
 ├── config/              # Shared configuration files
 ├── docker/              # Docker configurations
-└── scripts/             # Utility scripts
+├── scripts/             # Utility scripts
+├── .env.example         # Example environment variables
+└── .gitignore           # Git ignore file (includes .env)
 ```
 
 ## Projects
@@ -48,6 +50,8 @@ React-based dashboard for:
 - User-friendly IBC metrics visualization
 - Wallet integration for packet clearing
 - Individual packet or entire channel clearing
+- View user's stuck IBC transfers
+- Clear stuck transfers with one click
 - Real-time updates via WebSocket
 - Authentication for access control
 
@@ -99,6 +103,8 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
+**IMPORTANT**: The `.env` file contains sensitive credentials. It is already included in `.gitignore` and will NOT be committed to the repository. Keep your credentials secure!
+
 3. Start the services:
 ```bash
 docker-compose up -d
@@ -112,6 +118,15 @@ Default credentials:
 
 ## Configuration
 
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+- `RPC_USERNAME` / `RPC_PASSWORD`: Authentication for RPC endpoints (if required)
+- `JWT_SECRET`: Secret key for API authentication
+- `GF_ADMIN_USER` / `GF_ADMIN_PASSWORD`: Grafana admin credentials
+- `ACTIVE_RELAYER`: Choose between `hermes` or `go-relayer`
+
 ### Hermes Configuration
 
 Place your Hermes configuration at `config/hermes/config.toml`
@@ -119,6 +134,13 @@ Place your Hermes configuration at `config/hermes/config.toml`
 ### Go Relayer Configuration
 
 Place your Go relayer configuration at `config/relayer/config.yaml`
+
+### Chainpulse Configuration
+
+Chainpulse uses the forked version with authentication support:
+- Repository: https://github.com/cordtus/chainpulse.git
+- Config: `monitoring/config/chainpulse-cosmos-osmosis.toml`
+- Authentication is automatically injected from environment variables
 
 ## API Endpoints
 
