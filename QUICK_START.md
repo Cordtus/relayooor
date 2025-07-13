@@ -1,11 +1,12 @@
-# Quick Start - Cosmos Hub <> Osmosis Monitoring
+# Quick Start - IBC Packet Clearing Platform
 
-This guide will help you get the IBC monitoring stack running for Cosmos Hub and Osmosis.
+This guide will help you get the Relayooor packet clearing platform running for Cosmos Hub and Osmosis.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- (Optional) Mnemonic phrases for funded accounts on both chains if you want to enable packet clearing
+- Service wallet address for collecting clearing fees
+- (Optional) Mnemonic phrases for funded accounts if you want to run a relayer
 
 ## 1. Clone and Setup
 
@@ -20,10 +21,12 @@ cd relayooor
 cp .env.example .env
 ```
 
-Edit `.env` if you need to:
-- Add RPC authentication credentials (if using private nodes)
-- Change default passwords
-- Modify JWT secret
+Edit `.env` to configure:
+- `SERVICE_WALLET_ADDRESS` - Your wallet for collecting clearing fees (required)
+- `CLEARING_SECRET_KEY` - Generate a strong secret for token signing (required)
+- RPC authentication credentials (if using private nodes)
+- Database and Redis URLs
+- Fee structure (SERVICE_FEE, PER_PACKET_FEE)
 
 ## 3. Start the Stack
 
@@ -38,9 +41,10 @@ This will:
 
 ## 4. Access Services
 
-- **Web Dashboard**: http://localhost
-  - View IBC metrics
-  - Connect wallet to clear stuck packets
+- **Packet Clearing App**: http://localhost
+  - Connect Keplr wallet to view stuck transfers
+  - Clear stuck IBC packets with one-click payment
+  - View clearing history and statistics
   
 - **Grafana**: http://localhost:3003
   - Username: admin
@@ -50,12 +54,22 @@ This will:
 - **Prometheus**: http://localhost:9090
   - Query raw metrics
   
-- **API**: http://localhost:8080
-  - REST API for programmatic access
+- **API**: http://localhost:3000
+  - REST API for packet clearing operations
+  - WebSocket support for real-time updates
+  - JWT authentication for secure access
 
-## 5. Add Relayer Keys (Optional)
+## 5. Test Packet Clearing
 
-If you want the relayer to actually relay packets, you need to add keys:
+1. **Connect your wallet** at http://localhost
+2. **View stuck packets** associated with your addresses
+3. **Select packets to clear** and review fees
+4. **Make payment** with the generated memo
+5. **Monitor clearing progress** in real-time
+
+## 6. Add Relayer Keys (Optional)
+
+If you want to run your own relayer (not required for packet clearing):
 
 ```bash
 # Add Cosmos Hub key
@@ -76,7 +90,7 @@ Then restart the relayer:
 docker-compose restart relayer
 ```
 
-## 6. Monitor Channels
+## 7. Monitor Channels
 
 The system monitors:
 - **Cosmos Hub**: channel-141 (to Osmosis)
@@ -112,6 +126,16 @@ docker-compose restart [service-name]
 1. Make sure you have Keplr wallet installed
 2. Osmosis and Cosmos Hub chains should be added to Keplr
 3. Check browser console for errors
+
+### Payment verification failing?
+1. Ensure memo is copied exactly as shown
+2. Wait for transaction to be confirmed (6+ blocks)
+3. Check service wallet received the payment
+
+### Clearing not starting?
+1. Check Hermes relayer is running: `docker-compose ps relayer`
+2. Verify Hermes REST API: `curl http://localhost:5185/version`
+3. Check execution worker logs: `docker-compose logs api | grep worker`
 
 ## Stopping the Stack
 

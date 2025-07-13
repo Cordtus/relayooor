@@ -1,194 +1,208 @@
-# Relayooor - IBC Relayer Monorepo
+# Relayooor - IBC Packet Clearing Platform
 
-A comprehensive monorepo for IBC relayer operations, monitoring, and management. This project consists of three main components:
-
-1. **Relayer Middleware**: Dockerized setup for running multiple IBC relayers (Hermes and Go Relayer)
-2. **Monitoring**: Chainpulse-based monitoring and metrics collection for IBC networks
-3. **Web App**: User-friendly dashboard for viewing metrics and clearing stuck packets via wallet connection
-
-## Repository Structure
-
-```
-relayooor/
-├── hermes/              # Hermes IBC relayer (Rust)
-├── relayer/             # Go IBC relayer
-├── relayer-middleware/  # API backend for relayer management
-├── monitoring/          # Chainpulse monitoring tool
-├── webapp/              # React dashboard frontend
-├── config/              # Shared configuration files
-├── docker/              # Docker configurations
-├── scripts/             # Utility scripts
-├── .env.example         # Example environment variables
-└── .gitignore           # Git ignore file (includes .env)
-```
-
-## Projects
-
-### 1. Hermes (`/hermes`)
-The Rust implementation of the IBC relayer by Informal Systems.
-
-### 2. Go Relayer (`/relayer`)
-The official Go implementation of the IBC relayer.
-
-### 3. Relayer Middleware (`/relayer-middleware`)
-Dockerized setup containing:
-- Hermes relayer (with support for legacy versions)
-- Go relayer (cosmos/relayer)
-- Configuration management
-- Automated deployment scripts
-
-### 4. Monitoring (`/monitoring`)
-Chainpulse-based monitoring system:
-- Real-time IBC packet tracking
-- Stuck packet detection
-- Channel performance metrics
-- Prometheus metrics export
-- Extensible for custom metrics
-
-### 5. Web Application (`/webapp`)
-React-based dashboard for:
-- User-friendly IBC metrics visualization
-- Wallet integration for packet clearing
-- Individual packet or entire channel clearing
-- View user's stuck IBC transfers
-- Clear stuck transfers with one click
-- Real-time updates via WebSocket
-- Authentication for access control
+A comprehensive platform for IBC packet clearing and monitoring, providing secure and user-friendly solutions for stuck IBC transfers across the Cosmos ecosystem.
 
 ## Key Features
 
-- **Multiple Relayer Support**: Run both Hermes and Go relayer with legacy version support
-- **Comprehensive Monitoring**: Real-time IBC packet flow and stuck packet detection
-- **Wallet Integration**: Connect wallet to clear packets relevant to your addresses
-- **Flexible Packet Clearing**: Clear individual packets or entire channels
-- **Production Ready**: Optimized for Fly.io deployment
-- **Extensible Architecture**: Easy to add new monitoring metrics or relayer types
-- **Secure Node Access**: Support for username/password authenticated RPC nodes
+### Packet Clearing Service
+- **Secure Token-Based Authorization**: One-time tokens with cryptographic signatures
+- **On-Chain Payment Verification**: Pay service fees via standard IBC transfer with memo
+- **Automated Clearing**: Our Hermes relayer automatically clears stuck packets
+- **Multi-Chain Support**: Works with Osmosis, Cosmos Hub, Neutron, and more
+- **User Statistics**: Track your clearing history and success rates
+
+### Monitoring Dashboard
+- **Real-time IBC Metrics**: Powered by Chainpulse
+- **Stuck Packet Detection**: Identify packets stuck for >15 minutes
+- **Channel Performance**: Track success rates and congestion
+- **Relayer Analytics**: Competition analysis and performance metrics
+
+### Wallet Integration
+- **Keplr Support**: Connect your wallet to view your stuck transfers
+- **Batch Operations**: Clear multiple packets at once
+- **Transaction History**: View all your cleared packets
+- **Secure Authentication**: Sign messages for accessing personal data
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Web App       │────▶│   Monitoring    │────▶│  IBC Networks   │
-│ (React + Vite)  │     │  (Chainpulse)   │     │                 │
+│   Vue.js App    │────▶│  API Gateway    │────▶│   Chainpulse    │
+│ (User Interface)│     │  (Go + Redis)   │     │  (Monitoring)   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
-         │                                                │
-         │                                                │
-         ▼                                                ▼
-┌─────────────────┐                              ┌─────────────────┐
-│Relayer Middleware│                             │    Relayers     │
-│  (Docker Setup)  │────────────────────────────▶│ (Hermes + Rly)  │
-└─────────────────┘                              └─────────────────┘
+         │                       │                        │
+         │                       ▼                        ▼
+         │              ┌─────────────────┐     ┌─────────────────┐
+         └─────────────▶│ Packet Clearing │────▶│  IBC Networks   │
+                        │    Service      │     │ (Cosmos Chains) │
+                        └─────────────────┘     └─────────────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │  Hermes Relayer │
+                        │ (Clearing Exec) │
+                        └─────────────────┘
+```
+
+## Repository Structure
+
+```
+relayooor/
+├── webapp/                 # Vue.js frontend application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── views/         # Page components
+│   │   ├── services/      # API services
+│   │   └── stores/        # Pinia state management
+│   └── public/            # Static assets
+├── relayer-middleware/     # Go API backend
+│   └── api/
+│       └── pkg/
+│           ├── clearing/  # Packet clearing logic
+│           ├── handlers/  # HTTP handlers
+│           └── middleware/# Auth, CORS, logging
+├── monitoring/            # Chainpulse IBC monitoring
+│   └── chainpulse/       # Fork with user data support
+├── docs/                  # Documentation
+│   ├── deployment/       # Deployment guides
+│   ├── packet-clearing-* # Feature documentation
+│   └── *.md             # Various docs
+└── config/               # Configuration files
 ```
 
 ## Quick Start
 
 ### Prerequisites
-
 - Docker and Docker Compose
-- Node.js 20+ (for local development)
-- Go 1.21+ (for local development)
+- Node.js 16+ and Yarn
+- PostgreSQL (or SQLite for development)
+- Redis
+- Hermes relayer instance
 
 ### Local Development
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/yourusername/relayooor.git
 cd relayooor
 ```
 
-2. Copy environment configuration:
+2. **Set up environment:**
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration:
+# - SERVICE_WALLET_ADDRESS (for collecting fees)
+# - CLEARING_SECRET_KEY (generate a strong secret)
+# - Database and Redis URLs
+# - RPC endpoints for supported chains
 ```
 
-**IMPORTANT**: The `.env` file contains sensitive credentials. It is already included in `.gitignore` and will NOT be committed to the repository. Keep your credentials secure!
-
-3. Start the services:
+3. **Start backend services:**
 ```bash
-docker-compose up -d
+docker-compose up -d postgres redis chainpulse
+cd relayer-middleware/api
+go run cmd/server/main.go
 ```
 
-4. Access the dashboard at http://localhost:8080
+4. **Start frontend:**
+```bash
+cd webapp
+yarn install
+yarn dev
+```
 
-Default credentials:
-- Username: `admin`
-- Password: `admin123`
+5. **Access the application:**
+- Frontend: http://localhost:5173
+- API: http://localhost:3000
+- Chainpulse metrics: http://localhost:3001/metrics
+
+## How Packet Clearing Works
+
+1. **Connect Wallet**: User connects their Keplr wallet
+2. **View Stuck Packets**: See all stuck IBC transfers associated with your addresses
+3. **Select & Review**: Choose packets to clear and review fees
+4. **Make Payment**: Send payment with generated memo to service address
+5. **Automatic Clearing**: Our system verifies payment and clears packets
+6. **Get Results**: View transaction hashes and success status
+
+### Fee Structure
+- Base service fee: 1 TOKEN
+- Per-packet fee: 0.1 TOKEN
+- Gas fees: Estimated based on current network conditions
+- Automatic refunds for overpayments
 
 ## Configuration
 
+### Required Chainpulse Modifications
+To support user-based packet queries, Chainpulse needs to:
+1. Parse IBC packet data to extract sender/receiver addresses
+2. Add database indexes for user queries
+3. Implement stuck packet detection (>15 minutes pending)
+
+See [chainpulse-required-modifications.md](docs/chainpulse-required-modifications.md) for details.
+
 ### Environment Variables
+Key configuration in `.env`:
+```bash
+# Service Configuration
+SERVICE_WALLET_ADDRESS=cosmos1...  # Your service fee collection address
+CLEARING_SECRET_KEY=...            # Strong secret for token signing
 
-Copy `.env.example` to `.env` and configure:
+# Fees (in smallest denomination)
+CLEARING_SERVICE_FEE=1000000       # 1 TOKEN
+CLEARING_PER_PACKET_FEE=100000     # 0.1 TOKEN
 
-- `RPC_USERNAME` / `RPC_PASSWORD`: Authentication for RPC endpoints (if required)
-- `JWT_SECRET`: Secret key for API authentication
-- `GF_ADMIN_USER` / `GF_ADMIN_PASSWORD`: Grafana admin credentials
-- `ACTIVE_RELAYER`: Choose between `hermes` or `go-relayer`
-
-### Hermes Configuration
-
-Place your Hermes configuration at `config/hermes/config.toml`
-
-### Go Relayer Configuration
-
-Place your Go relayer configuration at `config/relayer/config.yaml`
-
-### Chainpulse Configuration
-
-Chainpulse uses the forked version with authentication support:
-- Repository: https://github.com/cordtus/chainpulse.git
-- Config: `monitoring/config/chainpulse-cosmos-osmosis.toml`
-- Authentication is automatically injected from environment variables
+# Infrastructure
+DATABASE_URL=postgresql://...
+REDIS_URL=redis://localhost:6379
+HERMES_REST_URL=http://localhost:5185
+```
 
 ## API Endpoints
 
-### Authentication
-- `POST /auth/login` - Login with username/password
-- `POST /auth/refresh` - Refresh JWT token
+### Clearing Operations
+- `POST /api/v1/clearing/request-token` - Get clearing authorization token
+- `POST /api/v1/clearing/verify-payment` - Verify payment transaction
+- `GET /api/v1/clearing/status/:token` - Check clearing status
 
-### IBC Operations
-- `GET /ibc/chains` - List all configured chains
-- `GET /ibc/channels` - List all channels
-- `GET /ibc/packets/pending` - Get pending packets
-- `POST /ibc/packets/clear` - Clear stuck packets
+### User Management
+- `POST /api/v1/auth/wallet-sign` - Authenticate with wallet signature
+- `GET /api/v1/users/statistics` - Get user clearing statistics
 
-### Relayer Management
-- `GET /relayer/status` - Get status of both relayers
-- `POST /relayer/hermes/start` - Start Hermes
-- `POST /relayer/rly/start` - Start Go relayer
+### Platform Analytics
+- `GET /api/v1/statistics/platform` - Platform-wide statistics
 
-## Deployment on Fly.io
+## Production Deployment
 
-1. Install Fly CLI:
+### Fly.io Deployment
+See [deployment guide](docs/deployment/README.md) for detailed instructions.
+
+Quick deploy:
 ```bash
-curl -L https://fly.io/install.sh | sh
-```
-
-2. Create a new Fly app:
-```bash
-fly launch --name your-relayer-dashboard
-```
-
-3. Set secrets:
-```bash
-fly secrets set JWT_SECRET=your-secret-key
-fly secrets set DB_PASSWORD=your-db-password
-```
-
-4. Deploy:
-```bash
+fly launch --name relayooor-app
+fly secrets set CLEARING_SECRET_KEY=... SERVICE_WALLET_ADDRESS=...
 fly deploy
 ```
 
-## Security Considerations
+### Security Checklist
+- [ ] Generate strong `CLEARING_SECRET_KEY`
+- [ ] Secure service wallet private key
+- [ ] Enable TLS for all connections
+- [ ] Configure CORS for your domain only
+- [ ] Set up monitoring alerts
+- [ ] Regular security audits
 
-- Always use strong JWT secrets in production
-- Configure CORS properly for your domain
-- Use HTTPS in production
-- Regularly update relayer binaries
-- Monitor access logs
+## Testing
+
+```bash
+# Backend tests
+cd relayer-middleware/api
+go test ./...
+
+# Frontend tests
+cd webapp
+yarn test
+```
 
 ## Contributing
 
@@ -198,6 +212,57 @@ fly deploy
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## Documentation
+
+- [Architecture Overview](docs/packet-clearing-architecture.md)
+- [Implementation Plan](docs/packet-clearing-implementation-plan.md)
+- [Edge Cases & Improvements](docs/packet-clearing-edge-cases.md)
+- [Operator Guide](docs/operator-review.md)
+- [User Experience Review](docs/user-experience-review.md)
+- [Deployment Guide](docs/deployment/README.md)
+
+## Security
+
+- All payment verification happens on-chain
+- One-time tokens prevent replay attacks
+- Cryptographic signatures ensure authenticity
+- Automatic refunds for edge cases
+- Regular security audits recommended
+
+## Roadmap
+
+### Phase 1 (Current)
+- Basic packet clearing functionality
+- Payment verification system
+- User statistics tracking
+- Multi-chain support
+
+### Phase 2 (Next)
+- [ ] Direct wallet payment integration
+- [ ] Mobile app support
+- [ ] Bulk clearing discounts
+- [ ] Advanced analytics
+
+### Phase 3 (Future)
+- [ ] Predictive stuck packet detection
+- [ ] Automated clearing options
+- [ ] Cross-chain clearing
+- [ ] Decentralized clearing network
+
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Chainpulse](https://github.com/informalsystems/chainpulse) for IBC monitoring
+- [Hermes](https://github.com/informalsystems/hermes) for reliable packet clearing
+- The Cosmos ecosystem for IBC protocol
+- All contributors and users of Relayooor
+
+---
+
+**Need Help?** 
+- Check our [documentation](docs/)
+- Report issues on [GitHub](https://github.com/yourusername/relayooor/issues)
+- Join our [Discord](https://discord.gg/relayooor) community
