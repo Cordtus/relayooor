@@ -5,11 +5,13 @@ A comprehensive platform for IBC packet clearing and monitoring, providing secur
 ## Key Features
 
 ### Packet Clearing Service
-- **Secure Token-Based Authorization**: One-time tokens with cryptographic signatures
+- **Secure Token-Based Authorization**: One-time tokens with cryptographic signatures and 5-minute expiry
 - **On-Chain Payment Verification**: Pay service fees via standard IBC transfer with memo
 - **Automated Clearing**: Our Hermes relayer automatically clears stuck packets
 - **Multi-Chain Support**: Works with Osmosis, Cosmos Hub, Neutron, and more
 - **User Statistics**: Track your clearing history and success rates
+- **Automatic Refunds**: Failed clearings are automatically refunded (specific failure types)
+- **Duplicate Payment Protection**: Prevents double-charging with multi-layer detection
 
 ### Monitoring Dashboard
 - **Real-time IBC Metrics**: Powered by Chainpulse
@@ -19,9 +21,12 @@ A comprehensive platform for IBC packet clearing and monitoring, providing secur
 
 ### Wallet Integration
 - **Keplr Support**: Connect your wallet to view your stuck transfers
+- **Direct Payment**: Pay clearing fees directly from your wallet
+- **QR Code Payments**: Mobile-friendly payment options
 - **Batch Operations**: Clear multiple packets at once
-- **Transaction History**: View all your cleared packets
+- **Transaction History**: View all your cleared packets with pagination
 - **Secure Authentication**: Sign messages for accessing personal data
+- **Real-time Updates**: WebSocket notifications for clearing status
 
 ## Architecture
 
@@ -33,16 +38,39 @@ A comprehensive platform for IBC packet clearing and monitoring, providing secur
          │                       │                        │
          │                       ▼                        ▼
          │              ┌─────────────────┐     ┌─────────────────┐
-         └─────────────▶│ Packet Clearing │────▶│  IBC Networks   │
-                        │    Service      │     │ (Cosmos Chains) │
+         └─────────────▶│ Enhanced Service│────▶│  IBC Networks   │
+                        │  - Circuit Break │     │ (Cosmos Chains) │
+                        │  - Retry Logic   │     └─────────────────┘
+                        │  - Auto Refunds  │              │
+                        │  - Caching       │              │
+                        └─────────────────┘              │
+                                 │                        │
+                                 ▼                        ▼
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │  Hermes Relayer │────▶│   PostgreSQL    │
+                        │ (Clearing Exec) │     │  (Operations)   │
                         └─────────────────┘     └─────────────────┘
-                                 │
-                                 ▼
-                        ┌─────────────────┐
-                        │  Hermes Relayer │
-                        │ (Clearing Exec) │
-                        └─────────────────┘
 ```
+
+### Enhanced Features
+
+#### Robustness & Reliability
+- **Circuit Breaker Pattern**: Prevents cascading failures with Hermes
+- **Retry Logic**: Exponential backoff with jitter for transient failures
+- **Graceful Shutdown**: Tracks active operations with up to 5-minute grace period
+- **Health Monitoring**: Component-level health checks with degraded mode support
+
+#### Performance Optimizations
+- **Smart Caching**: Redis caching with stampede prevention
+- **Database Indexes**: Optimized queries with materialized views
+- **Pagination**: Both standard and cursor-based for large datasets
+- **Connection Pooling**: Auto-scaling database connections based on load
+
+#### User Experience
+- **Payment URIs**: Direct wallet integration with cosmos:// URIs
+- **Price Oracle**: USD value estimates for all fees
+- **Help System**: Built-in glossary and term definitions
+- **Error Messages**: User-friendly errors with actionable guidance
 
 ## Repository Structure
 
