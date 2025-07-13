@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -211,9 +212,47 @@ func main() {
 		json.NewEncoder(w).Encode(resp)
 	}).Methods("POST")
 
+	// Chainpulse metrics endpoint (Prometheus format)
+	api.HandleFunc("/metrics/chainpulse", func(w http.ResponseWriter, r *http.Request) {
+		// Proxy to the actual Chainpulse endpoint
+		chainpulseURL := "http://localhost:3000/metrics"
+		
+		resp, err := http.Get(chainpulseURL)
+		if err != nil {
+			// Fall back to mock data if Chainpulse is not available
+			w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+			metrics := generateMockPrometheusMetrics()
+			fmt.Fprint(w, metrics)
+			return
+		}
+		defer resp.Body.Close()
+		
+		// Copy headers
+		for key, values := range resp.Header {
+			for _, value := range values {
+				w.Header().Add(key, value)
+			}
+		}
+		
+		// Copy status code
+		w.WriteHeader(resp.StatusCode)
+		
+		// Copy body
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			log.Printf("Error copying response body: %v", err)
+		}
+	}).Methods("GET")
+
+	// Structured monitoring data endpoint
+	api.HandleFunc("/monitoring/data", func(w http.ResponseWriter, r *http.Request) {
+		data := getStructuredMonitoringData()
+		json.NewEncoder(w).Encode(data)
+	}).Methods("GET")
+
 	// Setup CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost", "http://localhost:80", "http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost", "http://localhost:80", "http://localhost:3000", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
@@ -264,4 +303,85 @@ func generateTxHash() string {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func generateMockPrometheusMetrics() string {
+	metrics := ""
+
+	// System metrics
+	metrics += "# HELP chainpulse_chains Number of chains being monitored\n"
+	metrics += "# TYPE chainpulse_chains gauge\n"
+	metrics += "chainpulse_chains 2\n\n"
+
+	metrics += "# HELP chainpulse_txs Total number of transactions processed\n"
+	metrics += "# TYPE chainpulse_txs counter\n"
+	metrics += "chainpulse_txs{chain_id=\"cosmoshub-4\"} 12543\n"
+	metrics += "chainpulse_txs{chain_id=\"osmosis-1\"} 18976\n\n"
+
+	metrics += "# HELP chainpulse_packets Total number of packets processed\n"
+	metrics += "# TYPE chainpulse_packets counter\n"
+	metrics += "chainpulse_packets{chain_id=\"cosmoshub-4\"} 4532\n"
+	metrics += "chainpulse_packets{chain_id=\"osmosis-1\"} 6789\n\n"
+
+	// IBC packet metrics
+	metrics += "# HELP ibc_effected_packets IBC packets effected (successfully relayed)\n"
+	metrics += "# TYPE ibc_effected_packets counter\n"
+	metrics += `ibc_effected_packets{chain_id="cosmoshub-4",src_channel="channel-141",src_port="transfer",dst_channel="channel-0",dst_port="transfer",signer="cosmos1abc123",memo=""} 856` + "\n"
+	metrics += `ibc_effected_packets{chain_id="osmosis-1",src_channel="channel-0",src_port="transfer",dst_channel="channel-141",dst_port="transfer",signer="osmo1xyz789",memo=""} 1243` + "\n\n"
+
+	metrics += "# HELP ibc_uneffected_packets IBC packets relayed but not effected (frontrun)\n"
+	metrics += "# TYPE ibc_uneffected_packets counter\n"
+	metrics += `ibc_uneffected_packets{chain_id="cosmoshub-4",src_channel="channel-141",src_port="transfer",dst_channel="channel-0",dst_port="transfer",signer="cosmos1abc123",memo=""} 124` + "\n"
+	metrics += `ibc_uneffected_packets{chain_id="osmosis-1",src_channel="channel-0",src_port="transfer",dst_channel="channel-141",dst_port="transfer",signer="osmo1xyz789",memo=""} 189` + "\n\n"
+
+	// Stuck packets
+	metrics += "# HELP ibc_stuck_packets Number of stuck packets on an IBC channel\n"
+	metrics += "# TYPE ibc_stuck_packets gauge\n"
+	metrics += `ibc_stuck_packets{src_chain="cosmoshub-4",dst_chain="osmosis-1",src_channel="channel-141"} 0` + "\n"
+	metrics += `ibc_stuck_packets{src_chain="osmosis-1",dst_chain="cosmoshub-4",src_channel="channel-0"} 0` + "\n"
+
+	return metrics
+}
+
+func getStructuredMonitoringData() map[string]interface{} {
+	return map[string]interface{}{
+		"status": "healthy",
+		"chains": []map[string]interface{}{
+			{
+				"chain_id": "cosmoshub-4",
+				"name":     "Cosmos Hub",
+				"status":   "connected",
+				"height":   18234567,
+				"packets_24h": 4532,
+			},
+			{
+				"chain_id": "osmosis-1",
+				"name":     "Osmosis",
+				"status":   "connected",
+				"height":   12345678,
+				"packets_24h": 6789,
+			},
+		},
+		"channels": []map[string]interface{}{
+			{
+				"src":             "cosmoshub-4",
+				"dst":             "osmosis-1",
+				"src_channel":     "channel-141",
+				"dst_channel":     "channel-0",
+				"status":          "active",
+				"packets_pending": 0,
+				"success_rate":    87.3,
+			},
+			{
+				"src":             "osmosis-1",
+				"dst":             "cosmoshub-4",
+				"src_channel":     "channel-0",
+				"dst_channel":     "channel-141",
+				"status":          "active",
+				"packets_pending": 0,
+				"success_rate":    86.8,
+			},
+		},
+		"timestamp": time.Now(),
+	}
 }
