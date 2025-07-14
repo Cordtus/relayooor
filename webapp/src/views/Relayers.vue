@@ -58,7 +58,7 @@
         <h2 class="text-lg font-medium">Performance Leaderboard</h2>
         <div class="flex gap-2">
           <button
-            v-for="metric in ['packets', 'success', 'efficiency', 'revenue']"
+            v-for="metric in ['packets', 'success', 'efficiency']"
             :key="metric"
             @click="leaderboardMetric = metric"
             :class="[
@@ -310,9 +310,6 @@ const topRelayers = computed(() => {
         return b.successRate - a.successRate
       case 'efficiency':
         return (b.effectedPackets / b.totalPackets) - (a.effectedPackets / a.totalPackets)
-      case 'revenue':
-        // Mock revenue calculation
-        return (b.effectedPackets * 0.001) - (a.effectedPackets * 0.001)
       default:
         return b.totalPackets - a.totalPackets
     }
@@ -324,7 +321,7 @@ const filteredRelayers = computed(() => {
   if (!searchQuery.value) return relayers.value
   
   const query = searchQuery.value.toLowerCase()
-  return relayers.value.filter(r => 
+  return relayers.value.filter((r: any) => 
     r.address.toLowerCase().includes(query) ||
     r.memo.toLowerCase().includes(query)
   )
@@ -342,9 +339,6 @@ function getMetricValue(relayer: any, metric: string): string {
     case 'efficiency':
       const eff = (relayer.effectedPackets / relayer.totalPackets) * 100
       return `${eff.toFixed(1)}%`
-    case 'revenue':
-      // Mock revenue calculation
-      return `$${(relayer.effectedPackets * 0.001).toFixed(2)}`
     default:
       return relayer.totalPackets.toLocaleString()
   }
@@ -356,8 +350,6 @@ function getMetricLabel(metric: string): string {
       return 'success rate'
     case 'efficiency':
       return 'efficiency'
-    case 'revenue':
-      return 'est. revenue'
     default:
       return 'packets relayed'
   }
