@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -129,6 +130,52 @@ func main() {
 
 	// Stuck packets endpoint (global view)
 	api.HandleFunc("/packets/stuck", func(w http.ResponseWriter, r *http.Request) {
+		// Try to get data from Chainpulse
+		chainpulseURL := os.Getenv("CHAINPULSE_URL")
+		if chainpulseURL == "" {
+			chainpulseURL = "http://localhost:3000"
+		}
+
+		resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/stuck?min_stuck_minutes=30", chainpulseURL))
+		if err == nil && resp.StatusCode == http.StatusOK {
+			defer resp.Body.Close()
+			
+			// Parse Chainpulse response
+			var data map[string]interface{}
+			if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
+				if packets, ok := data["packets"].([]interface{}); ok {
+					stuckPackets := make([]StuckPacket, 0)
+					for _, p := range packets {
+						if packet, ok := p.(map[string]interface{}); ok {
+							sp := StuckPacket{
+								ID:               fmt.Sprintf("%v", packet["sequence"]),
+								ChannelID:        fmt.Sprintf("%v", packet["src_channel"]),
+								Sequence:         int(getFloat64(packet["sequence"])),
+								SourceChain:      fmt.Sprintf("%v", packet["chain_id"]),
+								DestinationChain: getCounterpartyChain(fmt.Sprintf("%v", packet["chain_id"])),
+								StuckDuration:    fmt.Sprintf("%ds", int(getFloat64(packet["age_seconds"]))),
+								Amount:           fmt.Sprintf("%v", packet["amount"]),
+								Denom:            fmt.Sprintf("%v", packet["denom"]),
+								Sender:           fmt.Sprintf("%v", packet["sender"]),
+								Receiver:         fmt.Sprintf("%v", packet["receiver"]),
+							}
+							
+							// Calculate timestamp from age
+							if ageSeconds := getFloat64(packet["age_seconds"]); ageSeconds > 0 {
+								sp.Timestamp = time.Now().Add(-time.Duration(ageSeconds) * time.Second)
+							}
+							
+							stuckPackets = append(stuckPackets, sp)
+						}
+					}
+					
+					json.NewEncoder(w).Encode(stuckPackets)
+					return
+				}
+			}
+		}
+		
+		// Fallback to empty array if Chainpulse is not available
 		packets := []StuckPacket{}
 		json.NewEncoder(w).Encode(packets)
 	}).Methods("GET")
@@ -145,7 +192,58 @@ func main() {
 			return
 		}
 
-		// Mock data for demo - in production this would query blockchain
+		// Try to get data from Chainpulse
+		chainpulseURL := os.Getenv("CHAINPULSE_URL")
+		if chainpulseURL == "" {
+			chainpulseURL = "http://localhost:3000"
+		}
+
+		resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/by-user?address=%s", chainpulseURL, wallet))
+		if err == nil && resp.StatusCode == http.StatusOK {
+			defer resp.Body.Close()
+			
+			// Parse Chainpulse response
+			var packets []map[string]interface{}
+			if err := json.NewDecoder(resp.Body).Decode(&packets); err == nil {
+				// Transform to UserTransfer format
+				transfers := make([]UserTransfer, 0)
+				for _, p := range packets {
+					transfer := UserTransfer{
+						ID:               fmt.Sprintf("%v-%v", p["tx_hash"], p["sequence"]),
+						ChannelID:        fmt.Sprintf("%v", p["channel"]),
+						Sequence:         int(getFloat64(p["sequence"])),
+						SourceChain:      fmt.Sprintf("%v", p["chain"]),
+						DestinationChain: getCounterpartyChain(fmt.Sprintf("%v", p["chain"])),
+						Amount:           fmt.Sprintf("%v", p["amount"]),
+						Denom:            fmt.Sprintf("%v", p["denom"]),
+						Sender:           fmt.Sprintf("%v", p["sender"]),
+						Receiver:         fmt.Sprintf("%v", p["receiver"]),
+						Status:           fmt.Sprintf("%v", p["status"]),
+						TxHash:           fmt.Sprintf("%v", p["tx_hash"]),
+					}
+					
+					// Parse timestamp
+					if ts, ok := p["timestamp"].(string); ok {
+						if t, err := time.Parse(time.RFC3339, ts); err == nil {
+							transfer.Timestamp = t
+						}
+					}
+					
+					// Add stuck duration if stuck
+					if transfer.Status == "stuck" {
+						duration := time.Since(transfer.Timestamp).Round(time.Minute).String()
+						transfer.StuckDuration = &duration
+					}
+					
+					transfers = append(transfers, transfer)
+				}
+				
+				json.NewEncoder(w).Encode(transfers)
+				return
+			}
+		}
+
+		// Fallback to mock data if Chainpulse is not available
 		transfers := []UserTransfer{
 			{
 				ID:               "transfer-1",
@@ -289,6 +387,34 @@ func convertAddress(address, targetPrefix string) string {
 		return "osmo1" + address[7:]
 	}
 	return address
+}
+
+func getCounterpartyChain(chain string) string {
+	// This would normally come from configuration
+	switch chain {
+	case "cosmoshub-4":
+		return "osmosis-1"
+	case "osmosis-1":
+		return "cosmoshub-4"
+	default:
+		return "unknown"
+	}
+}
+
+func getFloat64(v interface{}) float64 {
+	switch val := v.(type) {
+	case float64:
+		return val
+	case int:
+		return float64(val)
+	case int64:
+		return float64(val)
+	case string:
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+	}
+	return 0
 }
 
 func verifyWalletSignature(wallet, signature string) bool {

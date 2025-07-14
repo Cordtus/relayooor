@@ -34,7 +34,7 @@ services:
       - ./monitoring/config/chainpulse-cosmos-osmosis.toml:/config/chainpulse.toml:ro
       - chainpulse-data:/data
     ports:
-      - "3002:3001"  # Metrics endpoint (mapped to avoid conflict)
+      - "3000:3000"  # Metrics endpoint
     restart: unless-stopped
     networks:
       - relayooor-net
@@ -86,7 +86,7 @@ services:
     environment:
       - PORT=8080
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      - CHAINPULSE_URL=http://chainpulse:3001
+      - CHAINPULSE_URL=http://chainpulse:3000
       - HERMES_API_URL=http://relayer:3000
       - PROMETHEUS_URL=http://prometheus:9090
     ports:
