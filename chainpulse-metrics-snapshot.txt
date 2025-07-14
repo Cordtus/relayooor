@@ -1,0 +1,362 @@
+# HELP chainpulse_chains The number of chains being monitored
+# TYPE chainpulse_chains gauge
+chainpulse_chains 3
+# HELP chainpulse_errors The number of times an error was encountered
+# TYPE chainpulse_errors counter
+chainpulse_errors{chain_id="cosmoshub-4"} 14
+chainpulse_errors{chain_id="neutron-1"} 19
+# HELP chainpulse_packets The number of packets processed
+# TYPE chainpulse_packets counter
+chainpulse_packets{chain_id="osmosis-1"} 159
+# HELP chainpulse_reconnects The number of times we had to reconnect to the WebSocket
+# TYPE chainpulse_reconnects counter
+chainpulse_reconnects{chain_id="cosmoshub-4"} 14
+chainpulse_reconnects{chain_id="neutron-1"} 19
+chainpulse_reconnects{chain_id="osmosis-1"} 10
+# HELP chainpulse_txs The number of txs processed
+# TYPE chainpulse_txs counter
+chainpulse_txs{chain_id="osmosis-1"} 2746
+# HELP ibc_effected_packets The number of IBC packets that have been relayed and were effected
+# TYPE ibc_effected_packets counter
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Blockval Relayer Service  | hermes 1.10.5+be0be09d (https://hermes.informal.systems)",signer="osmo126q678c3f0k937zy4fp74xkxdzahvjgh6uzqkw",src_channel="channel-108",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-141",src_port="transfer"} 4
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo1evdjzy3w9t2yu54w4dhc2cvrlc2fvnptc9nqa2",src_channel="channel-767",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-141",src_port="transfer"} 15
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Relayed by MantiCore | https://manticore.team | rly(2.5.2)",signer="osmo1v32fx5j5k2tnuczgkl8zs4r2hrrymmkyf5f4ez",src_channel="channel-782",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Relayed by Shazoes - services.shazoes.xyz | hermes 1.13.1+5e403dd (https://hermes.informal.systems)",signer="osmo1238rpkaw44fys2cz27dng69anaugnkweh7954z",src_channel="channel-75016",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",signer="osmo1f269n4mrg0s8tqveny9huulyamvdv97n87xa7f",src_channel="channel-141",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="👾 Relayed by cosmosrescue | hermes 1.12.0 (https://hermes.informal.systems)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-8945",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="👾 Relayed by cosmosrescue.com | hermes 1.10.5 (https://hermes.informal.systems)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-141",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-750",src_port="transfer"} 5
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed By Rakoff | hermes 1.12.0+a2e84375 (https://hermes.informal.systems)",signer="osmo1k5pp46xyhu4w9sa6dlzjs5yaw9py078dem9xks",src_channel="channel-72",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed by Crosnest. | hermes 1.13.1+5e403dd5c (https://hermes.informal.systems)",signer="osmo19kzuzfmmy9wjr3cl0ss8wjzjup9g49hqwnkfuk",src_channel="channel-199",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-750",src_port="transfer"} 5
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-9",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-9",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.10.3+e26d356ab (https://hermes.informal.systems)",signer="osmo1gx3gzk6fdxswnuqkhn6zfsuwhfefxfu90fl46n",src_channel="channel-89321",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",signer="osmo1f269n4mrg0s8tqveny9huulyamvdv97n87xa7f",src_channel="channel-750",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.13.1+5e403dd5c (https://hermes.informal.systems)",signer="osmo12aeyaxq699k3f4d3733dl5pstw0ulplkjw69q7",src_channel="channel-9",src_port="transfer"} 3
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="rly()",signer="osmo1w0hyt85xppx2hn4csx5fu4ct7ujhucc8kmd5s3",src_channel="channel-103074",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-10",dst_port="transfer",memo="Relayed by R93ax | hermes 1.10.5+be0be09d (https://hermes.informal.systems)",signer="osmo1h36h57805m7eann0xs2mrv72p8wnyypmu50swt",src_channel="channel-874",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-101249",dst_port="transfer",memo="hermes 1.10.3+e26d356a (https://hermes.informal.systems)",signer="osmo157gnyjspwc7kqnqw735582232vh0re90zagdxx",src_channel="channel-5305",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-108",dst_port="transfer",memo="Blockval Relayer Service  | hermes 1.10.5+be0be09d (https://hermes.informal.systems)",signer="osmo126q678c3f0k937zy4fp74xkxdzahvjgh6uzqkw",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-113",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-7",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-122",dst_port="transfer",memo="High Stakes IBC Relayer | hermes 1.10.1+7a67ac5 (https://hermes.informal.systems)",signer="osmo1wgq85ejwm44rl3w8fpla6yeqwcpcpzr9mm3xdj",src_channel="channel-8",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-122",dst_port="transfer",memo="Relayed by Crosnest. | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",signer="osmo1l267dmlmprhu4p5aqslf50f495vjqlg340e5ye",src_channel="channel-8",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-0",src_port="transfer"} 5
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-0",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Relayed by Stakin | hermes 1.13.2+65c4cf82 (https://hermes.informal.systems)",signer="osmo1ptm9dyyya6erqj9h9ydurtzvla2h6lv9pdwwnx",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="👾 Relayed by the cosmosrescue.com | rly(2.5.2-45-g4e4e953)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-184",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.8.2+06dfbaf (https://hermes.informal.systems)",signer="osmo1nna7k5lywn99cd63elcfqm6p8c5c4qcuqwwflx",src_channel="channel-0",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-19774",dst_port="transfer",memo="mzonder | hermes 1.10.4+542e14f (https://hermes.informal.systems)",signer="osmo1fq3kf3s3238ny6j49pug9zp5a0ktaxazppnx4l",src_channel="channel-2",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Forbole Relayer | hermes 1.10.1+7a67ac5 (https://hermes.informal.systems)",signer="osmo1ff326qefrzw0u77zan7ht4s2te72yc3agflm5k",src_channel="channel-2188",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo16vmp7sz28pnvgz6f3zm6q93y39jsd33auhkawj",src_channel="channel-2188",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Pro-Nodes75 Relayer | hermes 1.13.1+5e403dd5-dirty (https://hermes.informal.systems)",signer="osmo1dyh8eu7k3n4uud3sz4vthlnc7l6garwcxyqy2w",src_channel="channel-6994",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="hermes 1.12.0 (https://hermes.informal.systems)",signer="osmo1e3nery2k48suf5x73a989rah2etm0dkg0hazex",src_channel="channel-85486",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="mzonder | hermes 1.10.4+542e14f (https://hermes.informal.systems)",signer="osmo1cdlz8scnf3mmxdnf4njmtp7vz4gps7fsz9d3vx",src_channel="channel-6994",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="mzonder | hermes 1.10.4+542e14f (https://hermes.informal.systems)",signer="osmo1fq3kf3s3238ny6j49pug9zp5a0ktaxazppnx4l",src_channel="channel-19774",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-208",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.8.2+06dfbaf (https://hermes.informal.systems)",signer="osmo1nna7k5lywn99cd63elcfqm6p8c5c4qcuqwwflx",src_channel="channel-3",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-216",dst_port="transfer",memo="owallet.io | rly(v2.6.0-rc.2)",signer="osmo1zqevmn000unnjj709akc8p86f9jc4xevnspylk",src_channel="channel-13",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-2188",dst_port="transfer",memo="Relayed by CroutonDigital | hermes 1.10.5+be0be09 (https://hermes.informal.systems)",signer="osmo1q8pj4z552p9wpmq7mhlzwhtr3p97j04fpyudm9",src_channel="channel-2",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-3",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.8.2+06dfbaf (https://hermes.informal.systems)",signer="osmo1nna7k5lywn99cd63elcfqm6p8c5c4qcuqwwflx",src_channel="channel-208",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-3",dst_port="transfer",memo="Relayed by Shazoes - services.shazoes.xyz | hermes 1.13.1+5e403dd (https://hermes.informal.systems)",signer="osmo1238rpkaw44fys2cz27dng69anaugnkweh7954z",src_channel="channel-101635",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-3",dst_port="transfer",memo="Relayed by Stakin | hermes 1.13.2+65c4cf82 (https://hermes.informal.systems)",signer="osmo1ptm9dyyya6erqj9h9ydurtzvla2h6lv9pdwwnx",src_channel="channel-208",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-38946",dst_port="transfer",memo="Relayed by NodeStake | hermes 1.10.4+542e14f (https://hermes.informal.systems)",signer="osmo1nms20r7jzaa4ms9exv90ckl2xfn0rd3rxsc277",src_channel="channel-1",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-4",dst_port="transfer",memo="Connect the Interchain. Stake with Informal 🐙 | hermes 1.13.1+bca53893 (https://hermes.informal.systems)",signer="osmo148zzqgulnly3wgx35s5f0z4l4vwf30tjjgaffr",src_channel="channel-79703",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-4",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-6",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-412",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-42",dst_port="transfer",memo="Relayed by Stake&Relax 🦥 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1056sshv4vvyzu3ylrp5wd5r9we7cppl33vy2kv",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-42",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.13.0+8ad29b4a8 (https://hermes.informal.systems)",signer="osmo15md2qvgma8lnvqv67w0umu2paqkqkheg332u7d",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-5",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-326",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-5",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-10",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-5",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-10",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-7",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-113",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-72",dst_port="transfer",memo="Relayed By Rakoff | hermes 1.12.0+a2e84375 (https://hermes.informal.systems)",signer="osmo1k5pp46xyhu4w9sa6dlzjs5yaw9py078dem9xks",src_channel="channel-1",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-75",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.8.2+06dfbaf (https://hermes.informal.systems)",signer="osmo1nna7k5lywn99cd63elcfqm6p8c5c4qcuqwwflx",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-750",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-1",src_port="transfer"} 3
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-750",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-1",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-750",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",signer="osmo1f269n4mrg0s8tqveny9huulyamvdv97n87xa7f",src_channel="channel-1",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-79703",dst_port="transfer",memo="Connect the Interchain. Stake with Informal 🐙 | hermes 1.13.1+bca53893 (https://hermes.informal.systems)",signer="osmo148zzqgulnly3wgx35s5f0z4l4vwf30tjjgaffr",src_channel="channel-4",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-8",dst_port="transfer",memo="High Stakes IBC Relayer | hermes 1.10.1+7a67ac5 (https://hermes.informal.systems)",signer="osmo1wgq85ejwm44rl3w8fpla6yeqwcpcpzr9mm3xdj",src_channel="channel-122",src_port="transfer"} 3
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-8",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-122",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-85077",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.10.3+e26d356ab (https://hermes.informal.systems)",signer="osmo145u97e5uwuventlwesghqgvx39wx6q8es7m0gk",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-85486",dst_port="transfer",memo="hermes 1.12.0 (https://hermes.informal.systems)",signer="osmo1e3nery2k48suf5x73a989rah2etm0dkg0hazex",src_channel="channel-2",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-874",dst_port="transfer",memo="Relayed by R93ax | hermes 1.10.5+be0be09d (https://hermes.informal.systems)",signer="osmo1h36h57805m7eann0xs2mrv72p8wnyypmu50swt",src_channel="channel-10",src_port="transfer"} 2
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-88",dst_port="transfer",memo="High Stakes IBC Relayer | hermes 1.10.1+7a67ac5 (https://hermes.informal.systems)",signer="osmo1wgq85ejwm44rl3w8fpla6yeqwcpcpzr9mm3xdj",src_channel="channel-1",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-8945",dst_port="transfer",memo="RELAYED BY 🚀 WHEN MOON 🌕 WHEN LAMBO 🔥 PLEASE SUPPORT US! | https://www.whenmoonwhenlambo.money/ | rly(v2.5.2)",signer="osmo12uakpta2nr7kn5vkdjj4ydg76z50vfeuhnlma9",src_channel="channel-0",src_port="transfer"} 1
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-9",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-1",src_port="transfer"} 3
+ibc_effected_packets{chain_id="osmosis-1",dst_channel="channel-94814",dst_port="transfer",memo="Relayed by SyaNodes | hermes 1.10.5+be0be09 (https://hermes.informal.systems)",signer="osmo1ama04pglrynswsfsazcmfsfnjehh8wucra9a3j",src_channel="channel-2",src_port="transfer"} 2
+# HELP ibc_frontrun_counter The number of times a signer gets frontrun by the original signer
+# TYPE ibc_frontrun_counter counter
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",effected_memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",frontrunned_by="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-141",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-141",src_port="transfer"} 3
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-141",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="👾 Relayed by cosmosrescue.com | hermes 1.10.5 (https://hermes.informal.systems)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-141",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="👾 Relayed by the cosmosrescue.com | rly(2.5.2-45-g4e4e953)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-141",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",effected_memo="Relayed by Crosnest. | hermes 1.13.1+5e403dd5c (https://hermes.informal.systems)",frontrunned_by="osmo19kzuzfmmy9wjr3cl0ss8wjzjup9g49hqwnkfuk",memo="mzonder | hermes 1.13.1+5e403dd (https://hermes.informal.systems)",signer="osmo1kxmk0uu50hn2gwtw8hrvnclym43jdxvkvajz6e",src_channel="channel-199",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="Relayed with 💜 by Lavender.Five Nodes 🐝 (8) | rly(2.6.0)",signer="osmo1j6swju2q7zywxmpcttcw4k98j7fphx5nu4scjy",src_channel="channel-750",src_port="transfer"} 2
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",effected_memo="relayed by CryptoCrew Validators | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",frontrunned_by="osmo1f269n4mrg0s8tqveny9huulyamvdv97n87xa7f",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-750",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",frontrunned_by="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-0",src_port="transfer"} 2
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",effected_memo="Relayed by Stakin | hermes 1.13.2+65c4cf82 (https://hermes.informal.systems)",frontrunned_by="osmo1ptm9dyyya6erqj9h9ydurtzvla2h6lv9pdwwnx",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-0",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",effected_memo="Forbole Relayer | hermes 1.10.1+7a67ac5 (https://hermes.informal.systems)",frontrunned_by="osmo1ff326qefrzw0u77zan7ht4s2te72yc3agflm5k",memo="Relayed by CroutonDigital | hermes 1.10.5+be0be09 (https://hermes.informal.systems)",signer="osmo1q8pj4z552p9wpmq7mhlzwhtr3p97j04fpyudm9",src_channel="channel-2188",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",effected_memo="Pro-Nodes75 Relayer | hermes 1.13.1+5e403dd5-dirty (https://hermes.informal.systems)",frontrunned_by="osmo1dyh8eu7k3n4uud3sz4vthlnc7l6garwcxyqy2w",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-6994",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",effected_memo="mzonder | hermes 1.10.4+542e14f (https://hermes.informal.systems)",frontrunned_by="osmo1fq3kf3s3238ny6j49pug9zp5a0ktaxazppnx4l",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo16vmp7sz28pnvgz6f3zm6q93y39jsd33auhkawj",src_channel="channel-19774",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-5",dst_port="transfer",effected_memo="Relayed by Crosnest. | hermes 1.10.5+be0be09d9 (https://hermes.informal.systems)",frontrunned_by="osmo1l267dmlmprhu4p5aqslf50f495vjqlg340e5ye",memo="hermes 1.9.0+a026d661a (https://hermes.informal.systems)",signer="osmo1vu7yn6ndqayf3wk8z5fwftwm445whh799u6xyd",src_channel="channel-550",src_port="transfer"} 17
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-75",dst_port="transfer",effected_memo="Relayed by IcyCRO 🧊 | hermes 1.8.2+06dfbaf (https://hermes.informal.systems)",frontrunned_by="osmo1nna7k5lywn99cd63elcfqm6p8c5c4qcuqwwflx",memo="Relayed by Crosnest. | hermes 1.13.1+5e403dd5c (https://hermes.informal.systems)",signer="osmo19kzuzfmmy9wjr3cl0ss8wjzjup9g49hqwnkfuk",src_channel="channel-0",src_port="transfer"} 1
+ibc_frontrun_counter{chain_id="osmosis-1",dst_channel="channel-85077",dst_port="transfer",effected_memo="relayed by CryptoCrew Validators | hermes 1.10.3+e26d356ab (https://hermes.informal.systems)",frontrunned_by="osmo145u97e5uwuventlwesghqgvx39wx6q8es7m0gk",memo="relayed by CryptoCrew Validators | hermes 1.12.0+a2e84375 (https://hermes.informal.systems)",signer="osmo1ld3met27u97dlu8mfs7xjnj35qjakd6zntyhhv",src_channel="channel-0",src_port="transfer"} 1
+# HELP ibc_packet_age_seconds Age of unrelayed packets in seconds
+# TYPE ibc_packet_age_seconds gauge
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-141",src_chain="osmosis-1"} 999
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-204",src_chain="osmosis-1"} 186028
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-340",src_chain="osmosis-1"} 14202
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-362",src_chain="osmosis-1"} 180060
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-412",src_chain="osmosis-1"} 14342
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-42",src_chain="osmosis-1"} 8966
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-75",src_chain="osmosis-1"} 999
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-781",src_chain="osmosis-1"} 8388
+ibc_packet_age_seconds{channel="channel-0",dst_chain="channel-85077",src_chain="osmosis-1"} 1664
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-1429",src_chain="osmosis-1"} 15958
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-143",src_chain="osmosis-1"} 64654
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-199",src_chain="osmosis-1"} 11280
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-320",src_chain="osmosis-1"} 15568
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-750",src_chain="osmosis-1"} 13517
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-9",src_chain="osmosis-1"} 12952
+ibc_packet_age_seconds{channel="channel-1",dst_chain="channel-98451",src_chain="osmosis-1"} 177844
+ibc_packet_age_seconds{channel="channel-10",dst_chain="channel-144",src_chain="osmosis-1"} 6679
+ibc_packet_age_seconds{channel="channel-10",dst_chain="channel-229",src_chain="osmosis-1"} 22170
+ibc_packet_age_seconds{channel="channel-10",dst_chain="channel-5",src_chain="osmosis-1"} 18476
+ibc_packet_age_seconds{channel="channel-10",dst_chain="channel-874",src_chain="osmosis-1"} 65862
+ibc_packet_age_seconds{channel="channel-10362",dst_chain="channel-26465",src_chain="osmosis-1"} 181415
+ibc_packet_age_seconds{channel="channel-104325",dst_chain="channel-3",src_chain="osmosis-1"} 11156
+ibc_packet_age_seconds{channel="channel-113",dst_chain="channel-7",src_chain="osmosis-1"} 65506
+ibc_packet_age_seconds{channel="channel-122",dst_chain="channel-8",src_chain="osmosis-1"} 16027
+ibc_packet_age_seconds{channel="channel-1277",dst_chain="channel-92956",src_chain="osmosis-1"} 183921
+ibc_packet_age_seconds{channel="channel-141",dst_chain="channel-0",src_chain="osmosis-1"} 1213
+ibc_packet_age_seconds{channel="channel-1429",dst_chain="channel-1",src_chain="osmosis-1"} 15984
+ibc_packet_age_seconds{channel="channel-143",dst_chain="channel-1",src_chain="osmosis-1"} 22195
+ibc_packet_age_seconds{channel="channel-144",dst_chain="channel-10",src_chain="osmosis-1"} 13643
+ibc_packet_age_seconds{channel="channel-165",dst_chain="channel-0",src_chain="osmosis-1"} 10685
+ibc_packet_age_seconds{channel="channel-181",dst_chain="channel-1",src_chain="osmosis-1"} 14232
+ibc_packet_age_seconds{channel="channel-19774",dst_chain="channel-2",src_chain="osmosis-1"} 1851
+ibc_packet_age_seconds{channel="channel-199",dst_chain="channel-1",src_chain="osmosis-1"} 1213
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-19774",src_chain="osmosis-1"} 9894
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-2188",src_chain="osmosis-1"} 18839
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-522",src_chain="osmosis-1"} 15579
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-6994",src_chain="osmosis-1"} 7194
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-94814",src_chain="osmosis-1"} 8368
+ibc_packet_age_seconds{channel="channel-2",dst_chain="channel-98416",src_chain="osmosis-1"} 177002
+ibc_packet_age_seconds{channel="channel-204",dst_chain="channel-0",src_chain="osmosis-1"} 8087
+ibc_packet_age_seconds{channel="channel-208",dst_chain="channel-3",src_chain="osmosis-1"} 8089
+ibc_packet_age_seconds{channel="channel-2188",dst_chain="channel-2",src_chain="osmosis-1"} 11595
+ibc_packet_age_seconds{channel="channel-229",dst_chain="channel-10",src_chain="osmosis-1"} 175984
+ibc_packet_age_seconds{channel="channel-232",dst_chain="channel-0",src_chain="osmosis-1"} 13103
+ibc_packet_age_seconds{channel="channel-259",dst_chain="channel-3",src_chain="osmosis-1"} 7700
+ibc_packet_age_seconds{channel="channel-2694",dst_chain="channel-0",src_chain="osmosis-1"} 182113
+ibc_packet_age_seconds{channel="channel-3",dst_chain="channel-115",src_chain="osmosis-1"} 17689
+ibc_packet_age_seconds{channel="channel-3",dst_chain="channel-208",src_chain="osmosis-1"} 7828
+ibc_packet_age_seconds{channel="channel-3",dst_chain="channel-259",src_chain="osmosis-1"} 7764
+ibc_packet_age_seconds{channel="channel-3",dst_chain="channel-6787",src_chain="osmosis-1"} 8976
+ibc_packet_age_seconds{channel="channel-320",dst_chain="channel-1",src_chain="osmosis-1"} 6934
+ibc_packet_age_seconds{channel="channel-326",dst_chain="channel-5",src_chain="osmosis-1"} 7597
+ibc_packet_age_seconds{channel="channel-340",dst_chain="channel-0",src_chain="osmosis-1"} 64866
+ibc_packet_age_seconds{channel="channel-4",dst_chain="channel-6",src_chain="osmosis-1"} 10896
+ibc_packet_age_seconds{channel="channel-412",dst_chain="channel-0",src_chain="osmosis-1"} 19094
+ibc_packet_age_seconds{channel="channel-42",dst_chain="channel-0",src_chain="osmosis-1"} 21541
+ibc_packet_age_seconds{channel="channel-5",dst_chain="channel-10",src_chain="osmosis-1"} 176101
+ibc_packet_age_seconds{channel="channel-5",dst_chain="channel-326",src_chain="osmosis-1"} 8661
+ibc_packet_age_seconds{channel="channel-522",dst_chain="channel-2",src_chain="osmosis-1"} 12977
+ibc_packet_age_seconds{channel="channel-550",dst_chain="channel-5",src_chain="osmosis-1"} 1162
+ibc_packet_age_seconds{channel="channel-59315",dst_chain="channel-104705",src_chain="osmosis-1"} 181153
+ibc_packet_age_seconds{channel="channel-6",dst_chain="channel-4",src_chain="osmosis-1"} 18839
+ibc_packet_age_seconds{channel="channel-6787",dst_chain="channel-3",src_chain="osmosis-1"} 9272
+ibc_packet_age_seconds{channel="channel-6994",dst_chain="channel-2",src_chain="osmosis-1"} 9362
+ibc_packet_age_seconds{channel="channel-7",dst_chain="channel-113",src_chain="osmosis-1"} 17431
+ibc_packet_age_seconds{channel="channel-75",dst_chain="channel-0",src_chain="osmosis-1"} 8728
+ibc_packet_age_seconds{channel="channel-750",dst_chain="channel-1",src_chain="osmosis-1"} 1474
+ibc_packet_age_seconds{channel="channel-75016",dst_chain="channel-0",src_chain="osmosis-1"} 176023
+ibc_packet_age_seconds{channel="channel-8",dst_chain="channel-122",src_chain="osmosis-1"} 10324
+ibc_packet_age_seconds{channel="channel-85077",dst_chain="channel-0",src_chain="osmosis-1"} 15118
+ibc_packet_age_seconds{channel="channel-874",dst_chain="channel-10",src_chain="osmosis-1"} 184357
+ibc_packet_age_seconds{channel="channel-88",dst_chain="channel-1",src_chain="osmosis-1"} 179030
+ibc_packet_age_seconds{channel="channel-9",dst_chain="channel-1",src_chain="osmosis-1"} 17597
+ibc_packet_age_seconds{channel="channel-91017",dst_chain="channel-6",src_chain="osmosis-1"} 6588
+ibc_packet_age_seconds{channel="channel-92975",dst_chain="channel-1288",src_chain="osmosis-1"} 183921
+ibc_packet_age_seconds{channel="channel-94814",dst_chain="channel-2",src_chain="osmosis-1"} 185184
+ibc_packet_age_seconds{channel="channel-98416",dst_chain="channel-2",src_chain="osmosis-1"} 176101
+# HELP ibc_stuck_packets The number of packets stuck on an IBC channel
+# TYPE ibc_stuck_packets gauge
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-141"} 109
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-165"} 2099
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-204"} 5
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-232"} 49
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-2694"} 1
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-340"} 1
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-412"} 1
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-42"} 1
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-75"} 4
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-75016"} 1
+ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="channel-85077"} 2
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-1429"} 3
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-143"} 1
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-181"} 58
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-199"} 4
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-320"} 2
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-750"} 129
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-88"} 5
+ibc_stuck_packets{dst_chain="channel-1",src_chain="osmosis-1",src_channel="channel-9"} 13
+ibc_stuck_packets{dst_chain="channel-10",src_chain="osmosis-1",src_channel="channel-144"} 1
+ibc_stuck_packets{dst_chain="channel-10",src_chain="osmosis-1",src_channel="channel-229"} 1
+ibc_stuck_packets{dst_chain="channel-10",src_chain="osmosis-1",src_channel="channel-5"} 2
+ibc_stuck_packets{dst_chain="channel-10",src_chain="osmosis-1",src_channel="channel-874"} 1
+ibc_stuck_packets{dst_chain="channel-104705",src_chain="osmosis-1",src_channel="channel-59315"} 1
+ibc_stuck_packets{dst_chain="channel-113",src_chain="osmosis-1",src_channel="channel-7"} 1
+ibc_stuck_packets{dst_chain="channel-115",src_chain="osmosis-1",src_channel="channel-3"} 2
+ibc_stuck_packets{dst_chain="channel-122",src_chain="osmosis-1",src_channel="channel-8"} 4
+ibc_stuck_packets{dst_chain="channel-1288",src_chain="osmosis-1",src_channel="channel-92975"} 35
+ibc_stuck_packets{dst_chain="channel-141",src_chain="osmosis-1",src_channel="channel-0"} 107
+ibc_stuck_packets{dst_chain="channel-1429",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets{dst_chain="channel-143",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets{dst_chain="channel-144",src_chain="osmosis-1",src_channel="channel-10"} 1
+ibc_stuck_packets{dst_chain="channel-19774",src_chain="osmosis-1",src_channel="channel-2"} 8
+ibc_stuck_packets{dst_chain="channel-199",src_chain="osmosis-1",src_channel="channel-1"} 4
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-19774"} 2
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-2188"} 3
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-522"} 1
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-6994"} 24
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-94814"} 1
+ibc_stuck_packets{dst_chain="channel-2",src_chain="osmosis-1",src_channel="channel-98416"} 1
+ibc_stuck_packets{dst_chain="channel-204",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets{dst_chain="channel-208",src_chain="osmosis-1",src_channel="channel-3"} 11
+ibc_stuck_packets{dst_chain="channel-2188",src_chain="osmosis-1",src_channel="channel-2"} 9
+ibc_stuck_packets{dst_chain="channel-229",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets{dst_chain="channel-259",src_chain="osmosis-1",src_channel="channel-3"} 4
+ibc_stuck_packets{dst_chain="channel-26465",src_chain="osmosis-1",src_channel="channel-10362"} 1
+ibc_stuck_packets{dst_chain="channel-3",src_chain="osmosis-1",src_channel="channel-104325"} 1
+ibc_stuck_packets{dst_chain="channel-3",src_chain="osmosis-1",src_channel="channel-208"} 10
+ibc_stuck_packets{dst_chain="channel-3",src_chain="osmosis-1",src_channel="channel-259"} 8
+ibc_stuck_packets{dst_chain="channel-3",src_chain="osmosis-1",src_channel="channel-6787"} 2
+ibc_stuck_packets{dst_chain="channel-320",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets{dst_chain="channel-326",src_chain="osmosis-1",src_channel="channel-5"} 20
+ibc_stuck_packets{dst_chain="channel-340",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets{dst_chain="channel-362",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets{dst_chain="channel-4",src_chain="osmosis-1",src_channel="channel-6"} 4
+ibc_stuck_packets{dst_chain="channel-412",src_chain="osmosis-1",src_channel="channel-0"} 6
+ibc_stuck_packets{dst_chain="channel-42",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets{dst_chain="channel-5",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets{dst_chain="channel-5",src_chain="osmosis-1",src_channel="channel-326"} 17
+ibc_stuck_packets{dst_chain="channel-5",src_chain="osmosis-1",src_channel="channel-550"} 221
+ibc_stuck_packets{dst_chain="channel-522",src_chain="osmosis-1",src_channel="channel-2"} 2
+ibc_stuck_packets{dst_chain="channel-6",src_chain="osmosis-1",src_channel="channel-4"} 4
+ibc_stuck_packets{dst_chain="channel-6",src_chain="osmosis-1",src_channel="channel-91017"} 3
+ibc_stuck_packets{dst_chain="channel-6787",src_chain="osmosis-1",src_channel="channel-3"} 6
+ibc_stuck_packets{dst_chain="channel-6994",src_chain="osmosis-1",src_channel="channel-2"} 56
+ibc_stuck_packets{dst_chain="channel-7",src_chain="osmosis-1",src_channel="channel-113"} 1
+ibc_stuck_packets{dst_chain="channel-75",src_chain="osmosis-1",src_channel="channel-0"} 14
+ibc_stuck_packets{dst_chain="channel-750",src_chain="osmosis-1",src_channel="channel-1"} 42
+ibc_stuck_packets{dst_chain="channel-781",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets{dst_chain="channel-8",src_chain="osmosis-1",src_channel="channel-122"} 5
+ibc_stuck_packets{dst_chain="channel-85077",src_chain="osmosis-1",src_channel="channel-0"} 3
+ibc_stuck_packets{dst_chain="channel-874",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets{dst_chain="channel-9",src_chain="osmosis-1",src_channel="channel-1"} 6
+ibc_stuck_packets{dst_chain="channel-92956",src_chain="osmosis-1",src_channel="channel-1277"} 7
+ibc_stuck_packets{dst_chain="channel-94814",src_chain="osmosis-1",src_channel="channel-2"} 7
+ibc_stuck_packets{dst_chain="channel-98416",src_chain="osmosis-1",src_channel="channel-2"} 1
+ibc_stuck_packets{dst_chain="channel-98451",src_chain="osmosis-1",src_channel="channel-1"} 1
+# HELP ibc_stuck_packets_detailed Detailed stuck packet tracking with user info
+# TYPE ibc_stuck_packets_detailed gauge
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="false",src_chain="osmosis-1",src_channel="channel-2694"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="false",src_chain="osmosis-1",src_channel="channel-75016"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-141"} 109
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-165"} 2099
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-204"} 5
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-232"} 49
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-340"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-412"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-42"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-75"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-0",dst_channel="channel-0",has_user_data="true",src_chain="osmosis-1",src_channel="channel-85077"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="false",src_chain="osmosis-1",src_channel="channel-88"} 5
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1429"} 3
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-143"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-181"} 58
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-199"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-320"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-750"} 129
+ibc_stuck_packets_detailed{dst_chain="channel-1",dst_channel="channel-1",has_user_data="true",src_chain="osmosis-1",src_channel="channel-9"} 13
+ibc_stuck_packets_detailed{dst_chain="channel-10",dst_channel="channel-10",has_user_data="false",src_chain="osmosis-1",src_channel="channel-229"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-10",dst_channel="channel-10",has_user_data="false",src_chain="osmosis-1",src_channel="channel-5"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-10",dst_channel="channel-10",has_user_data="false",src_chain="osmosis-1",src_channel="channel-874"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-10",dst_channel="channel-10",has_user_data="true",src_chain="osmosis-1",src_channel="channel-144"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-104705",dst_channel="channel-104705",has_user_data="false",src_chain="osmosis-1",src_channel="channel-59315"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-113",dst_channel="channel-113",has_user_data="true",src_chain="osmosis-1",src_channel="channel-7"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-115",dst_channel="channel-115",has_user_data="true",src_chain="osmosis-1",src_channel="channel-3"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-122",dst_channel="channel-122",has_user_data="true",src_chain="osmosis-1",src_channel="channel-8"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-1288",dst_channel="channel-1288",has_user_data="false",src_chain="osmosis-1",src_channel="channel-92975"} 35
+ibc_stuck_packets_detailed{dst_chain="channel-141",dst_channel="channel-141",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 107
+ibc_stuck_packets_detailed{dst_chain="channel-1429",dst_channel="channel-1429",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-143",dst_channel="channel-143",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-144",dst_channel="channel-144",has_user_data="true",src_chain="osmosis-1",src_channel="channel-10"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-19774",dst_channel="channel-19774",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2"} 8
+ibc_stuck_packets_detailed{dst_chain="channel-199",dst_channel="channel-199",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="false",src_chain="osmosis-1",src_channel="channel-94814"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="false",src_chain="osmosis-1",src_channel="channel-98416"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="true",src_chain="osmosis-1",src_channel="channel-19774"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2188"} 3
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="true",src_chain="osmosis-1",src_channel="channel-522"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-2",dst_channel="channel-2",has_user_data="true",src_chain="osmosis-1",src_channel="channel-6994"} 24
+ibc_stuck_packets_detailed{dst_chain="channel-204",dst_channel="channel-204",has_user_data="false",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-208",dst_channel="channel-208",has_user_data="true",src_chain="osmosis-1",src_channel="channel-3"} 11
+ibc_stuck_packets_detailed{dst_chain="channel-2188",dst_channel="channel-2188",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2"} 9
+ibc_stuck_packets_detailed{dst_chain="channel-229",dst_channel="channel-229",has_user_data="true",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-259",dst_channel="channel-259",has_user_data="true",src_chain="osmosis-1",src_channel="channel-3"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-26465",dst_channel="channel-26465",has_user_data="false",src_chain="osmosis-1",src_channel="channel-10362"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-3",dst_channel="channel-3",has_user_data="true",src_chain="osmosis-1",src_channel="channel-104325"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-3",dst_channel="channel-3",has_user_data="true",src_chain="osmosis-1",src_channel="channel-208"} 10
+ibc_stuck_packets_detailed{dst_chain="channel-3",dst_channel="channel-3",has_user_data="true",src_chain="osmosis-1",src_channel="channel-259"} 8
+ibc_stuck_packets_detailed{dst_chain="channel-3",dst_channel="channel-3",has_user_data="true",src_chain="osmosis-1",src_channel="channel-6787"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-320",dst_channel="channel-320",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-326",dst_channel="channel-326",has_user_data="true",src_chain="osmosis-1",src_channel="channel-5"} 20
+ibc_stuck_packets_detailed{dst_chain="channel-340",dst_channel="channel-340",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-362",dst_channel="channel-362",has_user_data="false",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-4",dst_channel="channel-4",has_user_data="true",src_chain="osmosis-1",src_channel="channel-6"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-412",dst_channel="channel-412",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 6
+ibc_stuck_packets_detailed{dst_chain="channel-42",dst_channel="channel-42",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-5",dst_channel="channel-5",has_user_data="true",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-5",dst_channel="channel-5",has_user_data="true",src_chain="osmosis-1",src_channel="channel-326"} 17
+ibc_stuck_packets_detailed{dst_chain="channel-5",dst_channel="channel-5",has_user_data="true",src_chain="osmosis-1",src_channel="channel-550"} 221
+ibc_stuck_packets_detailed{dst_chain="channel-522",dst_channel="channel-522",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-6",dst_channel="channel-6",has_user_data="true",src_chain="osmosis-1",src_channel="channel-4"} 4
+ibc_stuck_packets_detailed{dst_chain="channel-6",dst_channel="channel-6",has_user_data="true",src_chain="osmosis-1",src_channel="channel-91017"} 3
+ibc_stuck_packets_detailed{dst_chain="channel-6787",dst_channel="channel-6787",has_user_data="true",src_chain="osmosis-1",src_channel="channel-3"} 6
+ibc_stuck_packets_detailed{dst_chain="channel-6994",dst_channel="channel-6994",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2"} 56
+ibc_stuck_packets_detailed{dst_chain="channel-7",dst_channel="channel-7",has_user_data="true",src_chain="osmosis-1",src_channel="channel-113"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-75",dst_channel="channel-75",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 14
+ibc_stuck_packets_detailed{dst_chain="channel-750",dst_channel="channel-750",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 42
+ibc_stuck_packets_detailed{dst_chain="channel-781",dst_channel="channel-781",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-8",dst_channel="channel-8",has_user_data="true",src_chain="osmosis-1",src_channel="channel-122"} 5
+ibc_stuck_packets_detailed{dst_chain="channel-85077",dst_channel="channel-85077",has_user_data="true",src_chain="osmosis-1",src_channel="channel-0"} 3
+ibc_stuck_packets_detailed{dst_chain="channel-874",dst_channel="channel-874",has_user_data="true",src_chain="osmosis-1",src_channel="channel-10"} 2
+ibc_stuck_packets_detailed{dst_chain="channel-9",dst_channel="channel-9",has_user_data="true",src_chain="osmosis-1",src_channel="channel-1"} 6
+ibc_stuck_packets_detailed{dst_chain="channel-92956",dst_channel="channel-92956",has_user_data="false",src_chain="osmosis-1",src_channel="channel-1277"} 7
+ibc_stuck_packets_detailed{dst_chain="channel-94814",dst_channel="channel-94814",has_user_data="true",src_chain="osmosis-1",src_channel="channel-2"} 7
+ibc_stuck_packets_detailed{dst_chain="channel-98416",dst_channel="channel-98416",has_user_data="false",src_chain="osmosis-1",src_channel="channel-2"} 1
+ibc_stuck_packets_detailed{dst_chain="channel-98451",dst_channel="channel-98451",has_user_data="false",src_chain="osmosis-1",src_channel="channel-1"} 1
+# HELP ibc_uneffected_packets The number of IBC packets that were relayed but not effected
+# TYPE ibc_uneffected_packets counter
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-141",src_port="transfer"} 3
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-141",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="Relayed by Smart Stake | hermes 1.10.0 (https://hermes.informal.systems)",signer="osmo1v6evmh0wdfvs56nrkq0dd66yvpuj3paq3gzksp",src_channel="channel-141",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="👾 Relayed by cosmosrescue.com | hermes 1.10.5 (https://hermes.informal.systems)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-141",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-0",dst_port="transfer",memo="👾 Relayed by the cosmosrescue.com | rly(2.5.2-45-g4e4e953)",signer="osmo1p4557mdpc2qk8vcemeqgrcg55gs2uyznvdya3j",src_channel="channel-141",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-750",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="Relayed with 💜 by Lavender.Five Nodes 🐝 (8) | rly(2.6.0)",signer="osmo1j6swju2q7zywxmpcttcw4k98j7fphx5nu4scjy",src_channel="channel-750",src_port="transfer"} 2
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-1",dst_port="transfer",memo="mzonder | hermes 1.13.1+5e403dd (https://hermes.informal.systems)",signer="osmo1kxmk0uu50hn2gwtw8hrvnclym43jdxvkvajz6e",src_channel="channel-199",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo156vfr4kpaa0f07y673awf3u87eeemygl9tp72x",src_channel="channel-0",src_port="transfer"} 2
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-141",dst_port="transfer",memo="Relayed by IcyCRO 🧊 | hermes 1.9.0+a026d66 (https://hermes.informal.systems)",signer="osmo1p7d8mnjttcszv34pk2a5yyug3474mhff4twwa6",src_channel="channel-0",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Inter Blockchain Services Relayer | hermes 1.13.1 (https://hermes.informal.systems)",signer="osmo16vmp7sz28pnvgz6f3zm6q93y39jsd33auhkawj",src_channel="channel-19774",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Relayed by CroutonDigital | hermes 1.10.5+be0be09 (https://hermes.informal.systems)",signer="osmo1q8pj4z552p9wpmq7mhlzwhtr3p97j04fpyudm9",src_channel="channel-2188",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-2",dst_port="transfer",memo="Relayed by Polkachu | hermes 1.8.0 (https://hermes.informal.systems)",signer="osmo1fegapd4jc3ejqeg0eu3jk4hvr74hg660kpm5jl",src_channel="channel-6994",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-5",dst_port="transfer",memo="hermes 1.9.0+a026d661a (https://hermes.informal.systems)",signer="osmo1vu7yn6ndqayf3wk8z5fwftwm445whh799u6xyd",src_channel="channel-550",src_port="transfer"} 17
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-75",dst_port="transfer",memo="Relayed by Crosnest. | hermes 1.13.1+5e403dd5c (https://hermes.informal.systems)",signer="osmo19kzuzfmmy9wjr3cl0ss8wjzjup9g49hqwnkfuk",src_channel="channel-0",src_port="transfer"} 1
+ibc_uneffected_packets{chain_id="osmosis-1",dst_channel="channel-85077",dst_port="transfer",memo="relayed by CryptoCrew Validators | hermes 1.12.0+a2e84375 (https://hermes.informal.systems)",signer="osmo1ld3met27u97dlu8mfs7xjnj35qjakd6zntyhhv",src_channel="channel-0",src_port="transfer"} 1
