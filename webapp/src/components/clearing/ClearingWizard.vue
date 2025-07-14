@@ -44,7 +44,17 @@
       <!-- Step 1: Select packets -->
       <div v-if="currentStep === 0">
         <h2 class="text-xl font-semibold mb-4">Select Packets to Clear</h2>
+        <div v-if="loading" class="text-center py-8">
+          <div class="inline-flex items-center">
+            <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading stuck packets...
+          </div>
+        </div>
         <PacketSelector 
+          v-else
           v-model:selected="selectedPackets"
           :stuck-packets="stuckPackets"
           @update:selected="handlePacketSelection"
@@ -52,7 +62,7 @@
         <div class="mt-6 flex justify-end">
           <button
             @click="proceedToFees"
-            :disabled="selectedPackets.length === 0"
+            :disabled="selectedPackets.length === 0 || loading"
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue
@@ -146,9 +156,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckIcon, CheckCircleIcon } from 'lucide-vue-next'
 import { clearingService, type ClearingToken, type ClearingStatus } from '@/services/clearing'
+import { packetsService, type UserTransfer, type StuckPacket } from '@/services/packets'
 import { useWalletStore } from '@/stores/wallet'
 import PacketSelector from './PacketSelector.vue'
 import FeeEstimator from './FeeEstimator.vue'
@@ -171,34 +182,41 @@ const clearingToken = ref<ClearingToken | null>(null)
 const paymentAddress = ref('')
 const paymentMemo = ref('')
 const clearingStatus = ref<ClearingStatus | null>(null)
+const stuckPackets = ref<StuckPacket[]>([])
+const loading = ref(true)
 
-// Mock stuck packets for development
-const stuckPackets = ref([
-  {
-    id: '1',
-    chain: 'osmosis-1',
-    channel: 'channel-0',
-    sequence: 12345,
-    sender: walletStore.address,
-    receiver: 'cosmos1xyz...',
-    amount: '1000000',
-    denom: 'uosmo',
-    age: 1820,
-    attempts: 3
-  },
-  {
-    id: '2',
-    chain: 'osmosis-1',
-    channel: 'channel-0',
-    sequence: 12346,
-    sender: walletStore.address,
-    receiver: 'cosmos1abc...',
-    amount: '500000',
-    denom: 'uosmo',
-    age: 920,
-    attempts: 1
+// Load stuck packets for user
+onMounted(async () => {
+  if (walletStore.isConnected && walletStore.address) {
+    try {
+      loading.value = true
+      const packets = await packetsService.getUserStuckPackets(walletStore.address)
+      stuckPackets.value = packets.filter(p => p.status === 'stuck')
+    } catch (error) {
+      console.error('Failed to load stuck packets:', error)
+      // Fallback to mock data if API fails
+      stuckPackets.value = [
+        {
+          id: '1',
+          channelId: 'channel-0',
+          sequence: 12345,
+          sourceChain: 'osmosis-1',
+          destinationChain: 'cosmoshub-4',
+          amount: '1000000',
+          denom: 'uosmo',
+          sender: walletStore.address,
+          receiver: 'cosmos1xyz...',
+          status: 'stuck',
+          timestamp: new Date().toISOString(),
+          txHash: 'ABC123',
+          stuckDuration: '2h'
+        }
+      ]
+    } finally {
+      loading.value = false
+    }
   }
-])
+})
 
 const handlePacketSelection = (packets: any[]) => {
   selectedPackets.value = packets
@@ -213,8 +231,8 @@ const proceedToFees = async () => {
       type: 'packet',
       targets: {
         packets: selectedPackets.value.map(p => ({
-          chain: p.chain,
-          channel: p.channel,
+          chain: p.sourceChain,
+          channel: p.channelId,
           sequence: p.sequence
         }))
       }
@@ -278,14 +296,12 @@ const getExplorerUrl = (txHash: string): string => {
     'cosmoshub-4': 'https://www.mintscan.io/cosmos/tx/',
   }
   
-  const chain = selectedPackets.value[0]?.chain || 'osmosis-1'
+  const chain = selectedPackets.value[0]?.sourceChain || 'osmosis-1'
   const baseUrl = explorers[chain] || explorers['osmosis-1']
   
   return `${baseUrl}${txHash}`
 }
 
-// Import lifecycle hook
-import { onUnmounted } from 'vue'
 </script>
 
 <style scoped>
