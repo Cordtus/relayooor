@@ -10,11 +10,11 @@ The monitoring dashboard provides real-time visibility into IBC packet flows, re
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  Web Dashboard  │────▶│  API Backend │────▶│ Chainpulse  │
-│   (React/TS)    │     │  (Go/Gin)    │     │   (Rust)    │
+│  Web Dashboard  │────>│  API Backend │────>│ Chainpulse  │
+│   (Vue.js/TS)   │     │  (Go/Gin)    │     │   (Rust)    │
 └─────────────────┘     └──────────────┘     └─────────────┘
                                                      │
-                                                     ▼
+                                                     v
                                               ┌─────────────┐
                                               │ Blockchain  │
                                               │    Nodes    │

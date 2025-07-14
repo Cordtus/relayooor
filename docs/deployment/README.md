@@ -1,6 +1,6 @@
 # Relayooor Production Deployment Guide
 
-Deploy the complete Relayooor stack on Fly.io with this streamlined guide.
+Deploy the complete Relayooor stack on Fly.io with this guide.
 
 ## Architecture Overview
 
@@ -88,10 +88,12 @@ See [webapp-module.md](./webapp-module.md) for nginx configuration.
 All services communicate via Fly.io's private network:
 
 ```
-Internet → relayooor-webapp.fly.dev
-               ↓
+Internet -> relayooor-webapp.fly.dev
+               |
+               v
        relayooor-api.internal:8080
-               ↓
+               |
+               v
     relayooor-chainpulse.internal:3001
 ```
 

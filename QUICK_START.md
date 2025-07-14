@@ -1,6 +1,6 @@
 # Quick Start - IBC Packet Clearing Platform
 
-This guide will help you get the Relayooor packet clearing platform running for Cosmos Hub and Osmosis.
+This guide helps you get the Relayooor packet clearing platform running for Cosmos Hub and Osmosis.
 
 ## Prerequisites
 
@@ -49,7 +49,7 @@ This will:
 - **Grafana**: http://localhost:3003
   - Username: admin
   - Password: admin
-  - Pre-configured dashboard for Cosmos <> Osmosis
+  - Pre-configured dashboard for Cosmos Hub and Osmosis
 
 - **Prometheus**: http://localhost:9090
   - Query raw metrics

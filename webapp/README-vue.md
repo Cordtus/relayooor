@@ -1,10 +1,10 @@
 # Relayooor Web Application
 
-A comprehensive Vue.js dashboard for monitoring and managing IBC (Inter-Blockchain Communication) relay operations, powered by Chainpulse metrics.
+A Vue.js dashboard for monitoring and managing IBC (Inter-Blockchain Communication) relay operations, powered by Chainpulse metrics.
 
 ## Features
 
-### **Monitoring Dashboard**
+### Monitoring Dashboard
 - Real-time IBC packet flow visualization
 - Network health status for all monitored chains
 - Channel utilization heatmaps
@@ -12,27 +12,27 @@ A comprehensive Vue.js dashboard for monitoring and managing IBC (Inter-Blockcha
 - Stuck packet alerts
 - Frontrun competition analysis
 
-### **Channel Analytics**
+### Channel Analytics
 - Channel performance metrics and success rates
 - Volume analysis and routing optimization
 - Congestion detection and bottleneck identification
 - Channel flow visualization
 
-### **Relayer Analytics**
+### Relayer Analytics
 - Performance leaderboard with multiple metrics
 - Market share distribution
 - Software version tracking
 - Competition dynamics (HHI index)
 - Relayer churn analysis
 
-### **Packet Clearing**
+### Packet Clearing
 - User-friendly interface for clearing stuck IBC transfers
 - Wallet integration (Keplr)
 - Real-time stuck transfer detection
 - One-click clearing functionality
 - Transaction history
 
-### **Advanced Analytics**
+### Advanced Analytics
 - Predictive volume and success rate modeling
 - Network flow analysis
 - Anomaly detection

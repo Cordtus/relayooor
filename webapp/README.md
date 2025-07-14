@@ -1,6 +1,6 @@
 # Relayooor Web Application
 
-Vue.js-based frontend for the IBC packet clearing platform, providing a user-friendly interface for clearing stuck IBC transfers.
+Vue.js-based frontend for the IBC packet clearing platform that provides an interface for clearing stuck IBC transfers.
 
 ## Features
 
@@ -51,8 +51,7 @@ VITE_CHAINPULSE_URL=http://localhost:3001
 src/
 ├── components/         # Reusable UI components
 │   ├── clearing/      # Packet clearing wizard components
-│   ├── common/        # Shared components
-│   └── stats/         # Statistics display components
+│   └── monitoring/    # Monitoring and analytics components
 ├── views/             # Page components
 │   ├── Home.vue       # Landing page
 │   ├── Clearing.vue   # Packet clearing interface
@@ -71,7 +70,7 @@ src/
 ## Key Components
 
 ### ClearingWizard.vue
-Main component implementing the 5-step clearing process:
+Main component that implements the 5-step clearing process:
 1. **Select** - Choose stuck packets to clear
 2. **Fees** - Review service and gas fees
 3. **Payment** - Make payment with memo
@@ -79,25 +78,17 @@ Main component implementing the 5-step clearing process:
 5. **Complete** - View results
 
 ### WalletConnect.vue
-Handles Keplr wallet integration:
+Manages Keplr wallet integration:
 - Chain switching
 - Address management
 - Message signing for authentication
 
-### PacketList.vue
-Displays stuck packets with:
-- Sortable columns
-- Batch selection
-- Age indicators
-- Value display
+### PacketSelector.vue
+Displays and manages stuck packet selection with sortable columns, batch operations, and status indicators.
 
 ## Styling
 
-Using TailwindCSS with custom configuration:
-- Responsive design
-- Dark mode support (future)
-- Custom color palette
-- Animation utilities
+Uses TailwindCSS with custom configuration for responsive design, custom color palette, and utility classes.
 
 ## Configuration
 

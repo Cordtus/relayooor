@@ -1,6 +1,6 @@
 # Relayooor - IBC Packet Clearing Platform
 
-A comprehensive platform for IBC packet clearing and monitoring, providing secure and user-friendly solutions for stuck IBC transfers across the Cosmos ecosystem.
+A comprehensive platform for IBC packet clearing and monitoring that provides secure solutions for stuck IBC transfers across the Cosmos ecosystem.
 
 ## Key Features
 
@@ -54,13 +54,13 @@ A comprehensive platform for IBC packet clearing and monitoring, providing secur
 
 ### Enhanced Features
 
-#### Robustness & Reliability
+#### Robustness and Reliability
 - **Circuit Breaker Pattern**: Prevents cascading failures with Hermes
 - **Retry Logic**: Exponential backoff with jitter for transient failures
 - **Graceful Shutdown**: Tracks active operations with up to 5-minute grace period
 - **Health Monitoring**: Component-level health checks with degraded mode support
 
-#### Performance Optimizations
+#### Performance
 - **Smart Caching**: Redis caching with stampede prevention
 - **Database Indexes**: Optimized queries with materialized views
 - **Pagination**: Both standard and cursor-based for large datasets
@@ -243,10 +243,7 @@ yarn test
 ## Documentation
 
 - [Architecture Overview](docs/packet-clearing-architecture.md)
-- [Implementation Plan](docs/packet-clearing-implementation-plan.md)
-- [Edge Cases & Improvements](docs/packet-clearing-edge-cases.md)
-- [Operator Guide](docs/operator-review.md)
-- [User Experience Review](docs/user-experience-review.md)
+- [API Documentation](docs/API_IMPROVEMENTS.md)
 - [Deployment Guide](docs/deployment/README.md)
 
 ## Security
@@ -293,4 +290,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Need Help?** 
 - Check our [documentation](docs/)
 - Report issues on [GitHub](https://github.com/yourusername/relayooor/issues)
-- Join our [Discord](https://discord.gg/relayooor) community
