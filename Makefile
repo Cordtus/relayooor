@@ -95,3 +95,48 @@ commit: check-docs ## Commit with documentation check
 	@git add -A
 	@git commit
 
+# Testing commands
+.PHONY: test
+test: ## Run all tests
+	@./run-tests.sh
+
+.PHONY: test-unit
+test-unit: ## Run unit tests only
+	@echo "Running unit tests..."
+	@cd api && go test ./... -v
+	@cd relayer-middleware/api && go test ./... -v
+	@cd webapp && npm test
+
+.PHONY: test-integration
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@cd tests/integration && npm test
+
+.PHONY: test-e2e
+test-e2e: ## Run end-to-end tests
+	@echo "Running E2E tests..."
+	@cd tests/integration && npm run test:e2e
+
+.PHONY: test-security
+test-security: ## Run security scans
+	@echo "Running security scans..."
+	@govulncheck ./... || echo "Install govulncheck: go install golang.org/x/vuln/cmd/govulncheck@latest"
+	@cd webapp && npm audit
+
+.PHONY: test-coverage
+test-coverage: ## Generate test coverage reports
+	@echo "Generating coverage reports..."
+	@cd api && go test ./... -coverprofile=coverage.out && go tool cover -html=coverage.out -o coverage.html
+	@cd relayer-middleware/api && go test ./... -coverprofile=coverage.out && go tool cover -html=coverage.out -o coverage.html
+	@cd webapp && npm run test:coverage
+
+.PHONY: test-quick
+test-quick: ## Quick test (unit tests with race detection)
+	@cd api && go test -race -short ./...
+	@cd relayer-middleware/api && go test -race -short ./...
+
+.PHONY: test-bench
+test-bench: ## Run benchmark tests
+	@cd api && go test -bench=. -benchmem ./...
+	@cd relayer-middleware/api && go test -bench=. -benchmem ./...
+
