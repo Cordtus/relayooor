@@ -159,7 +159,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckIcon, CheckCircleIcon } from 'lucide-vue-next'
-import { clearingService, type ClearingToken, type ClearingStatus } from '@/services/clearing'
+import { clearingService, type ClearingToken, type ClearingStatus, type TokenResponse } from '@/services/clearing'
 import { packetsService, type UserTransfer, type StuckPacket } from '@/services/packets'
 import { useWalletStore } from '@/stores/wallet'
 import PacketSelector from './PacketSelector.vue'
@@ -167,6 +167,30 @@ import FeeEstimator from './FeeEstimator.vue'
 import PaymentPrompt from './PaymentPrompt.vue'
 import ClearingProgress from './ClearingProgress.vue'
 import Button from '@/components/ui/Button.vue'
+
+// Helper function to infer chain from wallet address prefix
+function inferChainFromAddress(address: string): string | null {
+  if (!address) return null
+  if (address.startsWith('osmo1')) return 'osmosis-1'
+  if (address.startsWith('cosmos1')) return 'cosmoshub-4'
+  if (address.startsWith('neutron1')) return 'neutron-1'
+  return null
+}
+
+// Helper to parse stuck duration
+function parseStuckDuration(duration: string | undefined): number {
+  if (!duration) return 0
+  const match = duration.match(/(\d+)([hms])/)
+  if (!match) return 0
+  const [, num, unit] = match
+  const value = parseInt(num)
+  switch (unit) {
+    case 'h': return value * 3600
+    case 'm': return value * 60
+    case 's': return value
+    default: return 0
+  }
+}
 
 const walletStore = useWalletStore()
 
@@ -184,7 +208,7 @@ const clearingToken = ref<ClearingToken | null>(null)
 const paymentAddress = ref('')
 const paymentMemo = ref('')
 const clearingStatus = ref<ClearingStatus | null>(null)
-const stuckPackets = ref<StuckPacket[]>([])
+const stuckPackets = ref<any[]>([])
 const loading = ref(true)
 
 // Load stuck packets for user
@@ -193,25 +217,37 @@ onMounted(async () => {
     try {
       loading.value = true
       const packets = await packetsService.getUserStuckPackets(walletStore.address)
-      stuckPackets.value = packets.filter(p => p.status === 'stuck')
+      // Map UserTransfer to StuckPacket format
+      stuckPackets.value = packets
+        .filter(p => p.status === 'stuck')
+        .map(p => ({
+          id: p.id,
+          chain: inferChainFromAddress(p.sender) || p.sourceChain,
+          channel: p.channelId,
+          sequence: p.sequence,
+          sender: p.sender,
+          receiver: p.receiver,
+          amount: p.amount,
+          denom: p.denom,
+          age: parseStuckDuration(p.stuckDuration),
+          attempts: 0
+        }))
     } catch (error) {
       console.error('Failed to load stuck packets:', error)
       // Fallback to mock data if API fails
+      const inferredChain = inferChainFromAddress(walletStore.address || '')
       stuckPackets.value = [
         {
           id: '1',
-          channelId: 'channel-0',
+          chain: inferredChain || 'osmosis-1',
+          channel: 'channel-0',
           sequence: 12345,
-          sourceChain: 'osmosis-1',
-          destinationChain: 'cosmoshub-4',
+          sender: walletStore.address || 'osmo1abc...',
+          receiver: 'cosmos1xyz...',
           amount: '1000000',
           denom: 'uosmo',
-          sender: walletStore.address,
-          receiver: 'cosmos1xyz...',
-          status: 'stuck',
-          timestamp: new Date().toISOString(),
-          txHash: 'ABC123',
-          stuckDuration: '2h'
+          age: 7200,
+          attempts: 0
         }
       ]
     } finally {

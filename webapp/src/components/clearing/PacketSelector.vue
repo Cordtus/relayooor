@@ -32,23 +32,37 @@
           Clear Selection
         </button>
       </div>
-      <div class="flex items-center gap-2">
-        <label class="text-sm text-gray-600">Sort by:</label>
-        <select 
-          v-model="sortBy"
-          class="text-sm border border-gray-300 rounded-md px-2 py-1"
-        >
-          <option value="age">Age</option>
-          <option value="value">Value</option>
-          <option value="attempts">Attempts</option>
-        </select>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600">Chain:</label>
+          <select 
+            v-model="chainFilter"
+            class="text-sm border border-gray-300 rounded-md px-2 py-1"
+          >
+            <option value="">All Chains</option>
+            <option v-for="chain in availableChains" :key="chain" :value="chain">
+              {{ getChainName(chain) }}
+            </option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-gray-600">Sort by:</label>
+          <select 
+            v-model="sortBy"
+            class="text-sm border border-gray-300 rounded-md px-2 py-1"
+          >
+            <option value="age">Age</option>
+            <option value="value">Value</option>
+            <option value="attempts">Attempts</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <!-- Packet list -->
     <div class="space-y-2 max-h-96 overflow-y-auto">
       <div
-        v-for="packet in sortedPackets"
+        v-for="packet in filteredAndSortedPackets"
         :key="packet.id"
         @click="togglePacket(packet)"
         :class="[
@@ -73,7 +87,7 @@
                   Sequence #{{ packet.sequence }}
                 </span>
                 <span class="text-xs text-gray-500">
-                  {{ packet.channel }}
+                  {{ packet.channel }} • {{ getChainName(packet.chain) }}
                 </span>
               </div>
               <div class="text-sm text-gray-600">
@@ -140,10 +154,22 @@ const emit = defineEmits<{
 }>()
 
 const sortBy = ref<'age' | 'value' | 'attempts'>('age')
+const chainFilter = ref<string>('')
 
-const sortedPackets = computed(() => {
-  const packets = [...props.stuckPackets]
+const availableChains = computed(() => {
+  const chains = new Set(props.stuckPackets.map(p => p.chain))
+  return Array.from(chains).sort()
+})
+
+const filteredAndSortedPackets = computed(() => {
+  let packets = [...props.stuckPackets]
   
+  // Apply chain filter
+  if (chainFilter.value) {
+    packets = packets.filter(p => p.chain === chainFilter.value)
+  }
+  
+  // Apply sorting
   switch (sortBy.value) {
     case 'age':
       return packets.sort((a, b) => b.age - a.age)
@@ -159,6 +185,16 @@ const sortedPackets = computed(() => {
       return packets
   }
 })
+
+// Helper to get chain name
+function getChainName(chainId: string): string {
+  const names: Record<string, string> = {
+    'osmosis-1': 'Osmosis',
+    'cosmoshub-4': 'Cosmos Hub',
+    'neutron-1': 'Neutron'
+  }
+  return names[chainId] || chainId
+}
 
 const isSelected = (packet: StuckPacket): boolean => {
   return props.selected.some(p => p.id === packet.id)

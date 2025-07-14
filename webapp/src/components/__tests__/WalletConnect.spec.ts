@@ -160,7 +160,7 @@ describe('WalletConnect', () => {
     await wrapper.find('button').trigger('click')
     
     expect(wrapper.emitted('error')).toBeTruthy()
-    expect(wrapper.emitted('error')?.[0]).toEqual([
+    expect(wrapper.emitted().error?.[0]).toEqual([
       { message: 'Please install Keplr wallet extension' }
     ])
     

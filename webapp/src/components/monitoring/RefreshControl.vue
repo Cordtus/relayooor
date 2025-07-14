@@ -4,7 +4,7 @@
     <input
       type="checkbox"
       :checked="modelValue"
-      @change="$emit('update:modelValue', $event.target.checked)"
+      @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
       class="rounded text-primary-600 focus:ring-primary-500"
     />
     <button

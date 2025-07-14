@@ -1,31 +1,37 @@
 <template>
   <div class="flex items-center space-x-2">
-    <div class="flex items-center">
-      <div class="h-2 w-2 rounded-full" :class="statusColor"></div>
-      <span class="ml-2 text-sm text-gray-600">{{ statusText }}</span>
-    </div>
+    <div :class="statusClasses" />
+    <span class="text-sm text-content-secondary">
+      {{ statusText }}
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
-import { metricsService } from '@/services/api'
+import { useConnectionStore } from '@/stores/connection'
 
-const { data: metrics } = useQuery({
-  queryKey: ['connection-status'],
-  queryFn: async () => {
-    try {
-      await metricsService.getRawMetrics()
-      return { connected: true }
-    } catch {
-      return { connected: false }
-    }
-  },
-  refetchInterval: 10000
+const connectionStore = useConnectionStore()
+
+const statusClasses = computed(() => {
+  const base = 'w-2 h-2 rounded-full'
+  if (connectionStore.connectionStatus === 'connected') {
+    return `${base} bg-status-success`
+  } else if (connectionStore.connectionStatus === 'connecting') {
+    return `${base} bg-status-warning animate-pulse`
+  } else {
+    return `${base} bg-status-error`
+  }
 })
 
-const isConnected = computed(() => metrics.value?.connected ?? false)
-const statusColor = computed(() => isConnected.value ? 'bg-green-400' : 'bg-red-400')
-const statusText = computed(() => isConnected.value ? 'Connected' : 'Disconnected')
+const statusText = computed(() => {
+  switch (connectionStore.connectionStatus) {
+    case 'connected':
+      return 'Connected'
+    case 'connecting':
+      return 'Connecting...'
+    default:
+      return 'Disconnected'
+  }
+})
 </script>

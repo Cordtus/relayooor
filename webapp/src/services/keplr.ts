@@ -4,7 +4,7 @@
  */
 
 import { SigningStargateClient } from '@cosmjs/stargate'
-import { OfflineDirectSigner } from '@cosmjs/proto-signing'
+import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
 import { CHAIN_CONFIG } from '@/config/chains'
 
 export interface KeplrSignature {
@@ -187,7 +187,7 @@ class KeplrService {
   ): Promise<boolean> {
     // In production, implement proper signature verification
     // using @cosmjs/crypto or similar
-    console.log('Verifying message:', { address, message, signature })
+    // Debug: Verifying message
     return true
   }
 

@@ -29,6 +29,12 @@ export interface StuckPacket {
   receiver: string
   timestamp: string
   txHash?: string
+  // Additional fields for compatibility with clearing service
+  chain?: string
+  channel?: string
+  age?: string
+  attempts?: number
+  status?: 'stuck'
 }
 
 export interface ClearPacketRequest {

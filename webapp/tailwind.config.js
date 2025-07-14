@@ -3,6 +3,7 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
+    "./src/style.css",
   ],
   theme: {
     extend: {
@@ -44,7 +45,7 @@ export default {
         },
         // Surface colors for consistent backgrounds
         surface: {
-          card: 'white',
+          card: '#ffffff',
           background: '#f9fafb',
           muted: '#f3f4f6',
           hover: '#f9fafb',

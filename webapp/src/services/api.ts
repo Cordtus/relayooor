@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { MetricsSnapshot } from '@/types/monitoring'
+import { mockData } from './mockData'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -8,23 +9,146 @@ export const api = axios.create({
   timeout: 10000,
 })
 
+// Alias for backwards compatibility
+export const apiClient = api
+
+export const analyticsService = {
+  // Get platform-wide statistics
+  async getPlatformStatistics(): Promise<any> {
+    const response = await api.get('/api/v1/statistics/platform')
+    return response.data
+  },
+
+  // Get network flow data
+  async getNetworkFlows(): Promise<any> {
+    const response = await api.get('/api/v1/metrics/packet-flow')
+    return response.data
+  },
+
+  // Get channel congestion data
+  async getChannelCongestion(): Promise<any> {
+    const response = await api.get('/api/v1/chainpulse/channels/congestion')
+    return response.data
+  },
+
+  // Get stuck packets analytics
+  async getStuckPacketsAnalytics(): Promise<any> {
+    const response = await api.get('/api/v1/metrics/stuck-packets')
+    return response.data
+  },
+
+  // Get relayer performance analytics
+  async getRelayerPerformance(): Promise<any> {
+    const response = await api.get('/api/v1/metrics/relayer-performance')
+    return response.data
+  },
+
+  // Get historical data for trend analysis
+  async getHistoricalTrends(timeRange: string): Promise<any> {
+    const response = await api.get('/api/v1/metrics/trends', {
+      params: { range: timeRange }
+    })
+    return response.data
+  }
+}
+
+// Chain registry service
+export const chainRegistryService = {
+  chainCache: new Map<string, ChainInfo>(),
+
+  async getChainRegistry(): Promise<{ chains: ChainInfo[] }> {
+    const response = await api.get('/api/chains/registry')
+    const data = response.data as { chains: ChainInfo[] }
+    // Cache the chains
+    data.chains.forEach(chain => {
+      this.chainCache.set(chain.chain_id, chain)
+    })
+    return data
+  },
+
+  async getChainInfo(chainId: string): Promise<ChainInfo | null> {
+    // Check cache first
+    if (this.chainCache.has(chainId)) {
+      return this.chainCache.get(chainId)!
+    }
+
+    // If not in cache, fetch registry
+    const registry = await this.getChainRegistry()
+    return registry.chains.find(c => c.chain_id === chainId) || null
+  },
+
+  getChainName(chainId: string): string {
+    // Try cache first
+    const cached = this.chainCache.get(chainId)
+    if (cached) {
+      return cached.pretty_name
+    }
+
+    // Fallback to hardcoded names
+    const names: Record<string, string> = {
+      'cosmoshub-4': 'Cosmos Hub',
+      'osmosis-1': 'Osmosis',
+      'neutron-1': 'Neutron',
+      'stride-1': 'Stride',
+      'noble-1': 'Noble',
+      'juno-1': 'Juno',
+      'axelar-dojo-1': 'Axelar',
+      'dydx-mainnet-1': 'dYdX'
+    }
+    return names[chainId] || chainId
+  }
+}
+
+// Types
+export interface ChainInfo {
+  chain_id: string
+  chain_name: string
+  pretty_name: string
+  network_type: string
+  prefix: string
+  rest_api: string
+  rpc: string
+  comet_version: string
+}
+
 export const metricsService = {
   // Fetch raw Prometheus metrics from Chainpulse
   async getRawMetrics(): Promise<string> {
-    const response = await api.get('/api/metrics/chainpulse', {
-      responseType: 'text'
-    })
+    try {
+      const response = await api.get('/api/metrics/chainpulse', {
+        responseType: 'text'
+      })
+      return response.data
+    } catch (error) {
+      console.log('Using mock metrics data')
+      return ''
+    }
+  },
+
+  // Fetch structured monitoring metrics
+  async getMonitoringMetrics(): Promise<any> {
+    const response = await api.get('/api/monitoring/metrics')
     return response.data
   },
 
   // Fetch structured monitoring data
   async getMonitoringData(): Promise<any> {
-    const response = await api.get('/api/monitoring/data')
-    return response.data
+    try {
+      const response = await api.get('/api/monitoring/data')
+      return response.data
+    } catch (error) {
+      console.log('Using mock monitoring data')
+      return mockData.generateMonitoringData()
+    }
   },
 
   // Parse Prometheus metrics into structured format
   parsePrometheusMetrics(rawMetrics: string): MetricsSnapshot {
+    // If no metrics, return mock data
+    if (!rawMetrics || rawMetrics.trim() === '') {
+      return mockData.generateMetrics()
+    }
+    
     const lines = rawMetrics.split('\n')
     const metrics: any = {
       system: {
@@ -88,7 +212,7 @@ export const metricsService = {
           this.processPacketMetric(metrics, labels, numValue, false)
           break
         
-        case 'ibc_frontrun_counter':
+        case 'ibc_frontrun_total':
           this.processFrontrunMetric(metrics, labels, numValue)
           break
         
@@ -108,9 +232,9 @@ export const metricsService = {
 
     // Convert maps to arrays
     metrics.relayers = Array.from(metrics.relayers.values())
-      .sort((a, b) => b.effectedPackets - a.effectedPackets)
+      .sort((a: any, b: any) => b.effectedPackets - a.effectedPackets)
     metrics.channels = Array.from(metrics.channels.values())
-      .sort((a, b) => b.totalPackets - a.totalPackets)
+      .sort((a: any, b: any) => b.totalPackets - a.totalPackets)
 
     return metrics
   },

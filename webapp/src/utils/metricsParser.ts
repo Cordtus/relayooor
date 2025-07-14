@@ -178,7 +178,7 @@ export class MetricsParser {
   private static extractPacketMetrics(metrics: Map<string, MetricSample[]>): PacketMetrics {
     const effectedSamples = metrics.get('ibc_effected_packets') || []
     const uneffectedSamples = metrics.get('ibc_uneffected_packets') || []
-    const frontrunSamples = metrics.get('ibc_frontrun_counter') || []
+    const frontrunSamples = metrics.get('ibc_frontrun_total') || []
 
     const effectedPackets = effectedSamples.reduce((sum, s) => sum + s.value, 0)
     const uneffectedPackets = uneffectedSamples.reduce((sum, s) => sum + s.value, 0)
@@ -280,7 +280,7 @@ export class MetricsParser {
     })
 
     // Process frontrun events
-    const frontrunSamples = metrics.get('ibc_frontrun_counter') || []
+    const frontrunSamples = metrics.get('ibc_frontrun_total') || []
     frontrunSamples.forEach(sample => {
       const signer = sample.labels.signer || 'unknown'
       const relayer = relayerMap.get(signer)

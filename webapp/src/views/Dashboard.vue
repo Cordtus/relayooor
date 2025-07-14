@@ -111,14 +111,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { api } from '@/services/api'
+import { api, metricsService } from '@/services/api'
 
 // Fetch monitoring data
 const { data: monitoringData } = useQuery({
   queryKey: ['monitoring-data'],
   queryFn: async () => {
-    const response = await api.get('/api/monitoring/data')
-    return response.data
+    return metricsService.getMonitoringData()
   },
   refetchInterval: 10000 // Refresh every 10 seconds
 })
@@ -127,8 +126,14 @@ const { data: monitoringData } = useQuery({
 const { data: comprehensiveMetrics } = useQuery({
   queryKey: ['comprehensive-metrics'],
   queryFn: async () => {
-    const response = await api.get('/api/monitoring/metrics')
-    return response.data
+    try {
+      const response = await api.get('/api/monitoring/metrics')
+      return response.data
+    } catch (error) {
+      // Use metrics service which has mock data fallback
+      const raw = await metricsService.getRawMetrics()
+      return metricsService.parsePrometheusMetrics(raw)
+    }
   },
   refetchInterval: 10000
 })
@@ -137,8 +142,14 @@ const { data: comprehensiveMetrics } = useQuery({
 const { data: channelCongestion } = useQuery({
   queryKey: ['channel-congestion'],
   queryFn: async () => {
-    const response = await api.get('/api/channels/congestion')
-    return response.data
+    try {
+      const response = await api.get('/api/channels/congestion')
+      return response.data
+    } catch (error) {
+      // Return channels from monitoring data
+      const data = await metricsService.getMonitoringData()
+      return data.channels || []
+    }
   },
   refetchInterval: 30000 // Refresh every 30 seconds
 })

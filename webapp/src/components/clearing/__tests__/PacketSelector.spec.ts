@@ -2,44 +2,59 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PacketSelector from '@/components/clearing/PacketSelector.vue'
-import type { StuckPacket } from '@/types/clearing'
+import type { StuckPacket } from '@/services/packets'
 
 describe('PacketSelector', () => {
   const mockPackets: StuckPacket[] = [
     {
       id: '1',
-      chain: 'osmosis-1',
-      channel: 'channel-0',
+      channelId: 'channel-0',
       sequence: 123,
-      sender: 'osmo1sender',
-      receiver: 'cosmos1receiver',
+      sourceChain: 'osmosis-1',
+      destinationChain: 'cosmoshub-4',
+      stuckDuration: '30m',
       amount: '1000000',
       denom: 'uosmo',
-      age: 1800, // 30 minutes
+      sender: 'osmo1sender',
+      receiver: 'cosmos1receiver',
+      timestamp: new Date().toISOString(),
+      chain: 'osmosis-1',
+      channel: 'channel-0',
+      age: '30m',
       attempts: 2,
     },
     {
       id: '2',
-      chain: 'osmosis-1',
-      channel: 'channel-0',
+      channelId: 'channel-0',
       sequence: 124,
-      sender: 'osmo1sender',
-      receiver: 'cosmos1receiver',
+      sourceChain: 'osmosis-1',
+      destinationChain: 'cosmoshub-4',
+      stuckDuration: '1h',
       amount: '500000',
       denom: 'uosmo',
-      age: 3600, // 1 hour
+      sender: 'osmo1sender',
+      receiver: 'cosmos1receiver',
+      timestamp: new Date().toISOString(),
+      chain: 'osmosis-1',
+      channel: 'channel-0',
+      age: '1h',
       attempts: 5,
     },
     {
       id: '3',
-      chain: 'cosmoshub-4',
-      channel: 'channel-141',
+      channelId: 'channel-141',
       sequence: 456,
-      sender: 'cosmos1sender',
-      receiver: 'osmo1receiver',
+      sourceChain: 'cosmoshub-4',
+      destinationChain: 'osmosis-1',
+      stuckDuration: '2h',
       amount: '2000000',
       denom: 'uatom',
-      age: 7200, // 2 hours
+      sender: 'cosmos1sender',
+      receiver: 'osmo1receiver',
+      timestamp: new Date().toISOString(),
+      chain: 'cosmoshub-4',
+      channel: 'channel-141',
+      age: '2h',
       attempts: 10,
     },
   ]
@@ -220,9 +235,9 @@ describe('PacketSelector', () => {
     const wrapper = mount(PacketSelector, {
       props: {
         stuckPackets: [
-          { ...mockPackets[0], age: 60 }, // 1 minute
-          { ...mockPackets[1], age: 3600 }, // 1 hour
-          { ...mockPackets[2], age: 86400 }, // 1 day
+          { ...mockPackets[0], age: '1m', stuckDuration: '1m' }, // 1 minute
+          { ...mockPackets[1], age: '1h', stuckDuration: '1h' }, // 1 hour
+          { ...mockPackets[2], age: '1d', stuckDuration: '1d' }, // 1 day
         ],
         selected: [],
       },
