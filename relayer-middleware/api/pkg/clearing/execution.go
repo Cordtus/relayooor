@@ -1,409 +1,393 @@
 package clearing
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
+	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"relayooor/api/pkg/circuitbreaker"
+	"relayooor/api/pkg/retry"
 )
 
-// ExecutionService handles the actual packet clearing through Hermes
-type ExecutionService struct {
-	service   *Service
-	hermesURL string
-	workers   int
+var (
+	ErrChannelClosed     = errors.New("channel closed")
+	ErrHermesUnavailable = errors.New("hermes unavailable")
+	ErrInsufficientGas   = errors.New("insufficient gas")
+)
+
+// ExecutionServiceV2 handles the actual packet clearing through Hermes with improved error handling
+type ExecutionServiceV2 struct {
+	db             *gorm.DB
+	redisClient    *redis.Client
+	hermesClient   HermesClient
+	logger         *zap.Logger
+	workerPool     chan struct{}
+	activeTasks    sync.WaitGroup
+	circuitBreaker *circuitbreaker.CircuitBreaker
+	retrier        *retry.Retrier
+	refundService  *RefundService
+	tracker        *OperationTracker
 }
 
-// NewExecutionService creates a new execution service
-func NewExecutionService(service *Service, workers int) *ExecutionService {
-	if workers <= 0 {
-		workers = 2
-	}
-	
-	return &ExecutionService{
-		service:   service,
-		hermesURL: service.hermesURL,
-		workers:   workers,
+// HermesClient interface for Hermes interactions
+type HermesClient interface {
+	ClearPackets(ctx context.Context, req *ClearPacketsRequest) (*ClearPacketsResponse, error)
+	GetVersion(ctx context.Context) (*VersionResponse, error)
+}
+
+type ClearPacketsRequest struct {
+	Chain     string   `json:"chain"`
+	Channel   string   `json:"channel"`
+	Port      string   `json:"port"`
+	Sequences []uint64 `json:"sequences"`
+}
+
+type ClearPacketsResponse struct {
+	Success  bool     `json:"success"`
+	TxHashes []string `json:"tx_hashes"`
+	Error    string   `json:"error,omitempty"`
+}
+
+type VersionResponse struct {
+	Version string `json:"version"`
+}
+
+type OperationTracker interface {
+	Add(op *ActiveOperation)
+	Remove(id string)
+}
+
+type ActiveOperation struct {
+	ID        string
+	StartTime time.Time
+	Type      string
+}
+
+func NewExecutionServiceV2(
+	db *gorm.DB,
+	redis *redis.Client,
+	hermesClient HermesClient,
+	refundService *RefundService,
+	tracker *OperationTracker,
+	logger *zap.Logger,
+) *ExecutionServiceV2 {
+	// Wrap Hermes client with circuit breaker
+	cbClient := NewCircuitBreakerClient(hermesClient)
+
+	return &ExecutionServiceV2{
+		db:             db,
+		redisClient:    redis,
+		hermesClient:   cbClient,
+		logger:         logger.With(zap.String("component", "execution")),
+		workerPool:     make(chan struct{}, 5), // Max 5 concurrent executions
+		circuitBreaker: circuitbreaker.New("hermes", 5, 30*time.Second),
+		retrier:        retry.NewRetrier(retry.DefaultConfig(), logger),
+		refundService:  refundService,
+		tracker:        tracker,
 	}
 }
 
-// Start begins processing the execution queue
-func (es *ExecutionService) Start(ctx context.Context) {
-	for i := 0; i < es.workers; i++ {
-		go es.worker(ctx, i)
-	}
+func (es *ExecutionServiceV2) Start(ctx context.Context) {
+	// Start execution queue processor
+	go es.processQueue(ctx)
 }
 
-// worker processes tokens from the execution queue
-func (es *ExecutionService) worker(ctx context.Context, workerID int) {
-	log.Printf("Execution worker %d started", workerID)
-	
+func (es *ExecutionServiceV2) processQueue(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("Execution worker %d stopped", workerID)
+			es.logger.Info("Stopping execution processor")
+			es.activeTasks.Wait()
 			return
 		default:
-			// Get token from queue
-			tokenID, err := es.service.redisClient.BRPop(ctx, 5*time.Second, "clearing:execution:queue").Result()
+			// Get next operation from queue
+			tokenID, err := es.redisClient.BLPop(ctx, 5*time.Second, "clearing:execution:queue").Result()
 			if err != nil {
-				continue // Timeout or error, try again
+				if err != redis.Nil {
+					es.logger.Error("Failed to get from queue", zap.Error(err))
+				}
+				continue
 			}
-			
+
 			if len(tokenID) < 2 {
 				continue
 			}
-			
-			// Process the token
-			if err := es.processToken(ctx, tokenID[1]); err != nil {
-				log.Printf("Worker %d failed to process token %s: %v", workerID, tokenID[1], err)
-				// Could implement retry logic here
+
+			// Process in goroutine with worker pool
+			es.workerPool <- struct{}{} // Acquire worker slot
+			es.activeTasks.Add(1)
+
+			go func(token string) {
+				defer func() {
+					<-es.workerPool // Release worker slot
+					es.activeTasks.Done()
+				}()
+
+				// Track operation
+				op := &ActiveOperation{
+					ID:        token,
+					StartTime: time.Now(),
+					Type:      "clearing",
+				}
+				es.tracker.Add(op)
+				defer es.tracker.Remove(op.ID)
+
+				if err := es.executeClearing(ctx, token); err != nil {
+					es.logger.Error("Failed to execute clearing",
+						zap.String("token", token),
+						zap.Error(err),
+					)
+				}
+			}(tokenID[1])
+		}
+	}
+}
+
+func (es *ExecutionServiceV2) executeClearing(ctx context.Context, tokenID string) error {
+	// Get operation details
+	operation, err := es.getOperation(ctx, tokenID)
+	if err != nil {
+		return fmt.Errorf("failed to get operation: %w", err)
+	}
+
+	// Update status to processing
+	if err := es.updateOperationStatus(operation.ID, "processing", ""); err != nil {
+		es.logger.Error("Failed to update status", zap.Error(err))
+	}
+
+	// Clear packets with retry logic
+	result, err := es.clearPackets(ctx, operation.Packets)
+	if err != nil {
+		es.handleClearingFailure(ctx, operation.ID, err)
+		return err
+	}
+
+	// Update operation as successful
+	if err := es.completeOperation(operation.ID, result); err != nil {
+		es.logger.Error("Failed to update operation", zap.Error(err))
+	}
+
+	// Broadcast success via WebSocket
+	es.broadcastStatus(tokenID, ClearingStatus{
+		Status:    "completed",
+		Message:   "Packets cleared successfully",
+		Progress:  100,
+		UpdatedAt: time.Now(),
+		TxHashes:  result.TxHashes,
+	})
+
+	return nil
+}
+
+func (es *ExecutionServiceV2) clearPackets(ctx context.Context, packets []PacketIdentifier) (*ClearingResult, error) {
+	retrier := retry.NewRetrier(retry.Config{
+		MaxAttempts:     3,
+		InitialInterval: 2 * time.Second,
+		MaxInterval:     30 * time.Second,
+		Multiplier:      2.0,
+		RandomFactor:    0.2,
+	}, es.logger)
+
+	var result *ClearingResult
+
+	err := retrier.Do(ctx, "clear_packets", func() error {
+		// Group packets by channel
+		channelGroups := es.groupPacketsByChannel(packets)
+
+		result = &ClearingResult{
+			Success:   true,
+			TxHashes:  make([]string, 0),
+			Timestamp: time.Now(),
+		}
+
+		for channel, channelPackets := range channelGroups {
+			// Clear packets for this channel
+			resp, err := es.hermesClient.ClearPackets(ctx, &ClearPacketsRequest{
+				Chain:     channel.ChainID,
+				Channel:   channel.ChannelID,
+				Port:      channel.PortID,
+				Sequences: channelPackets,
+			})
+
+			if err != nil {
+				return fmt.Errorf("failed to clear packets on channel %s: %w", channel.ChannelID, err)
+			}
+
+			if resp.Success {
+				result.TxHashes = append(result.TxHashes, resp.TxHashes...)
+			} else {
+				result.Success = false
+				result.Error = resp.Error
+				return fmt.Errorf("clearing failed: %s", resp.Error)
 			}
 		}
-	}
+
+		return nil
+	})
+
+	return result, err
 }
 
-// processToken executes clearing for a specific token
-func (es *ExecutionService) processToken(ctx context.Context, tokenID string) error {
-	// Get token details
-	token, err := es.service.getToken(ctx, tokenID)
-	if err != nil {
-		return fmt.Errorf("failed to get token: %w", err)
+func (es *ExecutionServiceV2) handleClearingFailure(ctx context.Context, operationID string, err error) {
+	logger := es.logger.With(
+		zap.String("operation_id", operationID),
+		zap.Error(err),
+	)
+
+	// Determine if failure is refundable
+	refundReason := es.determineRefundReason(err)
+	if refundReason == "" {
+		logger.Info("Failure not eligible for refund")
+		return
 	}
-	
-	// Verify payment
-	paymentKey := fmt.Sprintf("clearing:payment:%s", tokenID)
-	paymentExists, err := es.service.redisClient.Exists(ctx, paymentKey).Result()
-	if err != nil || paymentExists == 0 {
-		return fmt.Errorf("payment not verified")
+
+	// Mark operation for refund
+	if err := es.db.Model(&ClearingOperation{}).
+		Where("id = ?", operationID).
+		Updates(map[string]interface{}{
+			"refund_status": "pending",
+			"refund_reason": refundReason,
+		}).Error; err != nil {
+		logger.Error("Failed to mark operation for refund", zap.Error(err))
 	}
-	
-	// Start execution tracking
-	execution := &ExecutionInfo{
-		StartedAt: timePtr(time.Now()),
-	}
-	
-	if err := es.updateExecutionStatus(ctx, tokenID, execution); err != nil {
-		return fmt.Errorf("failed to update execution status: %w", err)
-	}
-	
-	// Execute based on type
-	var result *ClearingResult
-	startTime := time.Now()
-	
-	switch token.RequestType {
-	case "packet":
-		result, err = es.clearPackets(ctx, token.TargetIdentifiers.Packets)
-	case "channel":
-		result, err = es.clearChannel(ctx, token.TargetIdentifiers.Channels[0])
-	case "bulk":
-		result, err = es.clearBulkChannels(ctx, token.TargetIdentifiers.Channels)
+
+	// Trigger refund processing
+	go func() {
+		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
+		if err := es.refundService.ProcessRefund(refundCtx, operationID, refundReason); err != nil {
+			logger.Error("Failed to process refund", zap.Error(err))
+		}
+	}()
+}
+
+func (es *ExecutionServiceV2) determineRefundReason(err error) string {
+	switch {
+	case errors.Is(err, ErrChannelClosed):
+		return "Channel closed during clearing"
+	case errors.Is(err, ErrHermesUnavailable):
+		return "Clearing service temporarily unavailable"
+	case errors.Is(err, ErrInsufficientGas):
+		return "Insufficient gas for clearing transaction"
+	case errors.Is(err, circuitbreaker.ErrCircuitOpen):
+		return "Service temporarily unavailable due to high failure rate"
 	default:
-		err = fmt.Errorf("unknown request type: %s", token.RequestType)
+		return ""
 	}
-	
-	// Update execution status
-	execution.CompletedAt = timePtr(time.Now())
-	if err != nil {
-		execution.Error = err.Error()
-	} else if result != nil {
-		execution.PacketsCleared = result.PacketsCleared
-		execution.PacketsFailed = result.PacketsFailed
-		execution.TxHashes = result.TxHashes
-	}
-	
-	if err := es.updateExecutionStatus(ctx, tokenID, execution); err != nil {
-		log.Printf("Failed to update final execution status: %v", err)
-	}
-	
-	// Record operation in database (would be PostgreSQL in production)
-	operation := &ClearingOperation{
-		Token:            tokenID,
-		WalletAddress:    token.WalletAddress,
-		OperationType:    token.RequestType,
-		PacketsTargeted:  len(token.TargetIdentifiers.Packets),
-		PacketsCleared:   execution.PacketsCleared,
-		PacketsFailed:    execution.PacketsFailed,
-		StartedAt:        *execution.StartedAt,
-		CompletedAt:      execution.CompletedAt,
-		DurationMs:       int(time.Since(startTime).Milliseconds()),
-		Success:          err == nil,
-		ErrorMessage:     execution.Error,
-		ExecutionTxHashes: execution.TxHashes,
-	}
-	
-	// Store operation (in Redis for now, would be PostgreSQL)
-	if err := es.storeOperation(ctx, operation); err != nil {
-		log.Printf("Failed to store operation: %v", err)
-	}
-	
-	// Update user statistics
-	if err := es.updateUserStats(ctx, token.WalletAddress, operation); err != nil {
-		log.Printf("Failed to update user stats: %v", err)
-	}
-	
-	// Broadcast update via WebSocket
-	es.broadcastUpdate(tokenID, execution)
-	
-	return err
 }
 
-// ClearingResult represents the result of a clearing operation
-type ClearingResult struct {
-	PacketsCleared int
-	PacketsFailed  int
-	TxHashes       []string
-}
+func (es *ExecutionServiceV2) groupPacketsByChannel(packets []PacketIdentifier) map[ChannelKey][]uint64 {
+	groups := make(map[ChannelKey][]uint64)
 
-// clearPackets clears specific packets
-func (es *ExecutionService) clearPackets(ctx context.Context, packets []PacketIdentifier) (*ClearingResult, error) {
-	result := &ClearingResult{
-		TxHashes: []string{},
-	}
-	
-	// Group packets by channel for efficiency
-	packetsByChannel := make(map[string][]PacketIdentifier)
 	for _, packet := range packets {
-		key := fmt.Sprintf("%s:%s", packet.Chain, packet.Channel)
-		packetsByChannel[key] = append(packetsByChannel[key], packet)
+		key := ChannelKey{
+			ChainID:   packet.ChainID,
+			ChannelID: packet.ChannelID,
+			PortID:    packet.PortID,
+		}
+
+		groups[key] = append(groups[key], packet.Sequence)
 	}
-	
-	// Clear packets by channel group
-	for channelKey, channelPackets := range packetsByChannel {
-		// Call Hermes API to clear packets
-		hermesReq := map[string]interface{}{
-			"chain_id": channelPackets[0].Chain,
-			"channel":  channelPackets[0].Channel,
-			"sequences": func() []uint64 {
-				seqs := make([]uint64, len(channelPackets))
-				for i, p := range channelPackets {
-					seqs[i] = p.Sequence
-				}
-				return seqs
-			}(),
-		}
-		
-		resp, err := es.callHermesAPI("POST", "/clear-packets", hermesReq)
-		if err != nil {
-			log.Printf("Failed to clear packets for channel %s: %v", channelKey, err)
-			result.PacketsFailed += len(channelPackets)
-			continue
-		}
-		
-		// Parse response
-		if txHash, ok := resp["tx_hash"].(string); ok {
-			result.TxHashes = append(result.TxHashes, txHash)
-			result.PacketsCleared += len(channelPackets)
-		} else {
-			result.PacketsFailed += len(channelPackets)
-		}
-	}
-	
-	return result, nil
+
+	return groups
 }
 
-// clearChannel clears all pending packets on a channel
-func (es *ExecutionService) clearChannel(ctx context.Context, channel ChannelPair) (*ClearingResult, error) {
-	// Query Chainpulse for stuck packets on this channel
-	stuckPackets, err := es.queryStuckPackets(channel)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query stuck packets: %w", err)
-	}
-	
-	if len(stuckPackets) == 0 {
-		return &ClearingResult{}, nil
-	}
-	
-	// Convert to packet identifiers
-	packets := make([]PacketIdentifier, len(stuckPackets))
-	for i, sp := range stuckPackets {
-		packets[i] = PacketIdentifier{
-			Chain:    channel.SrcChain,
-			Channel:  channel.SrcChannel,
-			Sequence: sp.Sequence,
-		}
-	}
-	
-	return es.clearPackets(ctx, packets)
+func (es *ExecutionServiceV2) getOperation(ctx context.Context, tokenID string) (*QueuedOperation, error) {
+	// Implementation would fetch from database
+	return &QueuedOperation{
+		ID:      tokenID,
+		TokenID: tokenID,
+		Packets: []PacketIdentifier{},
+	}, nil
 }
 
-// clearBulkChannels clears multiple channels
-func (es *ExecutionService) clearBulkChannels(ctx context.Context, channels []ChannelPair) (*ClearingResult, error) {
-	totalResult := &ClearingResult{
-		TxHashes: []string{},
-	}
-	
-	for _, channel := range channels {
-		result, err := es.clearChannel(ctx, channel)
-		if err != nil {
-			log.Printf("Failed to clear channel %s->%s: %v", 
-				channel.SrcChannel, channel.DstChannel, err)
-			continue
-		}
-		
-		totalResult.PacketsCleared += result.PacketsCleared
-		totalResult.PacketsFailed += result.PacketsFailed
-		totalResult.TxHashes = append(totalResult.TxHashes, result.TxHashes...)
-	}
-	
-	return totalResult, nil
+func (es *ExecutionServiceV2) updateOperationStatus(operationID, status, message string) error {
+	return es.db.Model(&ClearingOperation{}).
+		Where("id = ?", operationID).
+		Updates(map[string]interface{}{
+			"status":        status,
+			"error_message": message,
+			"updated_at":    time.Now(),
+		}).Error
 }
 
-// Helper functions
-
-func (es *ExecutionService) callHermesAPI(method string, endpoint string, data interface{}) (map[string]interface{}, error) {
-	var body io.Reader
-	if data != nil {
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			return nil, err
-		}
-		body = bytes.NewReader(jsonData)
-	}
-	
-	req, err := http.NewRequest(method, es.hermesURL+endpoint, body)
-	if err != nil {
-		return nil, err
-	}
-	
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("hermes API returned status %d", resp.StatusCode)
-	}
-	
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-	
-	return result, nil
+func (es *ExecutionServiceV2) completeOperation(operationID string, result *ClearingResult) error {
+	now := time.Now()
+	return es.db.Model(&ClearingOperation{}).
+		Where("id = ?", operationID).
+		Updates(map[string]interface{}{
+			"status":          "completed",
+			"success":         result.Success,
+			"clearing_tx_hash": result.TxHashes[0], // Store first tx hash
+			"completed_at":    &now,
+		}).Error
 }
 
-type StuckPacket struct {
-	Sequence uint64 `json:"sequence"`
-	Age      int    `json:"age_seconds"`
+func (es *ExecutionServiceV2) broadcastStatus(tokenID string, status ClearingStatus) {
+	// Implementation would use WebSocket manager
+	es.logger.Info("Broadcasting status update",
+		zap.String("token", tokenID),
+		zap.String("status", status.Status),
+	)
 }
 
-func (es *ExecutionService) queryStuckPackets(channel ChannelPair) ([]StuckPacket, error) {
-	// Query Chainpulse API for stuck packets
-	chainpulseURL := "http://chainpulse:3001" // Would be configurable
-	
-	resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/stuck?src_channel=%s&dst_channel=%s",
-		chainpulseURL, channel.SrcChannel, channel.DstChannel))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	
-	var response struct {
-		Packets []StuckPacket `json:"packets"`
-	}
-	
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
-	}
-	
-	return response.Packets, nil
+// Circuit breaker wrapper for Hermes client
+type CircuitBreakerClient struct {
+	client  HermesClient
+	breaker *circuitbreaker.CircuitBreaker
 }
 
-func (es *ExecutionService) updateExecutionStatus(ctx context.Context, tokenID string, execution *ExecutionInfo) error {
-	executionKey := fmt.Sprintf("clearing:execution:%s", tokenID)
-	executionData, err := json.Marshal(execution)
-	if err != nil {
+func NewCircuitBreakerClient(client HermesClient) *CircuitBreakerClient {
+	return &CircuitBreakerClient{
+		client: client,
+		breaker: circuitbreaker.New(
+			"hermes",
+			5,                // Open after 5 failures
+			30*time.Second,   // Try again after 30 seconds
+		),
+	}
+}
+
+func (c *CircuitBreakerClient) ClearPackets(ctx context.Context, req *ClearPacketsRequest) (*ClearPacketsResponse, error) {
+	var resp *ClearPacketsResponse
+	var err error
+
+	circuitErr := c.breaker.Execute(func() error {
+		resp, err = c.client.ClearPackets(ctx, req)
 		return err
-	}
-	
-	return es.service.redisClient.Set(ctx, executionKey, executionData, 24*time.Hour).Err()
-}
+	})
 
-func (es *ExecutionService) storeOperation(ctx context.Context, operation *ClearingOperation) error {
-	// Store in Redis for now (would be PostgreSQL in production)
-	operationKey := fmt.Sprintf("clearing:operation:%s", operation.Token)
-	operationData, err := json.Marshal(operation)
-	if err != nil {
-		return err
-	}
-	
-	// Store operation
-	if err := es.service.redisClient.Set(ctx, operationKey, operationData, 30*24*time.Hour).Err(); err != nil {
-		return err
-	}
-	
-	// Add to user's operation list
-	userOpsKey := fmt.Sprintf("clearing:user:%s:operations", operation.WalletAddress)
-	return es.service.redisClient.LPush(ctx, userOpsKey, operation.Token).Err()
-}
-
-func (es *ExecutionService) updateUserStats(ctx context.Context, wallet string, operation *ClearingOperation) error {
-	statsKey := fmt.Sprintf("clearing:user:%s:stats", wallet)
-	
-	// Get current stats
-	var stats UserStatistics
-	statsData, err := es.service.redisClient.Get(ctx, statsKey).Result()
-	if err == nil {
-		json.Unmarshal([]byte(statsData), &stats)
-	}
-	
-	// Update stats
-	stats.Wallet = wallet
-	stats.TotalRequests++
-	if operation.Success {
-		stats.SuccessfulClears++
-		stats.TotalPacketsCleared += operation.PacketsCleared
-	} else {
-		stats.FailedClears++
-	}
-	
-	// Calculate success rate
-	if stats.TotalRequests > 0 {
-		stats.SuccessRate = float64(stats.SuccessfulClears) / float64(stats.TotalRequests)
-	}
-	
-	// Update average clear time
-	if operation.Success && operation.DurationMs > 0 {
-		if stats.AvgClearTime == 0 {
-			stats.AvgClearTime = operation.DurationMs
-		} else {
-			stats.AvgClearTime = (stats.AvgClearTime + operation.DurationMs) / 2
+	if circuitErr != nil {
+		if circuitErr == circuitbreaker.ErrCircuitOpen {
+			return nil, ErrHermesUnavailable
 		}
+		return nil, circuitErr
 	}
-	
-	// Store updated stats
-	updatedData, err := json.Marshal(stats)
-	if err != nil {
+
+	return resp, nil
+}
+
+func (c *CircuitBreakerClient) GetVersion(ctx context.Context) (*VersionResponse, error) {
+	var resp *VersionResponse
+	var err error
+
+	circuitErr := c.breaker.Execute(func() error {
+		resp, err = c.client.GetVersion(ctx)
 		return err
-	}
-	
-	return es.service.redisClient.Set(ctx, statsKey, updatedData, 0).Err()
-}
+	})
 
-func (es *ExecutionService) broadcastUpdate(tokenID string, execution *ExecutionInfo) {
-	// This would send updates via WebSocket
-	// Implementation depends on WebSocket handler setup
-	update := map[string]interface{}{
-		"type":      "clearing_update",
-		"token":     tokenID,
-		"execution": execution,
-		"timestamp": time.Now().Unix(),
+	if circuitErr != nil {
+		if circuitErr == circuitbreaker.ErrCircuitOpen {
+			return nil, ErrHermesUnavailable
+		}
+		return nil, circuitErr
 	}
-	
-	log.Printf("Broadcasting update for token %s: %+v", tokenID, update)
-}
 
-func timePtr(t time.Time) *time.Time {
-	return &t
+	return resp, nil
 }

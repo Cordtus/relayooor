@@ -1,7 +1,10 @@
 package clearing
 
 import (
+	"sync"
 	"time"
+	
+	"relayooor/api/pkg/types"
 )
 
 // ErrorResponse represents an API error response
@@ -187,8 +190,3 @@ func (t *OperationTracker) Count() int {
 	return len(t.operations)
 }
 
-// Additional imports
-import (
-	"sync"
-	"relayooor/api/pkg/types"
-)

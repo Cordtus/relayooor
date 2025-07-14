@@ -20,9 +20,12 @@ type ClearingTargets struct {
 
 // PacketIdentifier uniquely identifies a packet
 type PacketIdentifier struct {
-	Chain    string `json:"chain" binding:"required"`
-	Channel  string `json:"channel" binding:"required"`
-	Sequence uint64 `json:"sequence" binding:"required"`
+	ChainID   string `json:"chainId,omitempty"`     // For execution service
+	Chain     string `json:"chain" binding:"required"`
+	ChannelID string `json:"channelId,omitempty"`   // For execution service
+	Channel   string `json:"channel" binding:"required"`
+	PortID    string `json:"portId,omitempty"`      // For execution service
+	Sequence  uint64 `json:"sequence" binding:"required"`
 }
 
 // ChannelPair represents a source-destination channel pair
@@ -53,9 +56,12 @@ type ClearingToken struct {
 
 // TokenResponse is the API response for token requests
 type TokenResponse struct {
-	Token          ClearingToken `json:"token"`
-	PaymentAddress string        `json:"paymentAddress"`
-	Memo           string        `json:"memo"`
+	Token          *ClearingToken `json:"token"`
+	PaymentAddress string         `json:"paymentAddress"`
+	PaymentMemo    string         `json:"paymentMemo"`
+	PaymentAmount  string         `json:"paymentAmount"`
+	ExpiresIn      int            `json:"expiresIn"`
+	Memo           string         `json:"memo,omitempty"` // Deprecated, use PaymentMemo
 }
 
 // PaymentVerificationRequest represents a payment verification request
@@ -72,12 +78,13 @@ type PaymentVerificationResponse struct {
 }
 
 // ClearingStatus represents the current status of a clearing operation
-type ClearingStatus struct {
-	Token     string         `json:"token"`
-	Status    string         `json:"status"` // pending, paid, executing, completed, failed
-	Payment   PaymentStatus  `json:"payment"`
-	Execution *ExecutionInfo `json:"execution,omitempty"`
-}
+// NOTE: Using the enhanced version from types_v2.go
+// type ClearingStatus struct {
+// 	Token     string         `json:"token"`
+// 	Status    string         `json:"status"` // pending, paid, executing, completed, failed
+// 	Payment   PaymentStatus  `json:"payment"`
+// 	Execution *ExecutionInfo `json:"execution,omitempty"`
+// }
 
 // PaymentStatus contains payment information
 type PaymentStatus struct {
@@ -97,17 +104,19 @@ type ExecutionInfo struct {
 }
 
 // WalletAuthRequest represents a wallet authentication request
-type WalletAuthRequest struct {
-	WalletAddress string `json:"walletAddress" binding:"required"`
-	Signature     string `json:"signature" binding:"required"`
-	Message       string `json:"message" binding:"required"`
-}
+// NOTE: Using the enhanced version from types_v2.go
+// type WalletAuthRequest struct {
+// 	WalletAddress string `json:"walletAddress" binding:"required"`
+// 	Signature     string `json:"signature" binding:"required"`
+// 	Message       string `json:"message" binding:"required"`
+// }
 
 // WalletAuthResponse represents the authentication response
-type WalletAuthResponse struct {
-	SessionToken string    `json:"sessionToken"`
-	ExpiresAt    time.Time `json:"expiresAt"`
-}
+// NOTE: Using the enhanced version from types_v2.go
+// type WalletAuthResponse struct {
+// 	SessionToken string    `json:"sessionToken"`
+// 	ExpiresAt    time.Time `json:"expiresAt"`
+// }
 
 // UserStatistics represents user clearing statistics
 type UserStatistics struct {

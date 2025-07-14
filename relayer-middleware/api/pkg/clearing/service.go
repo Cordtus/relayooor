@@ -8,425 +8,472 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"math/big"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
-const (
-	TokenTTL             = 5 * time.Minute
-	SessionTTL           = 24 * time.Hour
-	PaymentGracePeriod   = 2 * time.Minute
-	DefaultServiceFee    = "1000000"  // 1 TOKEN in smallest unit
-	DefaultPerPacketFee  = "100000"   // 0.1 TOKEN per packet
-	DefaultGasPrice      = "25000"    // 0.025 TOKEN
-	BaseGasAmount        = 150000     // Base gas for IBC tx
-	PerPacketGas         = 50000      // Additional gas per packet
+var (
+	ErrDuplicatePayment = errors.New("duplicate payment detected")
+	ErrTokenExpired     = errors.New("token expired")
+	ErrInvalidToken     = errors.New("invalid token")
 )
 
-type Service struct {
-	redisClient      *redis.Client
-	secretKey        string
-	serviceAddress   string
-	chainRPCs        map[string]string
-	hermesURL        string
+// ServiceV2 is the improved clearing service with error handling
+type ServiceV2 struct {
+	db                *gorm.DB
+	redisClient       *redis.Client
+	secretKey         string
+	serviceAddress    string
+	chainRPCs         map[string]string
+	hermesURL         string
+	logger            *zap.Logger
+	
+	// New components
+	duplicateDetector *DuplicateDetector
+	paymentValidator  *PaymentValidator
+	cache             *PacketCache
+	refundService     *RefundService
+	executionService  *ExecutionServiceV2
 }
 
-// NewService creates a new clearing service instance
-func NewService(redisClient *redis.Client) *Service {
-	secretKey := os.Getenv("CLEARING_SECRET_KEY")
-	if secretKey == "" {
-		secretKey = "default-secret-key-change-in-production"
-	}
+// Config holds service configuration
+type Config struct {
+	SecretKey      string
+	ServiceAddress string
+	HermesURL      string
+	ChainRPCs      map[string]string
+}
 
-	serviceAddress := os.Getenv("SERVICE_WALLET_ADDRESS")
-	if serviceAddress == "" {
-		serviceAddress = "cosmos1service..."
+// NewServiceV2 creates a new improved clearing service
+func NewServiceV2(
+	db *gorm.DB,
+	redisClient *redis.Client,
+	config Config,
+	logger *zap.Logger,
+) *ServiceV2 {
+	// Create service wallet
+	serviceWallet := ServiceWallet{
+		Address: config.ServiceAddress,
+		// Private key should be loaded from secure storage
 	}
+	
+	// Initialize components
+	duplicateDetector := NewDuplicateDetector(redisClient, db, logger)
+	paymentValidator := NewPaymentValidator(config.ServiceAddress)
+	cache := NewPacketCache(redisClient, logger)
+	refundService := NewRefundService(db, serviceWallet, logger)
+	
+	service := &ServiceV2{
+		db:                db,
+		redisClient:       redisClient,
+		secretKey:         config.SecretKey,
+		serviceAddress:    config.ServiceAddress,
+		chainRPCs:         config.ChainRPCs,
+		hermesURL:         config.HermesURL,
+		logger:            logger.With(zap.String("component", "clearing_service")),
+		duplicateDetector: duplicateDetector,
+		paymentValidator:  paymentValidator,
+		cache:             cache,
+		refundService:     refundService,
+	}
+	
+	// Create execution service
+	// TODO: Create actual Hermes client
+	var hermesClient HermesClient
+	tracker := NewOperationTracker()
+	
+	service.executionService = NewExecutionServiceV2(
+		db,
+		redisClient,
+		hermesClient,
+		refundService,
+		tracker,
+		logger,
+	)
+	
+	return service
+}
 
-	hermesURL := os.Getenv("HERMES_REST_URL")
-	if hermesURL == "" {
-		hermesURL = "http://localhost:5185"
-	}
-
-	// Parse chain RPCs from environment
-	chainRPCs := make(map[string]string)
-	rpcConfig := os.Getenv("CHAIN_RPC_ENDPOINTS")
-	if rpcConfig != "" {
-		// Format: "osmosis:https://rpc.osmosis.zone,cosmoshub:https://rpc.cosmos.network"
-		// Parse and populate chainRPCs map
-	}
-
-	return &Service{
-		redisClient:    redisClient,
-		secretKey:      secretKey,
-		serviceAddress: serviceAddress,
-		chainRPCs:      chainRPCs,
-		hermesURL:      hermesURL,
-	}
+// Start initializes background workers
+func (s *ServiceV2) Start(ctx context.Context) {
+	// Start execution service
+	s.executionService.Start(ctx)
+	
+	// Start refund processor
+	go s.refundService.ProcessPendingRefunds(ctx)
+	
+	// Start duplicate detector cleanup
+	go s.duplicateDetector.CleanupOldRecords(ctx)
+	
+	s.logger.Info("Clearing service started")
 }
 
 // GenerateToken creates a new clearing token
-func (s *Service) GenerateToken(ctx context.Context, request ClearingRequest) (*TokenResponse, error) {
+func (s *ServiceV2) GenerateToken(ctx context.Context, request ClearingRequest) (*TokenResponse, error) {
+	logger := s.logger.With(
+		zap.String("operation", "generate_token"),
+		zap.String("wallet", request.WalletAddress),
+		zap.Int("packet_count", len(request.Targets.Packets)),
+	)
+	
+	logger.Info("Generating clearing token")
+	
 	// Validate request
-	if err := s.validateClearingRequest(request); err != nil {
-		return nil, fmt.Errorf("invalid request: %w", err)
+	if err := s.validateRequest(request); err != nil {
+		logger.Error("Request validation failed", zap.Error(err))
+		return nil, err
 	}
-
+	
 	// Calculate fees
-	fees, err := s.calculateFees(ctx, request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate fees: %w", err)
-	}
-
-	// Generate token
-	token := ClearingToken{
+	totalPackets := len(request.Targets.Packets)
+	serviceFee := s.getServiceFee()
+	perPacketFee := s.getPerPacketFee()
+	totalServiceFee := serviceFee + (perPacketFee * int64(totalPackets))
+	
+	// Estimate gas
+	estimatedGas := s.estimateGas(totalPackets)
+	gasPrice := s.getGasPrice(request.ChainID)
+	estimatedGasFee := estimatedGas * gasPrice
+	
+	totalRequired := totalServiceFee + estimatedGasFee
+	
+	// Create token
+	token := &ClearingToken{
 		Token:             uuid.New().String(),
 		Version:           1,
-		RequestType:       request.Type,
+		RequestType:       "clear_packets",
 		TargetIdentifiers: request.Targets,
 		WalletAddress:     request.WalletAddress,
 		ChainID:           request.ChainID,
 		IssuedAt:          time.Now().Unix(),
 		ExpiresAt:         time.Now().Add(TokenTTL).Unix(),
-		ServiceFee:        fees.ServiceFee,
-		EstimatedGasFee:   fees.GasFee,
-		TotalRequired:     fees.Total,
-		AcceptedDenom:     fees.Denom,
+		ServiceFee:        fmt.Sprintf("%d", totalServiceFee),
+		EstimatedGasFee:   fmt.Sprintf("%d", estimatedGasFee),
+		TotalRequired:     fmt.Sprintf("%d", totalRequired),
+		AcceptedDenom:     s.getAcceptedDenom(request.ChainID),
 		Nonce:             generateNonce(),
 	}
-
+	
 	// Sign token
 	token.Signature = s.signToken(token)
-
-	// Store in Redis
-	tokenKey := fmt.Sprintf("clearing:token:%s", token.Token)
+	
+	// Store token in Redis
+	tokenKey := fmt.Sprintf("token:%s", token.Token)
 	tokenData, err := json.Marshal(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal token: %w", err)
+		logger.Error("Failed to marshal token", zap.Error(err))
+		return nil, err
 	}
-
+	
 	if err := s.redisClient.Set(ctx, tokenKey, tokenData, TokenTTL).Err(); err != nil {
-		return nil, fmt.Errorf("failed to store token: %w", err)
+		logger.Error("Failed to store token", zap.Error(err))
+		return nil, err
 	}
-
-	// Generate payment memo
-	memo := s.generatePaymentMemo(token.Token, request.Type, request.Targets)
-
+	
+	// Store packet identifiers
+	packetsKey := fmt.Sprintf("packets:%s", token.Token)
+	packetsData, err := json.Marshal(request.Targets.Packets)
+	if err != nil {
+		logger.Error("Failed to marshal packets", zap.Error(err))
+		return nil, err
+	}
+	
+	if err := s.redisClient.Set(ctx, packetsKey, packetsData, TokenTTL).Err(); err != nil {
+		logger.Error("Failed to store packets", zap.Error(err))
+		return nil, err
+	}
+	
+	logger.Info("Token generated successfully",
+		zap.String("token_id", token.Token),
+		zap.Time("expires_at", time.Unix(token.ExpiresAt, 0)),
+	)
+	
+	// Invalidate user's packet cache
+	s.cache.InvalidateUserPackets(ctx, request.WalletAddress)
+	
 	return &TokenResponse{
-		Token:          token,
-		PaymentAddress: s.serviceAddress,
-		Memo:           memo,
+		Token:         token,
+		PaymentMemo:   generatePaymentMemo(token.Token),
+		PaymentAmount: token.TotalRequired,
+		ExpiresIn:     int(TokenTTL.Seconds()),
 	}, nil
 }
 
-// VerifyPayment verifies a payment transaction
-func (s *Service) VerifyPayment(ctx context.Context, tokenID string, txHash string) (*PaymentVerificationResponse, error) {
+// VerifyPayment verifies the payment transaction and queues the clearing
+func (s *ServiceV2) VerifyPayment(ctx context.Context, tokenID string, txHash string) (*PaymentVerificationResponse, error) {
+	logger := s.logger.With(
+		zap.String("token_id", tokenID),
+		zap.String("tx_hash", txHash),
+	)
+	
+	// Check for duplicate payment
+	isDuplicate, err := s.duplicateDetector.CheckDuplicate(ctx, txHash)
+	if err != nil {
+		logger.Error("Failed to check duplicate", zap.Error(err))
+		return nil, err
+	}
+	
+	if isDuplicate {
+		// Get previous payment info
+		prevInfo, err := s.duplicateDetector.GetPaymentInfo(ctx, txHash)
+		if err != nil {
+			logger.Error("Failed to get duplicate payment info", zap.Error(err))
+		}
+		
+		if prevInfo != nil && prevInfo.TokenID == tokenID {
+			// Same token, return success (idempotent)
+			return &PaymentVerificationResponse{
+				Success:     true,
+				OperationID: prevInfo.OperationID,
+				Message:     "Payment already processed",
+			}, nil
+		}
+		
+		return nil, ErrDuplicatePayment
+	}
+	
 	// Get token from Redis
-	token, err := s.getToken(ctx, tokenID)
+	tokenKey := fmt.Sprintf("token:%s", tokenID)
+	tokenData, err := s.redisClient.Get(ctx, tokenKey).Result()
 	if err != nil {
-		return &PaymentVerificationResponse{
-			Verified: false,
-			Status:   "invalid",
-			Message:  "Token not found or expired",
-		}, nil
+		if err == redis.Nil {
+			return nil, ErrTokenExpired
+		}
+		logger.Error("Failed to get token", zap.Error(err))
+		return nil, err
 	}
-
-	// Check if already paid
-	paymentKey := fmt.Sprintf("clearing:payment:%s", tokenID)
-	exists, err := s.redisClient.Exists(ctx, paymentKey).Result()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check payment status: %w", err)
-	}
-	if exists > 0 {
-		return &PaymentVerificationResponse{
-			Verified: true,
-			Status:   "verified",
-			Message:  "Payment already verified",
-		}, nil
-	}
-
-	// Verify transaction on chain
-	verified, amount, err := s.verifyTransactionOnChain(ctx, token.ChainID, txHash, token)
-	if err != nil {
-		log.Printf("Failed to verify transaction %s: %v", txHash, err)
-		return &PaymentVerificationResponse{
-			Verified: false,
-			Status:   "pending",
-			Message:  "Transaction verification pending",
-		}, nil
-	}
-
-	if !verified {
-		return &PaymentVerificationResponse{
-			Verified: false,
-			Status:   "invalid",
-			Message:  "Invalid payment transaction",
-		}, nil
-	}
-
-	// Check amount
-	requiredAmount, _ := new(big.Int).SetString(token.TotalRequired, 10)
-	paidAmount, _ := new(big.Int).SetString(amount, 10)
 	
-	if paidAmount.Cmp(requiredAmount) < 0 {
-		return &PaymentVerificationResponse{
-			Verified: false,
-			Status:   "insufficient",
-			Message:  fmt.Sprintf("Insufficient payment: required %s, received %s", token.TotalRequired, amount),
-		}, nil
+	var token ClearingToken
+	if err := json.Unmarshal([]byte(tokenData), &token); err != nil {
+		logger.Error("Failed to unmarshal token", zap.Error(err))
+		return nil, err
 	}
-
-	// Mark as paid
-	paymentData := map[string]interface{}{
-		"txHash":    txHash,
-		"amount":    amount,
-		"timestamp": time.Now().Unix(),
-	}
-	paymentJSON, _ := json.Marshal(paymentData)
 	
-	// Extend token expiry by grace period for execution
-	extendedTTL := TokenTTL + PaymentGracePeriod
-	if err := s.redisClient.Set(ctx, paymentKey, paymentJSON, extendedTTL).Err(); err != nil {
-		return nil, fmt.Errorf("failed to store payment data: %w", err)
+	// Verify token hasn't expired
+	if time.Now().Unix() > token.ExpiresAt {
+		return nil, ErrTokenExpired
 	}
-
+	
+	// Get transaction details
+	tx, err := s.getTransaction(ctx, token.ChainID, txHash)
+	if err != nil {
+		logger.Error("Failed to get transaction", zap.Error(err))
+		return nil, err
+	}
+	
+	// Validate payment
+	if err := s.paymentValidator.ValidatePayment(ctx, &token, tx); err != nil {
+		logger.Error("Payment validation failed", zap.Error(err))
+		
+		// Check if overpayment
+		if IsOverpayment(err) {
+			// Process payment but mark for partial refund
+			overpayment := err.(*ErrOverpayment)
+			logger.Info("Overpayment detected, will process partial refund",
+				zap.String("paid", overpayment.Paid),
+				zap.String("required", overpayment.Required),
+			)
+		} else {
+			return nil, err
+		}
+	}
+	
+	// Create clearing operation
+	operationID := uuid.New().String()
+	operation := &ClearingOperation{
+		ID:               operationID,
+		TokenID:          tokenID,
+		WalletAddress:    token.WalletAddress,
+		ChainID:          token.ChainID,
+		PaymentTxHash:    txHash,
+		PaymentAddress:   tx.FromAddress,
+		ServiceFee:       token.ServiceFee,
+		EstimatedGasFee:  token.EstimatedGasFee,
+		ActualFeePaid:    tx.Amount,
+		FeeDenom:         token.AcceptedDenom,
+		Status:           "queued",
+		CreatedAt:        time.Now(),
+	}
+	
+	if err := s.db.Create(operation).Error; err != nil {
+		logger.Error("Failed to create operation", zap.Error(err))
+		return nil, err
+	}
+	
+	// Store payment info
+	paymentInfo := &PaymentInfo{
+		TxHash:        txHash,
+		TokenID:       tokenID,
+		OperationID:   operationID,
+		WalletAddress: token.WalletAddress,
+		Amount:        tx.Amount,
+		Denom:         token.AcceptedDenom,
+		ProcessedAt:   time.Now(),
+	}
+	
+	if err := s.duplicateDetector.StorePaymentInfo(ctx, paymentInfo); err != nil {
+		logger.Error("Failed to store payment info", zap.Error(err))
+	}
+	
 	// Queue for execution
-	if err := s.queueForExecution(ctx, tokenID); err != nil {
-		log.Printf("Failed to queue token %s for execution: %v", tokenID, err)
+	if err := s.redisClient.RPush(ctx, "clearing:execution:queue", tokenID).Err(); err != nil {
+		logger.Error("Failed to queue for execution", zap.Error(err))
+		return nil, err
 	}
-
+	
+	// Mark token as used
+	s.redisClient.Del(ctx, tokenKey)
+	
+	logger.Info("Payment verified and clearing queued",
+		zap.String("operation_id", operationID),
+		zap.String("amount", tx.Amount),
+	)
+	
 	return &PaymentVerificationResponse{
-		Verified: true,
-		Status:   "verified",
-		Message:  "Payment verified successfully",
+		Success:     true,
+		OperationID: operationID,
+		Message:     "Payment verified, clearing in progress",
 	}, nil
 }
 
-// GetStatus returns the current status of a clearing operation
-func (s *Service) GetStatus(ctx context.Context, tokenID string) (*ClearingStatus, error) {
-	// Get token
-	token, err := s.getToken(ctx, tokenID)
-	if err != nil {
-		return nil, fmt.Errorf("token not found")
-	}
+// Helper methods
 
-	// Check payment status
-	paymentKey := fmt.Sprintf("clearing:payment:%s", tokenID)
-	paymentData, err := s.redisClient.Get(ctx, paymentKey).Result()
-	paymentStatus := PaymentStatus{Received: false}
+func (s *ServiceV2) validateRequest(request ClearingRequest) error {
+	if request.WalletAddress == "" {
+		return errors.New("wallet address required")
+	}
 	
-	if err == nil {
-		var payment map[string]interface{}
-		if err := json.Unmarshal([]byte(paymentData), &payment); err == nil {
-			paymentStatus.Received = true
-			paymentStatus.TxHash = payment["txHash"].(string)
-			paymentStatus.Amount = payment["amount"].(string)
-		}
+	if len(request.Targets.Packets) == 0 {
+		return errors.New("no packets to clear")
 	}
-
-	// Check execution status
-	executionKey := fmt.Sprintf("clearing:execution:%s", tokenID)
-	executionData, err := s.redisClient.Get(ctx, executionKey).Result()
 	
-	var execution *ExecutionInfo
-	var status string = "pending"
+	if len(request.Targets.Packets) > 100 {
+		return errors.New("too many packets (max 100)")
+	}
 	
-	if err == nil {
-		execution = &ExecutionInfo{}
-		if err := json.Unmarshal([]byte(executionData), execution); err == nil {
-			if execution.CompletedAt != nil {
-				if execution.Error != "" {
-					status = "failed"
-				} else {
-					status = "completed"
-				}
-			} else {
-				status = "executing"
-			}
-		}
-	} else if paymentStatus.Received {
-		status = "paid"
-	}
-
-	return &ClearingStatus{
-		Token:     tokenID,
-		Status:    status,
-		Payment:   paymentStatus,
-		Execution: execution,
-	}, nil
-}
-
-// Helper functions
-
-func (s *Service) validateClearingRequest(request ClearingRequest) error {
-	switch request.Type {
-	case "packet":
-		if len(request.Targets.Packets) == 0 {
-			return errors.New("no packets specified")
-		}
-	case "channel":
-		if len(request.Targets.Channels) == 0 {
-			return errors.New("no channels specified")
-		}
-	case "bulk":
-		if len(request.Targets.Channels) == 0 {
-			return errors.New("no channels specified for bulk operation")
-		}
-	default:
-		return errors.New("invalid request type")
-	}
 	return nil
 }
 
-type FeeCalculation struct {
-	ServiceFee string
-	GasFee     string
-	Total      string
-	Denom      string
-}
-
-func (s *Service) calculateFees(ctx context.Context, request ClearingRequest) (*FeeCalculation, error) {
-	serviceFeeStr := os.Getenv("CLEARING_SERVICE_FEE")
-	if serviceFeeStr == "" {
-		serviceFeeStr = DefaultServiceFee
-	}
+func (s *ServiceV2) signToken(token *ClearingToken) string {
+	h := hmac.New(sha256.New, []byte(s.secretKey))
 	
-	perPacketFeeStr := os.Getenv("CLEARING_PER_PACKET_FEE")
-	if perPacketFeeStr == "" {
-		perPacketFeeStr = DefaultPerPacketFee
-	}
-
-	serviceFee, _ := new(big.Int).SetString(serviceFeeStr, 10)
-	perPacketFee, _ := new(big.Int).SetString(perPacketFeeStr, 10)
-
-	// Calculate packet count
-	packetCount := 0
-	switch request.Type {
-	case "packet":
-		packetCount = len(request.Targets.Packets)
-	case "channel":
-		// Estimate packets in channel (would query actual count in production)
-		packetCount = 10 // placeholder
-	case "bulk":
-		// Estimate total packets across channels
-		packetCount = len(request.Targets.Channels) * 10 // placeholder
-	}
-
-	// Calculate total service fee
-	totalServiceFee := new(big.Int).Mul(perPacketFee, big.NewInt(int64(packetCount)))
-	totalServiceFee.Add(totalServiceFee, serviceFee)
-
-	// Calculate gas fee
-	totalGas := BaseGasAmount + (packetCount * PerPacketGas)
-	gasPrice, _ := new(big.Int).SetString(DefaultGasPrice, 10)
-	gasFee := new(big.Int).Mul(big.NewInt(int64(totalGas)), gasPrice)
-
-	// Total required
-	total := new(big.Int).Add(totalServiceFee, gasFee)
-
-	return &FeeCalculation{
-		ServiceFee: totalServiceFee.String(),
-		GasFee:     gasFee.String(),
-		Total:      total.String(),
-		Denom:      "utoken", // Would be dynamic based on chain
-	}, nil
-}
-
-func (s *Service) signToken(token ClearingToken) string {
-	// Create signing payload (exclude signature field)
-	payload := fmt.Sprintf("%s:%d:%s:%s:%d:%d:%s",
+	// Create signing payload
+	payload := fmt.Sprintf("%s:%d:%s:%s:%s",
 		token.Token,
-		token.Version,
-		token.WalletAddress,
-		token.ChainID,
 		token.IssuedAt,
-		token.ExpiresAt,
+		token.WalletAddress,
+		token.TotalRequired,
 		token.Nonce,
 	)
-
-	// Create HMAC signature
-	h := hmac.New(sha256.New, []byte(s.secretKey))
+	
 	h.Write([]byte(payload))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (s *Service) generatePaymentMemo(tokenID string, action string, targets ClearingTargets) string {
-	// Create abbreviated token (first 8 and last 8 chars)
-	abbrevToken := tokenID
-	if len(tokenID) > 16 {
-		abbrevToken = tokenID[:8] + "..." + tokenID[len(tokenID)-8:]
-	}
-
-	memoData := PaymentMemo{
-		Version: 1,
-		Token:   abbrevToken,
-		Action:  "clear_" + action,
-		Data:    make(map[string]interface{}),
-	}
-
-	// Add target data
-	switch action {
-	case "packet":
-		sequences := make([]uint64, len(targets.Packets))
-		for i, p := range targets.Packets {
-			sequences[i] = p.Sequence
-		}
-		memoData.Data["p"] = sequences
-	case "channel":
-		if len(targets.Channels) > 0 {
-			memoData.Data["c"] = fmt.Sprintf("%s->%s", 
-				targets.Channels[0].SrcChannel, 
-				targets.Channels[0].DstChannel)
-		}
-	}
-
-	// Marshal to compact JSON
-	memoJSON, _ := json.Marshal(memoData)
-	return string(memoJSON)
+func (s *ServiceV2) getServiceFee() int64 {
+	// TODO: Make configurable
+	return 1000000 // 1 TOKEN
 }
 
-func (s *Service) getToken(ctx context.Context, tokenID string) (*ClearingToken, error) {
-	tokenKey := fmt.Sprintf("clearing:token:%s", tokenID)
-	tokenData, err := s.redisClient.Get(ctx, tokenKey).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	var token ClearingToken
-	if err := json.Unmarshal([]byte(tokenData), &token); err != nil {
-		return nil, err
-	}
-
-	// Verify token hasn't expired
-	if time.Now().Unix() > token.ExpiresAt {
-		return nil, errors.New("token expired")
-	}
-
-	return &token, nil
+func (s *ServiceV2) getPerPacketFee() int64 {
+	// TODO: Make configurable
+	return 100000 // 0.1 TOKEN
 }
 
-func (s *Service) verifyTransactionOnChain(ctx context.Context, chainID string, txHash string, token *ClearingToken) (bool, string, error) {
-	// This would implement actual chain verification
-	// For now, return mock success
-	return true, token.TotalRequired, nil
+func (s *ServiceV2) estimateGas(packetCount int) int64 {
+	return int64(BaseGasAmount + (PerPacketGas * packetCount))
 }
 
-func (s *Service) queueForExecution(ctx context.Context, tokenID string) error {
-	// Add to execution queue
-	return s.redisClient.LPush(ctx, "clearing:execution:queue", tokenID).Err()
+func (s *ServiceV2) getGasPrice(chainID string) int64 {
+	// TODO: Get from chain
+	return 25000 // 0.025 TOKEN
+}
+
+func (s *ServiceV2) getAcceptedDenom(chainID string) string {
+	// TODO: Make configurable per chain
+	denoms := map[string]string{
+		"osmosis-1":    "uosmo",
+		"cosmoshub-4":  "uatom",
+		"neutron-1":    "untrn",
+	}
+	
+	if denom, ok := denoms[chainID]; ok {
+		return denom
+	}
+	
+	return "uatom" // Default
+}
+
+func (s *ServiceV2) getTransaction(ctx context.Context, chainID, txHash string) (*Transaction, error) {
+	// TODO: Implement actual transaction fetching
+	return &Transaction{
+		Hash:        txHash,
+		FromAddress: "cosmos1...",
+		Amount:      "1100000",
+		Messages:    []Message{},
+	}, nil
 }
 
 func generateNonce() string {
 	return uuid.New().String()[:8]
 }
 
-// GetServiceAddress returns the service wallet address
-func (s *Service) GetServiceAddress() string {
-	return s.serviceAddress
+func generatePaymentMemo(tokenID string) string {
+	return fmt.Sprintf("CLR-%s", tokenID)
+}
+
+// GetStatus retrieves the current status of a clearing operation
+func (s *ServiceV2) GetStatus(ctx context.Context, tokenID string) (*ClearingStatus, error) {
+	// Try to get from Redis first (for tokens not yet verified)
+	tokenKey := fmt.Sprintf("token:%s", tokenID)
+	if tokenData, err := s.redisClient.Get(ctx, tokenKey).Result(); err == nil {
+		// Token exists but not verified yet
+		return &ClearingStatus{
+			Status:    "pending_payment",
+			Message:   "Waiting for payment verification",
+			Progress:  0,
+			UpdatedAt: time.Now(),
+		}, nil
+	}
+	
+	// Get from database
+	var operation ClearingOperation
+	if err := s.db.Where("token_id = ?", tokenID).First(&operation).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("operation not found")
+		}
+		return nil, err
+	}
+	
+	// Map database status to response
+	progress := 0
+	message := ""
+	
+	switch operation.Status {
+	case "queued":
+		progress = 10
+		message = "Payment verified, waiting for execution"
+	case "processing":
+		progress = 50
+		message = "Clearing packets in progress"
+	case "completed":
+		progress = 100
+		message = "Clearing completed successfully"
+	case "failed":
+		progress = 100
+		message = fmt.Sprintf("Clearing failed: %s", operation.ErrorMessage)
+	}
+	
+	return &ClearingStatus{
+		Status:    operation.Status,
+		Message:   message,
+		Progress:  progress,
+		UpdatedAt: operation.UpdatedAt,
+		TxHashes:  []string{operation.ClearingTxHash},
+	}, nil
 }
