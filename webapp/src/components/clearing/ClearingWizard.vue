@@ -60,13 +60,13 @@
           @update:selected="handlePacketSelection"
         />
         <div class="mt-6 flex justify-end">
-          <button
+          <Button
             @click="proceedToFees"
             :disabled="selectedPackets.length === 0 || loading"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
           >
             Continue
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -78,18 +78,18 @@
           :packet-count="selectedPackets.length"
         />
         <div class="mt-6 flex justify-between">
-          <button
+          <Button
             @click="currentStep--"
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            variant="secondary"
           >
             Back
-          </button>
-          <button
+          </Button>
+          <Button
             @click="proceedToPayment"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            variant="primary"
           >
             Continue to Payment
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -103,12 +103,12 @@
           @payment-sent="handlePaymentSent"
         />
         <div class="mt-6 flex justify-between">
-          <button
+          <Button
             @click="currentStep--"
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            variant="secondary"
           >
             Back
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -143,12 +143,13 @@
               </a>
             </div>
           </div>
-          <button
+          <Button
             @click="startNew"
-            class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            variant="primary"
+            class="mt-6"
           >
             Clear More Packets
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -165,6 +166,7 @@ import PacketSelector from './PacketSelector.vue'
 import FeeEstimator from './FeeEstimator.vue'
 import PaymentPrompt from './PaymentPrompt.vue'
 import ClearingProgress from './ClearingProgress.vue'
+import Button from '@/components/ui/Button.vue'
 
 const walletStore = useWalletStore()
 
