@@ -22,18 +22,17 @@
     
     <button
       @click="$emit('implement', recommendation)"
-      class="mt-4 w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
+      class="mt-4 w-full bg-indigo-600 text-white rounded-md py-2 text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
     >
-      View Implementation Guide
+      <component :is="getActionIcon(recommendation.type)" class="h-4 w-4" />
+      {{ getActionText(recommendation.type) }}
     </button>
-    
-    <div class="mt-4 text-center">
-      <p class="text-xs text-gray-500">Full recommendation system coming soon</p>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Settings, Zap, Clock, TrendingUp } from 'lucide-vue-next'
+
 interface Recommendation {
   id: number
   type: string
@@ -50,4 +49,32 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits(['implement'])
+
+function getActionIcon(type: string) {
+  switch (type) {
+    case 'config':
+      return Settings
+    case 'action':
+      return Zap
+    case 'timing':
+      return Clock
+    default:
+      return TrendingUp
+  }
+}
+
+function getActionText(type: string): string {
+  switch (type) {
+    case 'config':
+      return 'View Configuration'
+    case 'action':
+      return 'Take Action'
+    case 'timing':
+      return 'Optimize Schedule'
+    case 'channel':
+      return 'Analyze Channel'
+    default:
+      return 'View Details'
+  }
+}
 </script>
