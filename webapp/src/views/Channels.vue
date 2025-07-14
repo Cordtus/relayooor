@@ -5,9 +5,9 @@
       <div class="flex items-center gap-4">
         <select v-model="filterChain" class="rounded-md border-gray-300 text-sm">
           <option value="">All Chains</option>
-          <option value="cosmoshub-4">Cosmos Hub</option>
-          <option value="osmosis-1">Osmosis</option>
-          <option value="neutron-1">Neutron</option>
+          <option v-for="chain in chainRegistry?.chains || []" :key="chain.chain_id" :value="chain.chain_id">
+            {{ chain.pretty_name }}
+          </option>
         </select>
         <select v-model="sortBy" class="rounded-md border-gray-300 text-sm">
           <option value="volume">Sort by Volume</option>
@@ -131,8 +131,8 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button @click="viewDetails(channel)" class="text-primary-600 hover:text-primary-900">
-                  Details
+                <button @click="viewDetails(channel)" class="text-blue-600 hover:text-blue-900 font-medium">
+                  Details →
                 </button>
               </td>
             </tr>
@@ -157,9 +157,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { metricsService } from '@/services/api'
+import { metricsService, chainRegistryService } from '@/services/api'
 import ChannelFlowDiagram from '@/components/channels/ChannelFlowDiagram.vue'
 import ChannelDetailsModal from '@/components/channels/ChannelDetailsModal.vue'
 
@@ -167,6 +167,11 @@ import ChannelDetailsModal from '@/components/channels/ChannelDetailsModal.vue'
 const filterChain = ref('')
 const sortBy = ref('volume')
 const selectedChannel = ref<any>(null)
+
+// Load chain registry on mount
+onMounted(async () => {
+  await chainRegistryService.getChainRegistry()
+})
 
 // Fetch channel data
 const { data: metrics } = useQuery({
@@ -176,6 +181,13 @@ const { data: metrics } = useQuery({
     return metricsService.parsePrometheusMetrics(raw)
   },
   refetchInterval: 30000
+})
+
+// Fetch chain registry
+const { data: chainRegistry } = useQuery({
+  queryKey: ['chain-registry'],
+  queryFn: () => chainRegistryService.getChainRegistry(),
+  staleTime: 600000 // Cache for 10 minutes
 })
 
 // Mock enhanced channel data
@@ -232,12 +244,8 @@ function formatNumber(num: number): string {
 }
 
 function getChainName(chainId: string): string {
-  const names: Record<string, string> = {
-    'cosmoshub-4': 'Cosmos Hub',
-    'osmosis-1': 'Osmosis',
-    'neutron-1': 'Neutron'
-  }
-  return names[chainId] || chainId
+  // Use chain registry service which has caching
+  return chainRegistryService.getChainName(chainId)
 }
 
 function viewDetails(channel: any) {
