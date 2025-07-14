@@ -1,0 +1,11 @@
+{
+  "name": "relayooor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/cordtus/relayooor",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
