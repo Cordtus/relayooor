@@ -1,8 +1,8 @@
 import axios from 'axios'
 import type { MetricsSnapshot } from '@/types/monitoring'
-import { mockData } from './mockData'
+import { config } from '@/config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_BASE_URL = config.getApiUrl()
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -115,12 +115,12 @@ export const metricsService = {
   // Fetch raw Prometheus metrics from Chainpulse
   async getRawMetrics(): Promise<string> {
     try {
-      const response = await api.get('/api/metrics/chainpulse', {
+      const response = await api.get('/api/v1/chainpulse/metrics', {
         responseType: 'text'
       })
       return response.data
     } catch (error) {
-      console.log('Using mock metrics data')
+      console.error('Failed to fetch chainpulse metrics:', error)
       return ''
     }
   },
@@ -134,19 +134,36 @@ export const metricsService = {
   // Fetch structured monitoring data
   async getMonitoringData(): Promise<any> {
     try {
-      const response = await api.get('/api/monitoring/data')
+      const response = await api.get('/api/v1/monitoring/data')
       return response.data
     } catch (error) {
-      console.log('Using mock monitoring data')
-      return mockData.generateMonitoringData()
+      // Fall back to parsing raw metrics
+      const raw = await this.getRawMetrics()
+      return this.parsePrometheusMetrics(raw)
     }
   },
 
   // Parse Prometheus metrics into structured format
   parsePrometheusMetrics(rawMetrics: string): MetricsSnapshot {
-    // If no metrics, return mock data
+    // If no metrics, return empty structure
     if (!rawMetrics || rawMetrics.trim() === '') {
-      return mockData.generateMetrics()
+      return {
+        system: {
+          totalChains: 0,
+          totalTransactions: 0,
+          totalPackets: 0,
+          totalErrors: 0,
+          uptime: 0,
+          lastSync: new Date()
+        },
+        chains: [],
+        relayers: [],
+        channels: [],
+        recentPackets: [],
+        stuckPackets: [],
+        frontrunEvents: [],
+        timestamp: new Date()
+      }
     }
     
     const lines = rawMetrics.split('\n')
