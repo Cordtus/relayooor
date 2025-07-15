@@ -1,0 +1,123 @@
+# Relayooor Docker Management
+.PHONY: help up down restart logs status chainpulse-restart api-restart webapp-restart clean-all
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# Main commands
+up: ## Start all services
+	@echo "🚀 Starting all services..."
+	@docker ps -q --filter name=relayooor-chainpulse-1 | grep -q . && docker start relayooor-chainpulse-1 || docker-compose up -d chainpulse
+	@docker ps -q --filter name=relayooor-api | grep -q . && docker start relayooor-api || docker run -d --name relayooor-api -p 8080:8080 --network relayooor_relayooor-net relayooor-api
+	@docker ps -q --filter name=relayooor-webapp | grep -q . && docker start relayooor-webapp || docker run -d --name relayooor-webapp -p 80:80 --network relayooor_relayooor-net relayooor-webapp
+	@$(MAKE) -f Makefile.docker status
+
+down: ## Stop all services
+	@echo "🛑 Stopping all services..."
+	@docker stop relayooor-chainpulse-1 relayooor-api relayooor-webapp 2>/dev/null || true
+
+restart: down up ## Restart all services
+
+logs: ## Show logs from all services
+	@echo "📝 Showing logs (Ctrl+C to exit)..."
+	@docker logs -f --tail=50 relayooor-chainpulse-1 relayooor-api relayooor-webapp
+
+status: ## Show service status
+	@echo "📊 Service Status"
+	@echo "================"
+	@echo ""
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(relayooor|NAME)" || echo "No services running"
+	@echo ""
+	@echo "🔗 URLs:"
+	@echo "  Web App:        http://localhost/"
+	@echo "  API:            http://localhost:8080/health"
+	@echo "  Chainpulse:     http://localhost:3001/metrics"
+	@echo ""
+	@echo "📈 Chain Status:"
+	@curl -s http://localhost:3001/metrics 2>/dev/null | grep -E "^chainpulse_chains|^chainpulse_errors" | head -10 || echo "  Chainpulse not responding"
+
+# Individual service management
+chainpulse-restart: ## Restart only chainpulse (for chain config changes)
+	@echo "🔄 Restarting chainpulse..."
+	@docker-compose stop chainpulse 2>/dev/null || true
+	@docker-compose up -d chainpulse
+	@sleep 3
+	@docker logs --tail=20 relayooor-chainpulse-1
+
+api-restart: ## Restart only API (for endpoint changes)
+	@echo "🔄 Restarting API..."
+	@docker stop relayooor-api 2>/dev/null || true
+	@docker rm relayooor-api 2>/dev/null || true
+	@docker build -t relayooor-api ./api
+	@docker run -d --name relayooor-api -p 8080:8080 --network relayooor_relayooor-net relayooor-api
+	@sleep 2
+	@docker logs --tail=10 relayooor-api
+
+webapp-restart: ## Restart only webapp (for UI changes)
+	@echo "🔄 Restarting webapp..."
+	@docker stop relayooor-webapp 2>/dev/null || true
+	@docker rm relayooor-webapp 2>/dev/null || true
+	@docker build -t relayooor-webapp ./webapp
+	@docker run -d --name relayooor-webapp -p 80:80 --network relayooor_relayooor-net relayooor-webapp
+	@sleep 2
+	@docker logs --tail=10 relayooor-webapp
+
+# Utility commands
+clean-all: ## Stop and remove all containers, images, and volumes
+	@echo "🧹 Cleaning up everything..."
+	@docker stop relayooor-chainpulse-1 relayooor-api relayooor-webapp 2>/dev/null || true
+	@docker rm relayooor-chainpulse-1 relayooor-api relayooor-webapp 2>/dev/null || true
+	@docker-compose down -v
+	@docker rmi relayooor-api relayooor-webapp 2>/dev/null || true
+	@echo "✅ Cleanup complete"
+
+# Chain management
+add-chain: ## Add a new chain (usage: make add-chain CHAIN=akash-1 WS=wss://akash-1-skip-rpc.polkachu.com/websocket)
+	@if [ -z "$(CHAIN)" ] || [ -z "$(WS)" ]; then \
+		echo "❌ Usage: make add-chain CHAIN=chain-id WS=websocket-url"; \
+		exit 1; \
+	fi
+	@echo "➕ Adding chain $(CHAIN) with WebSocket $(WS)"
+	@echo "# $(CHAIN)" >> config/chainpulse-selected.toml
+	@echo "[chains.$(CHAIN)]" >> config/chainpulse-selected.toml
+	@echo 'url = "$${$(shell echo $(CHAIN) | tr '[:lower:]' '[:upper:]' | tr '-' '_')_WS_URL}"' >> config/chainpulse-selected.toml
+	@echo 'comet_version = "0.37"' >> config/chainpulse-selected.toml
+	@echo 'username = "$${RPC_USERNAME}"' >> config/chainpulse-selected.toml
+	@echo 'password = "$${RPC_PASSWORD}"' >> config/chainpulse-selected.toml
+	@echo "" >> config/chainpulse-selected.toml
+	@echo "$(shell echo $(CHAIN) | tr '[:lower:]' '[:upper:]' | tr '-' '_')_WS_URL=$(WS)" >> .env
+	@echo "✅ Added $(CHAIN) - now run 'make chainpulse-restart'"
+
+check-chains: ## Check which chains are configured and their status
+	@echo "🔍 Configured chains:"
+	@grep -E "^\[chains\." config/chainpulse-selected.toml | sed 's/\[chains\./  - /g' | sed 's/\]//g'
+	@echo ""
+	@echo "📊 Chain metrics:"
+	@curl -s http://localhost:3001/metrics 2>/dev/null | grep -E "chainpulse_packets{|chainpulse_errors{" | sort || echo "  Chainpulse not responding"
+
+# Development helpers
+logs-chainpulse: ## Show only chainpulse logs
+	@docker logs -f --tail=50 relayooor-chainpulse-1
+
+logs-api: ## Show only API logs
+	@docker logs -f --tail=50 relayooor-api
+
+logs-webapp: ## Show only webapp logs
+	@docker logs -f --tail=50 relayooor-webapp
+
+test-api: ## Test API endpoints
+	@echo "🧪 Testing API endpoints..."
+	@echo -n "  Health: " && curl -s http://localhost:8080/health | jq -r .status || echo "FAIL"
+	@echo -n "  Monitoring: " && curl -s http://localhost:8080/api/monitoring/data | jq -r .status || echo "FAIL"
+	@echo -n "  Chains: " && curl -s http://localhost:8080/api/monitoring/data | jq -r '.chains | length' | xargs -I {} echo "{} chains" || echo "FAIL"
+
+# Quick iteration commands
+quick-fix-api: ## Quick fix and restart API (edit api/cmd/server/main.go first)
+	@echo "🔧 Quick fixing API..."
+	@cd api && go build -o api-server ./cmd/server && cd ..
+	@$(MAKE) -f Makefile.docker api-restart
+
+quick-fix-webapp: ## Quick fix and restart webapp (edit webapp files first)
+	@echo "🔧 Quick fixing webapp..."
+	@cd webapp && yarn build && cd ..
+	@$(MAKE) -f Makefile.docker webapp-restart
