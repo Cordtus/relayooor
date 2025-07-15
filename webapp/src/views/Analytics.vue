@@ -4,10 +4,9 @@
       <h1 class="text-2xl font-bold text-gray-900">Advanced Analytics</h1>
       <div class="flex items-center gap-4">
         <select v-model="timeRange" class="rounded-md border-gray-300 text-sm">
-          <option value="24h">Last 24 Hours</option>
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
-          <option value="90d">Last 90 Days</option>
+          <option v-for="range in TIME_RANGES.slice(1)" :key="range.value" :value="range.value">
+            {{ range.label }}
+          </option>
         </select>
         <button
           @click="exportData"
@@ -221,6 +220,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'vue-sonner'
 import { analyticsService, metricsService } from '@/services/api'
 import { clearingService } from '@/services/clearing'
+import { configService } from '@/services/config'
+import { formatNumber, formatPercentage } from '@/utils/formatting'
+import { REFRESH_INTERVALS, TIME_RANGES, ANALYTICS } from '@/config/constants'
 import InsightCard from '@/components/analytics/InsightCard.vue'
 import VolumePredictionChart from '@/components/analytics/VolumePredictionChart.vue'
 import SuccessRateTrendChart from '@/components/analytics/SuccessRateTrendChart.vue'
@@ -230,14 +232,14 @@ import ChurnRateChart from '@/components/analytics/ChurnRateChart.vue'
 import RecommendationCard from '@/components/analytics/RecommendationCard.vue'
 
 // State
-const timeRange = ref('7d')
+const timeRange = ref(ANALYTICS.DEFAULT_TIME_RANGE)
 const isLoading = ref(true)
 
 // Fetch platform statistics
 const { data: platformStats } = useQuery({
   queryKey: ['platform-statistics'],
   queryFn: () => clearingService.getPlatformStatistics(),
-  refetchInterval: 30000
+  refetchInterval: REFRESH_INTERVALS.RELAXED
 })
 
 // Fetch analytics data

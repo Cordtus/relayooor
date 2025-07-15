@@ -226,7 +226,8 @@ import Card from '@/components/Card.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useConnectionStore } from '@/stores/connection'
 import { apiClient } from '@/services/api'
-import { CHAIN_CONFIG, getSupportedChains } from '@/config/chains'
+import { configService } from '@/services/config'
+import { REFRESH_INTERVALS, UI_THRESHOLDS, CACHE_DURATIONS, PAGINATION } from '@/config/constants'
 
 const toast = useToast()
 const settingsStore = useSettingsStore()
@@ -247,17 +248,26 @@ const services = ref({
   websocket: false
 })
 
-// Generate chains from centralized configuration
-const chains = ref(
-  getSupportedChains()
-    .filter(chainId => ['osmosis-1', 'cosmoshub-4', 'neutron-1', 'noble-1'].includes(chainId))
-    .map(chainId => ({
-      id: chainId,
-      name: CHAIN_CONFIG[chainId].name,
-      clearingFee: CHAIN_CONFIG[chainId].clearingFee || '0.1',
-      denom: CHAIN_CONFIG[chainId].denom
-    }))
-)
+// Generate chains from config service
+const chains = ref<Array<{
+  id: string
+  name: string
+  clearingFee: string
+  denom: string
+}>>([])
+
+// Load chains from config service
+onMounted(async () => {
+  const allChains = await configService.getAllChains()
+  chains.value = allChains.map(chain => ({
+    id: chain.chain_id,
+    name: chain.chain_name,
+    clearingFee: '0.1', // TODO: Get from API
+    denom: chain.chain_id === 'osmosis-1' ? 'uosmo' : 
+           chain.chain_id === 'cosmoshub-4' ? 'uatom' :
+           chain.chain_id === 'neutron-1' ? 'untrn' : 'uusdc'
+  }))
+})
 
 const testing = ref(false)
 

@@ -30,7 +30,7 @@
         <div v-if="recentActivity.length > 0" class="space-y-3">
           <div v-for="activity in recentActivity" :key="activity.timestamp" class="flex items-center justify-between py-2 border-b">
             <div>
-              <p class="text-sm font-medium">{{ getChainName(activity.from_chain) }} → {{ getChainName(activity.to_chain) }}</p>
+              <p class="text-sm font-medium">{{ getChainNameSync(activity.from_chain) }} → {{ getChainNameSync(activity.to_chain) }}</p>
               <p class="text-xs text-gray-500">{{ activity.channel }}</p>
             </div>
             <span :class="[
@@ -112,6 +112,9 @@
 import { ref, onMounted } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { api, metricsService } from '@/services/api'
+import { configService } from '@/services/config'
+import { formatNumber, formatAddress, formatNumberWithCommas, formatDuration, formatAmount } from '@/utils/formatting'
+import { REFRESH_INTERVALS } from '@/config/constants'
 
 // Fetch monitoring data
 const { data: monitoringData } = useQuery({
@@ -119,7 +122,7 @@ const { data: monitoringData } = useQuery({
   queryFn: async () => {
     return metricsService.getMonitoringData()
   },
-  refetchInterval: 10000 // Refresh every 10 seconds
+  refetchInterval: REFRESH_INTERVALS.NORMAL
 })
 
 // Fetch comprehensive metrics
@@ -136,7 +139,7 @@ const { data: comprehensiveMetrics } = useQuery({
       return metricsService.parsePrometheusMetrics(raw)
     }
   },
-  refetchInterval: 10000
+  refetchInterval: REFRESH_INTERVALS.NORMAL
 })
 
 // Fetch channel congestion data
@@ -152,7 +155,7 @@ const { data: channelCongestion } = useQuery({
       return data.channels || []
     }
   },
-  refetchInterval: 30000 // Refresh every 30 seconds
+  refetchInterval: REFRESH_INTERVALS.RELAXED
 })
 
 const stats = ref({
@@ -206,50 +209,34 @@ onMounted(() => {
   updateStats()
   
   // Watch for changes
-  const interval = setInterval(updateStats, 1000)
+  const interval = setInterval(updateStats, REFRESH_INTERVALS.REAL_TIME)
   
   // Cleanup
   return () => clearInterval(interval)
 })
 
-function formatPacketCount(count: number): string {
-  if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M'
-  if (count >= 1000) return (count / 1000).toFixed(1) + 'K'
-  return count.toString()
+// Alias for packet count formatting
+const formatPacketCount = formatNumber
+
+// Get chain name from config service
+async function getChainName(chainId: string): Promise<string> {
+  const chain = await configService.getChain(chainId)
+  return chain?.chain_name || chainId
 }
 
-function getChainName(chainId: string): string {
-  const names: Record<string, string> = {
-    'osmosis-1': 'Osmosis',
-    'cosmoshub-4': 'Cosmos Hub',
-    'neutron-1': 'Neutron'
-  }
-  return names[chainId] || chainId
-}
+// For synchronous usage in template, we'll use a reactive map
+const chainNames = ref<Record<string, string>>({})
 
-function formatAddress(address: string): string {
-  if (!address || address.length < 10) return address
-  return address.slice(0, 10) + '...' + address.slice(-4)
-}
+// Load chain names on mount
+onMounted(async () => {
+  const chains = await configService.getAllChains()
+  chains.forEach(chain => {
+    chainNames.value[chain.chain_id] = chain.chain_name
+  })
+})
 
-function formatNumber(num: number): string {
-  return new Intl.NumberFormat().format(num)
-}
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`
-  return `${Math.floor(seconds / 86400)}d`
-}
-
-function formatAmount(amount: string, denom: string): string {
-  const value = parseFloat(amount) / 1000000
-  const symbols: Record<string, string> = {
-    'uatom': 'ATOM',
-    'uosmo': 'OSMO',
-    'untrn': 'NTRN'
-  }
-  return `${value.toFixed(2)} ${symbols[denom] || denom}`
+// Helper for template usage
+function getChainNameSync(chainId: string): string {
+  return chainNames.value[chainId] || chainId
 }
 </script>

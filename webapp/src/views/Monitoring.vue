@@ -216,6 +216,9 @@ import {
 import { metricsService, analyticsService } from '@/services/api'
 import { clearingService, type ClearingRequest, type PacketIdentifier } from '@/services/clearing'
 import { useWalletStore } from '@/stores/wallet'
+import { configService } from '@/services/config'
+import { formatNumber, formatPercentage, formatDuration } from '@/utils/formatting'
+import { REFRESH_INTERVALS, UI_THRESHOLDS } from '@/config/constants'
 import { toast } from 'vue-sonner'
 import type { MetricsSnapshot } from '@/types/monitoring'
 
@@ -249,7 +252,7 @@ const router = useRouter()
 // State
 const activeTab = ref('overview')
 const autoRefresh = ref(true)
-const refreshInterval = ref(5000)
+const refreshInterval = ref(REFRESH_INTERVALS.FREQUENT)
 const lastUpdate = ref(new Date())
 const channelSortBy = ref('totalPackets')
 
@@ -347,11 +350,14 @@ const enrichedChannels = computed(() => {
 })
 
 const poorPerformingChannels = computed(() => {
-  return metrics.value?.channels.filter(c => c.successRate < 75) || []
+  return metrics.value?.channels.filter(c => c.successRate < UI_THRESHOLDS.SUCCESS_RATE.POOR) || []
 })
 
 const underperformingRelayers = computed(() => {
-  return metrics.value?.relayers.filter(r => r.successRate < 50 && r.totalPackets > 10) || []
+  return metrics.value?.relayers.filter(r => 
+    r.successRate < 50 && 
+    r.totalPackets > UI_THRESHOLDS.PERFORMANCE.MIN_RELAYER_ACTIVITY
+  ) || []
 })
 
 const totalFrontrunEvents = computed(() => {
@@ -461,7 +467,7 @@ const { data: historicalData } = useQuery({
       return null
     }
   },
-  refetchInterval: 60000 // Refresh every minute
+  refetchInterval: REFRESH_INTERVALS.SLOW
 })
 
 const historicalRelayers = computed(() => {
@@ -495,7 +501,7 @@ const peakActivityPeriod = computed(() => {
 const mostReliableRoute = computed(() => {
   if (!metrics.value) return 'N/A'
   const reliable = metrics.value.channels
-    .filter(c => c.totalPackets > 100)
+    .filter(c => c.totalPackets > UI_THRESHOLDS.PERFORMANCE.MIN_PACKETS_FOR_STATS)
     .sort((a, b) => b.successRate - a.successRate)[0]
   return reliable ? `${reliable.srcChain} → ${reliable.dstChain}` : 'N/A'
 })
