@@ -14,10 +14,12 @@ A comprehensive platform for IBC packet clearing and monitoring that provides se
 - **Duplicate Payment Protection**: Prevents double-charging with multi-layer detection
 
 ### Monitoring Dashboard
-- **Real-time IBC Metrics**: Powered by Chainpulse
+- **Real-time IBC Metrics**: Powered by Chainpulse with CometBFT 0.38 support
 - **Stuck Packet Detection**: Identify packets stuck for >15 minutes
 - **Channel Performance**: Track success rates and congestion
 - **Relayer Analytics**: Competition analysis and performance metrics
+- **Multi-Network Support**: Monitor Cosmos Hub, Osmosis, Neutron, Noble, and Stride
+- **Predictive Analytics**: AI-powered volume and success rate predictions
 
 ### Wallet Integration
 - **Keplr Support**: Connect your wallet to view your stuck transfers
@@ -102,10 +104,10 @@ relayooor/
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js 16+ and Yarn
-- PostgreSQL (or SQLite for development)
-- Redis
-- Hermes relayer instance
+- Node.js 20+ and Yarn
+- PostgreSQL 15+ with pg_cron extension (optional)
+- Go 1.21+
+- For M1/M4 Macs: Docker Desktop with proper resource allocation
 
 ### Local Development
 
@@ -125,24 +127,36 @@ cp .env.example .env
 # - RPC endpoints for supported chains
 ```
 
-3. **Start backend services:**
+3. **Start all services with Docker:**
 ```bash
-docker-compose up -d postgres redis chainpulse
-cd relayer-middleware/api
-go run cmd/server/main.go
+# Quick start with all services
+./start-full-stack.sh
+
+# Or manually:
+docker-compose -f docker-compose.full.yml up -d
 ```
 
-4. **Start frontend:**
+4. **Alternative: Start services individually:**
 ```bash
+# Backend services
+docker-compose up -d postgres chainpulse prometheus
+
+# API server
+cd relayer-middleware/api
+go run cmd/server/main.go
+
+# Frontend (for development)
 cd webapp
 yarn install
-yarn dev
+yarn dev  # Note: May have issues on M1/M4 Macs, use Docker instead
 ```
 
 5. **Access the application:**
-- Frontend: http://localhost:5173
-- API: http://localhost:3000
-- Chainpulse metrics: http://localhost:3001/metrics
+- Frontend: http://localhost (via nginx)
+- API: http://localhost:8080
+- Chainpulse API: http://localhost:3000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3003 (admin/admin)
 
 ## How Packet Clearing Works
 
@@ -245,6 +259,8 @@ yarn test
 - [Architecture Overview](docs/packet-clearing-architecture.md)
 - [API Documentation](docs/API_IMPROVEMENTS.md)
 - [Deployment Guide](docs/deployment/README.md)
+- [Full Stack Deployment](FULL_STACK_DEPLOYMENT.md)
+- [Database Optimizations](relayer-middleware/api/migrations/)
 
 ## Security
 
@@ -278,9 +294,18 @@ yarn test
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Performance Optimizations
+
+The platform includes extensive database optimizations for handling multiple networks:
+- **Connection pooling** with pgx/v5 for optimal throughput
+- **Time-series data** support with TimescaleDB integration
+- **Materialized views** for expensive aggregations
+- **Smart indexing** on all common query patterns
+- **Automatic maintenance** procedures for data cleanup
+
 ## Acknowledgments
 
-- [Chainpulse](https://github.com/informalsystems/chainpulse) for IBC monitoring
+- [Chainpulse](https://github.com/Cordtus/chainpulse) fork with CometBFT 0.38 support
 - [Hermes](https://github.com/informalsystems/hermes) for reliable packet clearing
 - The Cosmos ecosystem for IBC protocol
 - All contributors and users of Relayooor

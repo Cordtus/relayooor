@@ -44,8 +44,11 @@ const initializeData = () => {
   for (let i = props.maxDataPoints - 1; i >= 0; i--) {
     const time = new Date(now.getTime() - i * 60000) // 1 minute intervals
     historicalData.value.labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
-    historicalData.value.effected.push(Math.floor(Math.random() * 1000) + 500)
-    historicalData.value.uneffected.push(Math.floor(Math.random() * 200) + 50)
+    // Use time-based pattern instead of random
+    const minutes = time.getMinutes()
+    const hourPattern = 1 + Math.sin(minutes * Math.PI / 30) * 0.3 // Sine wave pattern
+    historicalData.value.effected.push(Math.floor(800 * hourPattern))
+    historicalData.value.uneffected.push(Math.floor(150 * hourPattern))
   }
 }
 
@@ -55,8 +58,17 @@ const addDataPoint = () => {
   
   // Add new data point
   historicalData.value.labels.push(label)
-  historicalData.value.effected.push(Math.floor(Math.random() * 1000) + 500)
-  historicalData.value.uneffected.push(Math.floor(Math.random() * 200) + 50)
+  // Calculate based on current minute for consistent pattern
+  const minutes = now.getMinutes()
+  const seconds = now.getSeconds()
+  const timePattern = 1 + Math.sin((minutes + seconds/60) * Math.PI / 30) * 0.3
+  
+  // Base rates from props.data if available, otherwise use defaults
+  const baseEffected = props.data?.baseEffected || 800
+  const baseUneffected = props.data?.baseUneffected || 150
+  
+  historicalData.value.effected.push(Math.floor(baseEffected * timePattern))
+  historicalData.value.uneffected.push(Math.floor(baseUneffected * timePattern))
   
   // Remove oldest data point if we exceed max
   if (historicalData.value.labels.length > props.maxDataPoints) {

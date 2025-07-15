@@ -1,0 +1,51 @@
+# Example node configuration file using Skip endpoints
+# Copy this to nodes.toml and fill in with your actual authentication
+# NEVER commit nodes.toml to the repository!
+
+# ========================================
+# SKIP NODE CONFIGURATIONS (PRIVATE)
+# ========================================
+
+[chains.cosmoshub-4]
+name = "Cosmos Hub"
+rpc = "https://username:password@cosmoshub-4-skip-rpc.polkachu.com"
+api = "https://username:password@cosmoshub-4-skip-api.polkachu.com"
+grpc = "https://username:password@cosmoshub-4-skip-grpc.polkachu.com:14990"
+ws = "wss://username:password@cosmoshub-4-skip-rpc.polkachu.com/websocket"
+backup_rpc = "https://cosmos-rpc.polkachu.com"
+comet_version = "0.37"
+healthy = true
+active = true
+
+[chains.osmosis-1]
+name = "Osmosis"
+rpc = "https://username:password@osmosis-1-skip-rpc.polkachu.com"
+api = "https://username:password@osmosis-1-skip-api.polkachu.com"
+grpc = "https://username:password@osmosis-1-skip-grpc.polkachu.com:12590"
+ws = "wss://username:password@osmosis-1-skip-rpc.polkachu.com/websocket"
+backup_rpc = "https://osmosis-rpc.polkachu.com"
+comet_version = "0.38"
+healthy = false  # Currently unhealthy according to CSV
+active = false
+
+[chains.neutron-1]
+name = "Neutron"
+rpc = "https://username:password@neutron-1-skip-rpc.polkachu.com"
+api = "https://username:password@neutron-1-skip-api.polkachu.com"
+grpc = "https://username:password@neutron-1-skip-grpc.polkachu.com:19190"
+ws = "wss://username:password@neutron-1-skip-rpc.polkachu.com/websocket"
+backup_rpc = "https://neutron-rpc.polkachu.com"
+comet_version = "0.37"
+healthy = false  # Currently unhealthy according to CSV
+active = false
+
+# Additional healthy Skip nodes available:
+# - akashnet-2 (Akash)
+# - archway-1 (Archway)
+# - axelar-dojo-1 (Axelar)
+# - injective-1 (Injective)
+# - kaiyo-1 (Kujira)
+# - evmos_9001-2 (Evmos)
+# - dydx-mainnet-1 (dYdX)
+# - dymension_1100-1 (Dymension)
+# - core-1 (Persistence)

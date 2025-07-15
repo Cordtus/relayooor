@@ -134,7 +134,6 @@
               </button>
             </div>
             <div class="mt-2 text-xs text-gray-600">
-              <p>RPC: {{ chain.rpc || 'Default' }}</p>
               <p>Fee: {{ chain.clearingFee }} {{ chain.denom }}</p>
             </div>
           </div>
@@ -227,6 +226,7 @@ import Card from '@/components/Card.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useConnectionStore } from '@/stores/connection'
 import { apiClient } from '@/services/api'
+import { CHAIN_CONFIG, getSupportedChains } from '@/config/chains'
 
 const toast = useToast()
 const settingsStore = useSettingsStore()
@@ -247,29 +247,17 @@ const services = ref({
   websocket: false
 })
 
-const chains = ref([
-  {
-    id: 'osmosis-1',
-    name: 'Osmosis',
-    rpc: '',
-    clearingFee: '0.1',
-    denom: 'OSMO'
-  },
-  {
-    id: 'cosmoshub-4',
-    name: 'Cosmos Hub',
-    rpc: '',
-    clearingFee: '0.1',
-    denom: 'ATOM'
-  },
-  {
-    id: 'neutron-1',
-    name: 'Neutron',
-    rpc: '',
-    clearingFee: '0.1',
-    denom: 'NTRN'
-  }
-])
+// Generate chains from centralized configuration
+const chains = ref(
+  getSupportedChains()
+    .filter(chainId => ['osmosis-1', 'cosmoshub-4', 'neutron-1', 'noble-1'].includes(chainId))
+    .map(chainId => ({
+      id: chainId,
+      name: CHAIN_CONFIG[chainId].name,
+      clearingFee: CHAIN_CONFIG[chainId].clearingFee || '0.1',
+      denom: CHAIN_CONFIG[chainId].denom
+    }))
+)
 
 const testing = ref(false)
 
@@ -313,7 +301,7 @@ function resetSettings() {
 function exportSettings() {
   const data = {
     settings: settings.value,
-    chains: chains.value,
+    supportedChains: chains.value.map(c => c.id), // Only export chain IDs
     exported: new Date().toISOString()
   }
   
@@ -343,8 +331,16 @@ function importSettings() {
       if (data.settings) {
         settings.value = { ...settings.value, ...data.settings }
       }
-      if (data.chains) {
-        chains.value = data.chains
+      if (data.supportedChains) {
+        // Only use chains that are in our centralized config
+        chains.value = data.supportedChains
+          .filter((chainId: string) => chainId in CHAIN_CONFIG)
+          .map((chainId: string) => ({
+            id: chainId,
+            name: CHAIN_CONFIG[chainId].name,
+            clearingFee: CHAIN_CONFIG[chainId].clearingFee || '0.1',
+            denom: CHAIN_CONFIG[chainId].denom
+          }))
       }
       
       saveSettings()

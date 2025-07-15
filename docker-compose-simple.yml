@@ -1,0 +1,66 @@
+services:
+  # Use prebuilt hermes image
+  hermes:
+    image: ghcr.io/informalsystems/hermes:v1.10.5
+    ports:
+      - "5185:3000"  # Hermes REST API
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - ./config/hermes:/home/hermes/.hermes
+    networks:
+      - relayooor-net
+    command: ["start"]
+
+  # Chainpulse Monitoring
+  chainpulse:
+    build:
+      context: ./monitoring
+      dockerfile: Dockerfile
+    environment:
+      - RPC_USERNAME=${RPC_USERNAME}
+      - RPC_PASSWORD=${RPC_PASSWORD}
+      - COSMOS_WS_URL=${COSMOS_WS_URL:-wss://cosmos-rpc.polkachu.com/websocket}
+      - OSMOSIS_WS_URL=${OSMOSIS_WS_URL:-wss://osmosis-rpc.polkachu.com/websocket}
+      - NEUTRON_WS_URL=${NEUTRON_WS_URL:-wss://neutron-rpc.polkachu.com/websocket}
+      - NOBLE_WS_URL=${NOBLE_WS_URL:-wss://noble-rpc.polkachu.com/websocket}
+    volumes:
+      - ./config/chainpulse-selected.toml:/config/chainpulse.toml:ro
+    ports:
+      - "3001:3001"  # Metrics endpoint
+    networks:
+      - relayooor-net
+
+  # API Backend
+  api-backend:
+    build:
+      context: ./relayer-middleware/api
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+      - CHAINPULSE_URL=http://chainpulse:3001
+      - HERMES_URL=http://hermes:3000
+    ports:
+      - "8080:8080"
+    networks:
+      - relayooor-net
+    depends_on:
+      - chainpulse
+      - hermes
+
+  # Web App
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - relayooor-net
+    depends_on:
+      - api-backend
+
+networks:
+  relayooor-net:
+    driver: bridge
+EOF < /dev/null

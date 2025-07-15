@@ -15,13 +15,24 @@
         </span>
       </div>
     </div>
-    <div class="mt-4 text-center text-gray-500">
-      <p class="text-sm">InsightCard component coming soon</p>
+    <div v-if="props.icon" class="mt-4">
+      <div class="h-24 flex items-center justify-center">
+        <div class="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
+          <component 
+            :is="getIconComponent()" 
+            class="h-12 w-12"
+            :class="getIconColor()"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { Clock, Route, TrendingUp, AlertTriangle } from 'lucide-vue-next'
+
 interface Props {
   title: string
   value: string | number
@@ -32,4 +43,23 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const getIconComponent = () => {
+  switch (props.icon) {
+    case 'Clock': return Clock
+    case 'Route': return Route
+    case 'TrendingUp': return TrendingUp
+    case 'AlertTriangle': return AlertTriangle
+    default: return Clock
+  }
+}
+
+const getIconColor = () => {
+  switch (props.color) {
+    case 'error': return 'text-red-500'
+    case 'warning': return 'text-yellow-500'
+    case 'success': return 'text-green-500'
+    default: return 'text-blue-500'
+  }
+}
 </script>

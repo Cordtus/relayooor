@@ -109,6 +109,12 @@ func main() {
 		
 		// Chainpulse integration routes
 		chainpulseHandler.RegisterRoutes(api)
+		
+		// Channels routes (moved here for better organization)
+		channels := api.Group("/channels")
+		{
+			channels.GET("/congestion", chainpulseHandler.GetChannelCongestion)
+		}
 
 		// Original authentication routes
 		auth := api.Group("/auth")
@@ -172,6 +178,13 @@ func main() {
 				metrics.GET("/packet-flow", originalHandlers.GetPacketFlowMetrics)
 				metrics.GET("/stuck-packets", originalHandlers.GetStuckPackets)
 				metrics.GET("/relayer-performance", originalHandlers.GetRelayerPerformance)
+			}
+			
+			// Monitoring endpoints
+			monitoring := protected.Group("/monitoring")
+			{
+				monitoring.GET("/data", originalHandlers.GetMonitoringData)
+				monitoring.GET("/metrics", originalHandlers.GetMonitoringMetrics)
 			}
 		}
 	}

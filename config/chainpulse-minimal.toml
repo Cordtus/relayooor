@@ -1,0 +1,19 @@
+# Minimal Chainpulse configuration for testing
+# Only monitors Cosmos Hub <-> Osmosis
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3000
+stuck_packets = true
+
+# Monitor only Cosmos Hub and Osmosis for testing
+[chains.cosmoshub-4]
+url = "wss://rpc.cosmos.network/websocket"
+comet_version = "0.34"
+
+[chains.osmosis-1]
+url = "wss://rpc.osmosis.zone/websocket"
+comet_version = "0.38"

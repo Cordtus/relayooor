@@ -41,15 +41,13 @@
 </template>
 
 <script setup lang="ts">
-import { Home, Activity, Link, Users, PackageX, BarChart3, Settings } from 'lucide-vue-next'
+import { Home, Activity, PackageX, BarChart3, Settings } from 'lucide-vue-next'
 import ConnectionStatus from '@/components/ConnectionStatus.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Monitoring', href: '/monitoring', icon: Activity },
-  { name: 'Channels', href: '/channels', icon: Link },
-  { name: 'Relayers', href: '/relayers', icon: Users },
+  { name: 'IBC Monitoring', href: '/monitoring', icon: Activity },
   { name: 'Packet Clearing', href: '/packet-clearing', icon: PackageX },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings }

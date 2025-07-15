@@ -13,16 +13,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/Monitoring.vue')
   },
   {
-    path: '/channels',
-    name: 'channels',
-    component: () => import('@/views/Channels.vue')
-  },
-  {
-    path: '/relayers',
-    name: 'relayers',
-    component: () => import('@/views/Relayers.vue')
-  },
-  {
     path: '/packet-clearing',
     name: 'packet-clearing',
     component: () => import('@/views/PacketClearing.vue')

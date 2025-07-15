@@ -205,7 +205,9 @@ function generateDefaultData() {
   return Array.from({ length: days }, (_, i) => {
     // Add some realistic variation
     const trend = i * 0.1 // Slight upward trend
-    const dailyVariation = (Math.random() - 0.5) * 4
+    // Use day-based variation instead of random
+    const dayHash = (i * 31) % 13 // Pseudo-random based on day
+    const dailyVariation = ((dayHash / 13) - 0.5) * 4
     const weeklyPattern = Math.sin((i % 7) / 7 * Math.PI) * 2
     
     const rate = Math.max(70, Math.min(95, baseRate + trend + dailyVariation + weeklyPattern))
@@ -273,7 +275,9 @@ function generateProjection(historicalData: Array<{day: number, rate: number}>, 
     currentRate += dailyTrend * Math.pow(0.9, i)
     
     // Add some random variation that increases with time
-    const uncertainty = (Math.random() - 0.5) * 2 * (i + 1) * 0.3
+    // Uncertainty increases with projection distance
+    const uncertaintyBase = ((i * 37) % 11) / 11 // Deterministic pseudo-random
+    const uncertainty = (uncertaintyBase - 0.5) * 2 * (i + 1) * 0.3
     
     // Constrain to reasonable bounds
     const projectedRate = Math.max(70, Math.min(95, currentRate + uncertainty))

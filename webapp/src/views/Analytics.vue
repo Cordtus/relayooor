@@ -558,11 +558,11 @@ function implementRecommendation(rec: any) {
 
 // Data generation functions (enhanced with real data)
 function generatePredictionData(dailyAvg: number = 350000) {
-  const variance = dailyAvg * 0.15 // 15% variance
+  // Linear trend projection with decreasing confidence
   return Array.from({ length: 7 }, (_, i) => ({
     day: i + 1,
-    predicted: Math.round(dailyAvg + (Math.random() - 0.5) * variance),
-    confidence: 85 - (i * 2) + Math.random() * 10 // Confidence decreases over time
+    predicted: Math.round(dailyAvg * (1 + i * 0.02)), // 2% daily growth
+    confidence: 95 - (i * 5) // Confidence decreases 5% per day
   }))
 }
 
@@ -570,7 +570,7 @@ function generateTrendData(currentRate: number = 87.3) {
   const baseRate = currentRate - 2 // Start slightly lower
   return Array.from({ length: 30 }, (_, i) => ({
     day: i + 1,
-    rate: Math.min(100, baseRate + (Math.random() - 0.3) * 2 + (i * 0.1))
+    rate: Math.min(100, baseRate + (i * 0.1)) // Steady improvement
   }))
 }
 
@@ -585,9 +585,9 @@ function generateNetworkFlows() {
       { id: 'neutron', name: 'Neutron' }
     ],
     links: [
-      { source: 'osmosis', target: 'cosmos', value: Math.round(baseValues.osmosisToCosmoshub * (0.8 + Math.random() * 0.4)) },
-      { source: 'cosmos', target: 'osmosis', value: Math.round(baseValues.cosmoshubToOsmosis * (0.8 + Math.random() * 0.4)) },
-      { source: 'neutron', target: 'osmosis', value: Math.round(baseValues.neutronToOsmosis * (0.8 + Math.random() * 0.4)) }
+      { source: 'osmosis', target: 'cosmos', value: baseValues.osmosisToCosmoshub },
+      { source: 'cosmos', target: 'osmosis', value: baseValues.cosmoshubToOsmosis },
+      { source: 'neutron', target: 'osmosis', value: baseValues.neutronToOsmosis }
     ]
   }
 }
@@ -596,16 +596,16 @@ function generateHHIData(currentHHI: number = 2345) {
   const trend = currentHHI > 2500 ? -15 : -10 // Stronger decline if high concentration
   return Array.from({ length: 30 }, (_, i) => ({
     day: i + 1,
-    value: Math.max(1000, currentHHI + (trend * i) + (Math.random() - 0.5) * 100)
+    value: Math.max(1000, currentHHI + (trend * i))
   }))
 }
 
 function generateChurnData() {
-  // More realistic churn data with trend
+  // Realistic churn data with growth trend
   return Array.from({ length: 12 }, (_, i) => ({
     week: i + 1,
-    entries: Math.floor(Math.random() * 5) + 3 + Math.floor(i / 4), // Slight growth trend
-    exits: Math.floor(Math.random() * 3) + 1
+    entries: 5 + Math.floor(i / 3), // Growth every 3 weeks
+    exits: 2 + Math.floor(i / 6) // Slower exit growth
   }))
 }
 </script>

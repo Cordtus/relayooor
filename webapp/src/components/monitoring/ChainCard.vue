@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { configService } from '@/services/config'
 
 interface ChainInfo {
   chainId: string
@@ -91,15 +92,17 @@ const emit = defineEmits<{
 }>()
 
 function getChainColor(chainId: string): string {
-  const colors: Record<string, string> = {
-    'osmosis-1': '#6B46C1',
-    'cosmoshub-4': '#2E3148',
-    'neutron-1': '#000000',
-    'stride-1': '#E40475',
-    'juno-1': '#F0827D',
-    'stargaze-1': '#DB2777'
+  // Generate a consistent color based on chain ID hash
+  let hash = 0
+  for (let i = 0; i < chainId.length; i++) {
+    const char = chainId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32-bit integer
   }
-  return colors[chainId] || '#6B7280'
+  
+  // Generate a hue based on the hash
+  const hue = Math.abs(hash) % 360
+  return `hsl(${hue}, 65%, 45%)`
 }
 
 function getStatusClass(status: string): string {

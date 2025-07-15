@@ -161,6 +161,18 @@ config.local.*
 *-local.yml
 *-local.json
 
+# Node configuration (contains private endpoints)
+/config/nodes.toml
+!config/nodes.toml.example
+nodes.toml
+nodes.json
+nodes.yaml
+endpoints.toml
+endpoints.json
+endpoints.yaml
+*-nodes-*.md
+!skip-nodes-reference.md
+
 # Wallet keys and mnemonics
 *.mnemonic
 *.mnemonic.txt

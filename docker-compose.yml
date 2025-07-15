@@ -30,11 +30,15 @@ services:
     environment:
       - RPC_USERNAME=${RPC_USERNAME}
       - RPC_PASSWORD=${RPC_PASSWORD}
+      - COSMOS_WS_URL=${COSMOS_WS_URL:-wss://cosmos-rpc.polkachu.com/websocket}
+      - OSMOSIS_WS_URL=${OSMOSIS_WS_URL:-wss://osmosis-rpc.polkachu.com/websocket}
+      - NEUTRON_WS_URL=${NEUTRON_WS_URL:-wss://neutron-rpc.polkachu.com/websocket}
+      - NOBLE_WS_URL=${NOBLE_WS_URL:-wss://noble-rpc.polkachu.com/websocket}
     volumes:
-      - ./monitoring/config/chainpulse-cosmos-osmosis.toml:/config/chainpulse.toml:ro
+      - ./config/chainpulse-selected.toml:/config/chainpulse.toml:ro
       - chainpulse-data:/data
     ports:
-      - "3000:3000"  # Metrics endpoint
+      - "3001:3001"  # Metrics endpoint
     restart: unless-stopped
     networks:
       - relayooor-net

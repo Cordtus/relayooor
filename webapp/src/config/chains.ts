@@ -17,14 +17,16 @@ export interface ChainInfo {
   clearingFee?: string
 }
 
+// Chain configuration with public endpoints only
+// Private endpoints are loaded from environment variables on the backend
 export const CHAIN_CONFIG: Record<string, ChainInfo> = {
   'cosmoshub-4': {
     name: 'Cosmos Hub',
     prefix: 'cosmos',
     color: '#2E3148',
     logo: '/images/cosmos-logo.svg',
-    rpcEndpoint: 'https://rpc.cosmos.network',
-    restEndpoint: 'https://api.cosmos.network',
+    rpcEndpoint: 'https://cosmos-rpc.polkachu.com',
+    restEndpoint: 'https://cosmos-api.polkachu.com',
     denom: 'ATOM',
     minimalDenom: 'uatom',
     decimals: 6,
@@ -36,8 +38,8 @@ export const CHAIN_CONFIG: Record<string, ChainInfo> = {
     prefix: 'osmo',
     color: '#5E12A0',
     logo: '/images/osmosis-logo.svg',
-    rpcEndpoint: 'https://rpc.osmosis.zone',
-    restEndpoint: 'https://api.osmosis.zone',
+    rpcEndpoint: 'https://osmosis-rpc.polkachu.com',
+    restEndpoint: 'https://osmosis-api.polkachu.com',
     denom: 'OSMO',
     minimalDenom: 'uosmo',
     decimals: 6,
@@ -49,12 +51,25 @@ export const CHAIN_CONFIG: Record<string, ChainInfo> = {
     prefix: 'neutron',
     color: '#000000',
     logo: '/images/neutron-logo.svg',
-    rpcEndpoint: 'https://rpc-neutron.keplr.app',
-    restEndpoint: 'https://api-neutron.keplr.app',
+    rpcEndpoint: 'https://neutron-rpc.polkachu.com',
+    restEndpoint: 'https://neutron-api.polkachu.com',
     denom: 'NTRN',
     minimalDenom: 'untrn',
     decimals: 6,
     gasPrice: '0.025',
+    clearingFee: '0.1'
+  },
+  'noble-1': {
+    name: 'Noble',
+    prefix: 'noble',
+    color: '#5B21B6',
+    logo: '/images/noble-logo.svg',
+    rpcEndpoint: 'https://noble-rpc.polkachu.com',
+    restEndpoint: 'https://noble-api.polkachu.com',
+    denom: 'USDC',
+    minimalDenom: 'uusdc',
+    decimals: 6,
+    gasPrice: '0.01',
     clearingFee: '0.1'
   },
   'terra2-1': {

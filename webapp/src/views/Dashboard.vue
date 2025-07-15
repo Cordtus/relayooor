@@ -126,11 +126,12 @@ const { data: monitoringData } = useQuery({
 const { data: comprehensiveMetrics } = useQuery({
   queryKey: ['comprehensive-metrics'],
   queryFn: async () => {
+    // Try to get structured metrics first
     try {
       const response = await api.get('/api/monitoring/metrics')
       return response.data
     } catch (error) {
-      // Use metrics service which has mock data fallback
+      // Fall back to parsing raw Prometheus metrics
       const raw = await metricsService.getRawMetrics()
       return metricsService.parsePrometheusMetrics(raw)
     }

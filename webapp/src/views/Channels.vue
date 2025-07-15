@@ -197,7 +197,7 @@ const channels = computed(() => {
     ...channel,
     id: `${channel.srcChain}-${channel.srcChannel}`,
     volume24h: channel.totalPackets,
-    avgProcessingTime: Math.random() * 10 + 5, // 5-15 seconds
+    avgProcessingTime: channel.avgProcessingTime || 10, // Use actual or default 10s
     status: channel.successRate > 90 ? 'active' : 
             channel.successRate > 75 ? 'congested' : 'degraded'
   }))

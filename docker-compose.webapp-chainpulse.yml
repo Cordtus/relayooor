@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Chainpulse for real IBC monitoring
+  chainpulse:
+    build:
+      context: ./monitoring/chainpulse
+      dockerfile: Dockerfile.fork
+    container_name: relayooor-chainpulse
+    environment:
+      - RPC_USERNAME=${RPC_USERNAME}
+      - RPC_PASSWORD=${RPC_PASSWORD}
+    volumes:
+      - ./config/chainpulse-minimal.toml:/config/chainpulse.toml:ro
+      - chainpulse-data:/data
+    ports:
+      - "3001:3000"  # Metrics endpoint (map internal 3000 to external 3001)
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+    command: ["--config", "/config/chainpulse.toml"]
+
+  # API Backend
+  api-backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: relayooor-api-backend
+    environment:
+      - PORT=8080
+      - CHAINPULSE_URL=http://chainpulse:3000
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+    depends_on:
+      - chainpulse
+
+  # Web App
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: relayooor-webapp
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+    depends_on:
+      - api-backend
+
+networks:
+  relayooor-net:
+    driver: bridge
+
+volumes:
+  chainpulse-data:

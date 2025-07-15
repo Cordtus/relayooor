@@ -155,7 +155,7 @@ func (h *Handler) GetRelayerPerformance(c *gin.Context) {
 	performance := gin.H{
 		"effected_packets":   countMetricValues(metrics, "ibc_effected_packets"),
 		"uneffected_packets": countMetricValues(metrics, "ibc_uneffected_packets"),
-		"frontrun_events":    countMetricValues(metrics, "ibc_frontrun_counter"),
+		"frontrun_events":    countMetricValues(metrics, "ibc_frontrun_total"),
 		"stuck_packets":      countMetricValues(metrics, "ibc_stuck_packets"),
 	}
 

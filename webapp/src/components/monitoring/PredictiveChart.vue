@@ -161,9 +161,10 @@ function generateMockData() {
   
   for (let i = 48; i > 0; i--) {
     const time = new Date(now - i * 3600000).toISOString()
-    const variation = (Math.random() - 0.5) * 0.2
+    // Use hour-based variation instead of random
+    const hourVariation = Math.sin(i * Math.PI / 24) * 0.1
     const trend = props.type === 'rate' ? -0.001 * i : 100 * i
-    const value = baseValue * (1 + variation) + trend
+    const value = baseValue * (1 + hourVariation) + trend
     
     data.push({
       time,
@@ -189,8 +190,9 @@ function generatePrediction(historicalData: any[]) {
   
   for (let i = 1; i <= 24; i++) {
     const time = new Date(now + i * 3600000).toISOString()
-    const noise = (Math.random() - 0.5) * 0.1 * lastValue
-    const value = lastValue + avgGrowth + noise
+    // Use predictable variation based on time pattern
+    const timeVariation = Math.sin(i * Math.PI / 12) * 0.05 * lastValue
+    const value = lastValue + avgGrowth + timeVariation
     
     predictions.push({
       time,

@@ -129,39 +129,6 @@
           <CongestionAnalysis :channels="metrics?.channels" :packets="recentPackets" />
         </div>
 
-        <!-- Frontrun Analysis Tab -->
-        <div v-if="activeTab === 'frontrun'" class="space-y-6">
-          <!-- Frontrun Statistics -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <MetricCard
-              title="Total Frontrun Events"
-              :value="totalFrontrunEvents"
-              icon="ZapIcon"
-              color="warning"
-            />
-            <MetricCard
-              title="Most Frontrun Relayer"
-              :value="mostFrontrunRelayer?.address || 'N/A'"
-              :subtitle="`${mostFrontrunRelayer?.frontrunCount || 0} times`"
-              icon="UserXIcon"
-              color="error"
-            />
-            <MetricCard
-              title="Top Frontrunner"
-              :value="topFrontrunner?.address || 'N/A'"
-              :subtitle="`Won ${topFrontrunner?.wonCount || 0} times`"
-              icon="TrophyIcon"
-              color="warning"
-            />
-          </div>
-
-          <!-- Frontrun Timeline -->
-          <FrontrunTimeline :events="metrics?.frontrunEvents" />
-
-          <!-- Competition Heatmap -->
-          <CompetitionHeatmap :events="metrics?.frontrunEvents" :relayers="metrics?.relayers" />
-        </div>
-
         <!-- Alerts & Issues Tab -->
         <div v-if="activeTab === 'alerts'" class="space-y-6">
           <!-- Stuck Packets Alert -->
@@ -268,8 +235,6 @@ import SoftwareDistribution from '@/components/monitoring/SoftwareDistribution.v
 import ChannelPerformanceTable from '@/components/monitoring/ChannelPerformanceTable.vue'
 import ChannelFlowSankey from '@/components/monitoring/ChannelFlowSankey.vue'
 import CongestionAnalysis from '@/components/monitoring/CongestionAnalysis.vue'
-import FrontrunTimeline from '@/components/monitoring/FrontrunTimeline.vue'
-import CompetitionHeatmap from '@/components/monitoring/CompetitionHeatmap.vue'
 import StuckPacketsAlert from '@/components/monitoring/StuckPacketsAlert.vue'
 import ConnectionIssues from '@/components/monitoring/ConnectionIssues.vue'
 import PerformanceAlerts from '@/components/monitoring/PerformanceAlerts.vue'
@@ -293,7 +258,6 @@ const tabs = [
   { id: 'chains', name: 'Chains', icon: Link, badge: computed(() => metrics.value?.chains.length) },
   { id: 'relayers', name: 'Relayers', icon: Users, badge: computed(() => metrics.value?.relayers.length) },
   { id: 'channels', name: 'Channels', icon: BarChart3 },
-  { id: 'frontrun', name: 'Competition', icon: Zap },
   { id: 'alerts', name: 'Alerts', icon: AlertTriangle, badge: computed(() => alertCount.value || null) }
 ]
 
@@ -435,11 +399,23 @@ const packetFlowData = computed(() => {
   // Generate packet flow data from metrics
   if (!metrics.value) return { labels: [], datasets: [] }
   
+  // Generate hourly packet flow based on total daily packets
+  const totalPackets = metrics.value?.system?.totalPackets || 1000
+  const baseHourlyRate = totalPackets / 24
+  
+  // Create a realistic daily pattern (higher during business hours)
+  const hourlyPattern = [
+    0.6, 0.5, 0.4, 0.4, 0.5, 0.7, // 00:00 - 05:00 (low activity)
+    0.9, 1.2, 1.4, 1.5, 1.6, 1.5, // 06:00 - 11:00 (morning ramp up)
+    1.4, 1.5, 1.6, 1.7, 1.6, 1.4, // 12:00 - 17:00 (peak hours)
+    1.2, 1.0, 0.9, 0.8, 0.7, 0.6  // 18:00 - 23:00 (evening decline)
+  ]
+  
   return {
     labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
     datasets: [{
       label: 'Packet Flow',
-      data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 100 + 50)),
+      data: hourlyPattern.map(multiplier => Math.floor(baseHourlyRate * multiplier)),
       borderColor: 'rgb(59, 130, 246)',
       backgroundColor: 'rgba(59, 130, 246, 0.1)'
     }]
@@ -451,10 +427,10 @@ const projectedVolume = computed(() => {
   const currentRate = metrics.value?.system?.totalPackets || 50000
   const hourlyRate = currentRate / 24 // Simple hourly average
   
-  // Generate 24-hour projection data points
+  // Generate 24-hour projection data points with trend
   return Array.from({ length: 24 }, (_, i) => ({
     time: new Date(Date.now() + i * 3600000).toISOString(),
-    value: Math.round(hourlyRate * (0.8 + Math.random() * 0.4))
+    value: Math.round(hourlyRate * (1 + (i * 0.01))) // Slight growth trend
   }))
 })
 
@@ -502,9 +478,12 @@ const peakActivityPeriod = computed(() => {
   const hourlyVolumes = new Map<number, number>()
   const now = new Date()
   
-  // Aggregate by hour (simplified - would need real timestamp data)
-  for (let hour = 0; hour < 24; hour++) {
-    hourlyVolumes.set(hour, Math.random() * 1000) // Placeholder until we have timestamps
+  // Aggregate by hour from recent packets
+  if (metrics.value?.recentPackets) {
+    metrics.value.recentPackets.forEach(packet => {
+      const hour = new Date(packet.timestamp).getHours()
+      hourlyVolumes.set(hour, (hourlyVolumes.get(hour) || 0) + 1)
+    })
   }
   
   const sorted = Array.from(hourlyVolumes.entries()).sort((a, b) => b[1] - a[1])
