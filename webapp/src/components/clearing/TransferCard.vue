@@ -113,6 +113,7 @@ import StatusBadge from './StatusBadge.vue'
 import CopyButton from '@/components/CopyButton.vue'
 import { getChannelPair, formatAmount } from '@/config/chains'
 import { formatDistanceToNow } from 'date-fns'
+import { configService } from '@/services/config'
 import type { Transfer, StuckPacket } from '@/types/clearing'
 
 const props = defineProps<{
@@ -154,15 +155,6 @@ const formatDuration = (ms: number): string => {
 }
 
 const getExplorerUrl = (chain: string, txHash: string): string => {
-  const explorers: Record<string, string> = {
-    'cosmoshub-4': 'https://www.mintscan.io/cosmos/txs/',
-    'osmosis-1': 'https://www.mintscan.io/osmosis/txs/',
-    'neutron-1': 'https://www.mintscan.io/neutron/txs/',
-    'terra2-1': 'https://www.mintscan.io/terra/txs/',
-    'juno-1': 'https://www.mintscan.io/juno/txs/'
-  }
-  
-  const baseUrl = explorers[chain] || 'https://www.mintscan.io/cosmos/txs/'
-  return `${baseUrl}${txHash}`
+  return configService.getExplorerUrl(chain, txHash)
 }
 </script>

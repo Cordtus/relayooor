@@ -162,6 +162,7 @@ import { CheckIcon, CheckCircleIcon } from 'lucide-vue-next'
 import { clearingService, type ClearingToken, type ClearingStatus, type TokenResponse } from '@/services/clearing'
 import { packetsService, type UserTransfer, type StuckPacket } from '@/services/packets'
 import { useWalletStore } from '@/stores/wallet'
+import { configService } from '@/services/config'
 import PacketSelector from './PacketSelector.vue'
 import FeeEstimator from './FeeEstimator.vue'
 import PaymentPrompt from './PaymentPrompt.vue'
@@ -169,12 +170,16 @@ import ClearingProgress from './ClearingProgress.vue'
 import Button from '@/components/ui/Button.vue'
 
 // Helper function to infer chain from wallet address prefix
-function inferChainFromAddress(address: string): string | null {
+async function inferChainFromAddress(address: string): Promise<string | null> {
   if (!address) return null
-  if (address.startsWith('osmo1')) return 'osmosis-1'
-  if (address.startsWith('cosmos1')) return 'cosmoshub-4'
-  if (address.startsWith('neutron1')) return 'neutron-1'
-  return null
+  
+  // Extract the prefix (everything before the '1')
+  const match = address.match(/^([a-z]+)1/)
+  if (!match) return null
+  
+  const prefix = match[1]
+  const chain = await configService.getChainByPrefix(prefix)
+  return chain?.chain_id || null
 }
 
 // Helper to parse stuck duration
@@ -328,16 +333,8 @@ const startNew = () => {
 }
 
 const getExplorerUrl = (txHash: string): string => {
-  // Get explorer URL based on chain
-  const explorers: Record<string, string> = {
-    'osmosis-1': 'https://www.mintscan.io/osmosis/tx/',
-    'cosmoshub-4': 'https://www.mintscan.io/cosmos/tx/',
-  }
-  
   const chain = selectedPackets.value[0]?.sourceChain || 'osmosis-1'
-  const baseUrl = explorers[chain] || explorers['osmosis-1']
-  
-  return `${baseUrl}${txHash}`
+  return configService.getExplorerUrl(chain, txHash)
 }
 
 </script>
