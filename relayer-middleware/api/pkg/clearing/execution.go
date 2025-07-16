@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"relayooor/api/pkg/circuitbreaker"
@@ -31,7 +31,7 @@ type ExecutionServiceV2 struct {
 	circuitBreaker *circuitbreaker.CircuitBreaker
 	retrier        *retry.Retrier
 	refundService  *RefundService
-	tracker        *OperationTracker
+	tracker        OperationTracker
 }
 
 // HermesClient interface for Hermes interactions
@@ -73,7 +73,7 @@ func NewExecutionServiceV2(
 	redis *redis.Client,
 	hermesClient HermesClient,
 	refundService *RefundService,
-	tracker *OperationTracker,
+	tracker OperationTracker,
 	logger *zap.Logger,
 ) *ExecutionServiceV2 {
 	// Wrap Hermes client with circuit breaker

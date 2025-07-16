@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 	"time"
 
@@ -73,7 +73,7 @@ func (h *HandlersV2) RequestToken(c *gin.Context) {
 	// Log request details (with sensitive data masked)
 	logger.Info("Token request received",
 		zap.String("wallet", maskWallet(request.WalletAddress)),
-		zap.Int("packet_count", len(request.PacketIdentifiers)),
+		zap.Int("packet_count", len(request.Targets.Packets)),
 		zap.String("chain_id", request.ChainID),
 	)
 
@@ -178,9 +178,13 @@ func (h *HandlersV2) VerifyPayment(c *gin.Context) {
 	}
 
 	logger.Info("Payment verified successfully",
-		zap.String("operation_id", response.OperationID),
-		zap.Bool("success", response.Success),
+		zap.String("token", request.Token),
+		zap.Bool("verified", response.Verified),
+		zap.String("status", response.Status),
 	)
+
+	// Generate operation ID
+	operationID := uuid.New().String()
 
 	// Broadcast payment verification via WebSocket
 	h.wsManager.Broadcast(request.Token, WebSocketMessage{
@@ -188,8 +192,8 @@ func (h *HandlersV2) VerifyPayment(c *gin.Context) {
 		Token:     request.Token,
 		Timestamp: time.Now(),
 		Data: map[string]interface{}{
-			"operation_id": response.OperationID,
-			"status":       "queued",
+			"operation_id": operationID,
+			"status":       response.Status,
 		},
 	})
 
@@ -570,7 +574,7 @@ func (h *HandlersV2) getUserStatistics(ctx context.Context, wallet string) (*Use
 	stats.FailedClears = int(result.FailedClears)
 	stats.TotalPacketsCleared = int(result.TotalPacketsCleared)
 	stats.AvgClearTime = int(result.AvgClearTime)
-	stats.TotalFeesSpent = result.TotalFeesSpent
+	stats.TotalFeesPaid = result.TotalFeesSpent
 	
 	if stats.TotalRequests > 0 {
 		stats.SuccessRate = float64(stats.SuccessfulClears) / float64(stats.TotalRequests)
@@ -588,11 +592,11 @@ func (h *HandlersV2) getUserStatistics(ctx context.Context, wallet string) (*Use
 		stats.History = make([]ClearingHistoryItem, len(recentOps))
 		for i, op := range recentOps {
 			stats.History[i] = ClearingHistoryItem{
-				Timestamp:      op.CreatedAt,
-				Type:           op.RequestType,
+				Timestamp:      op.StartedAt,
+				Type:           op.OperationType,
 				PacketsCleared: op.PacketsCleared,
 				Fee:            op.ActualFeePaid,
-				TxHashes:       []string{op.ClearingTxHash},
+				TxHashes:       op.ExecutionTxHashes,
 			}
 		}
 	}
@@ -883,8 +887,3 @@ func getDefaultPlatformStats() *PlatformStatistics {
 		},
 	}
 }
-
-// Additional imports
-import (
-	"os"
-)

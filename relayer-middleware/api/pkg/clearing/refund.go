@@ -102,7 +102,7 @@ func (s *RefundService) ProcessRefund(ctx context.Context, operationID string, r
 		return err
 	}
 
-	if balance.IsLT(refundAmount.Amount) {
+	if balance.LT(refundAmount.Amount) {
 		logger.Error("Insufficient balance for refund",
 			zap.String("required", refundAmount.String()),
 			zap.String("available", balance.String()),
@@ -175,8 +175,8 @@ func (s *RefundService) calculateRefundAmount(operation ClearingOperation) (sdk.
 
 	// Estimate network fee for refund transaction
 	estimatedGas := sdk.NewInt(80000) // Typical gas for bank send
-	gasPrice := sdk.NewDecFromStr("0.025") // Get from chain config
-	networkFee := estimatedGas.ToDec().Mul(gasPrice).TruncateInt()
+	gasPrice, _ := sdk.NewDecFromStr("0.025") // Get from chain config
+	networkFee := sdk.NewDecFromInt(estimatedGas).Mul(gasPrice).TruncateInt()
 
 	// Calculate refund amount (paid - network fee)
 	refundAmount := paidAmount.Amount.Sub(networkFee)
@@ -197,14 +197,14 @@ func (s *RefundService) getServiceWalletBalance(ctx context.Context, denom strin
 
 func (s *RefundService) executeRefund(ctx context.Context, refund RefundableOperation, amount sdk.Coin) (string, error) {
 	// Create refund message
-	msg := &banktypes.MsgSend{
+	_ = &banktypes.MsgSend{
 		FromAddress: s.serviceWallet.Address,
 		ToAddress:   refund.RefundAddress,
 		Amount:      sdk.NewCoins(amount),
 	}
 
 	// Add memo explaining refund
-	memo := fmt.Sprintf("Refund for clearing operation %s: %s",
+	_ = fmt.Sprintf("Refund for clearing operation %s: %s",
 		truncateID(refund.OperationID), refund.RefundReason)
 
 	// TODO: Implement actual transaction signing and broadcasting

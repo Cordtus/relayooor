@@ -1,7 +1,6 @@
 package clearing
 
 import (
-	"sync"
 	"time"
 	
 	"relayooor/api/pkg/types"
@@ -68,47 +67,6 @@ type ChannelKey struct {
 	PortID    string
 }
 
-// Transaction represents a blockchain transaction
-type Transaction struct {
-	Hash        string    `json:"hash"`
-	FromAddress string    `json:"from_address"`
-	ToAddress   string    `json:"to_address"`
-	Amount      string    `json:"amount"`
-	Memo        string    `json:"memo"`
-	Messages    []Message `json:"messages"`
-	Height      int64     `json:"height"`
-	Timestamp   time.Time `json:"timestamp"`
-}
-
-// Message represents a transaction message
-type Message struct {
-	Type   string                 `json:"type"`
-	Sender string                 `json:"sender"`
-	Data   map[string]interface{} `json:"data"`
-}
-
-// ErrOverpayment represents an overpayment error
-type ErrOverpayment struct {
-	Required string
-	Paid     string
-	Excess   string
-}
-
-func (e *ErrOverpayment) Error() string {
-	return "overpayment detected"
-}
-
-// IsOverpayment checks if an error is an overpayment error
-func IsOverpayment(err error) bool {
-	_, ok := err.(*ErrOverpayment)
-	return ok
-}
-
-// ServiceWallet represents the service wallet for refunds
-type ServiceWallet struct {
-	Address    string
-	PrivateKey string // In production, use secure key management
-}
 
 // RefundRequest represents a refund request
 type RefundRequest struct {
@@ -144,49 +102,4 @@ type WalletAuthResponse struct {
 	Wallet       string    `json:"wallet"`
 }
 
-// OperationTracker tracks active operations
-type OperationTracker struct {
-	operations map[string]*ActiveOperation
-	mu         sync.RWMutex
-}
-
-// NewOperationTracker creates a new operation tracker
-func NewOperationTracker() *OperationTracker {
-	return &OperationTracker{
-		operations: make(map[string]*ActiveOperation),
-	}
-}
-
-// Add adds an operation to tracking
-func (t *OperationTracker) Add(op *ActiveOperation) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.operations[op.ID] = op
-}
-
-// Remove removes an operation from tracking
-func (t *OperationTracker) Remove(id string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	delete(t.operations, id)
-}
-
-// GetAll returns all active operations
-func (t *OperationTracker) GetAll() []*ActiveOperation {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	
-	ops := make([]*ActiveOperation, 0, len(t.operations))
-	for _, op := range t.operations {
-		ops = append(ops, op)
-	}
-	return ops
-}
-
-// Count returns the number of active operations
-func (t *OperationTracker) Count() int {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return len(t.operations)
-}
 

@@ -133,7 +133,7 @@ func initializeTermDefinitions() map[string]TermDefinition {
 		"gas": {
 			Term:       "gas",
 			Definition: "Network fees paid to process transactions on the blockchain. Like postage for your transfer",
-			Examples:   []string{"Gas fee: 0.01 OSMO", "Estimated gas: 200,000"],
+			Examples:   []string{"Gas fee: 0.01 OSMO", "Estimated gas: 200,000"},
 			Related:    []string{"fee", "transaction"},
 		},
 		"ibc": {

@@ -72,9 +72,11 @@ type PaymentVerificationRequest struct {
 
 // PaymentVerificationResponse represents the verification result
 type PaymentVerificationResponse struct {
-	Verified bool   `json:"verified"`
-	Status   string `json:"status"` // pending, verified, insufficient, invalid
-	Message  string `json:"message,omitempty"`
+	Success     bool   `json:"success"`
+	Verified    bool   `json:"verified"`
+	OperationID string `json:"operationId"`
+	Status      string `json:"status"` // pending, verified, insufficient, invalid
+	Message     string `json:"message,omitempty"`
 }
 
 // ClearingStatus represents the current status of a clearing operation
@@ -195,20 +197,25 @@ type PaymentMemo struct {
 
 // ClearingOperation represents a clearing operation in the database
 type ClearingOperation struct {
-	ID               uint      `json:"id"`
-	Token            string    `json:"token"`
-	WalletAddress    string    `json:"walletAddress"`
-	OperationType    string    `json:"operationType"`
-	PacketsTargeted  int       `json:"packetsTargeted"`
-	PacketsCleared   int       `json:"packetsCleared"`
-	PacketsFailed    int       `json:"packetsFailed"`
-	StartedAt        time.Time `json:"startedAt"`
-	CompletedAt      *time.Time `json:"completedAt,omitempty"`
-	DurationMs       int       `json:"durationMs,omitempty"`
-	Success          bool      `json:"success"`
-	ErrorMessage     string    `json:"errorMessage,omitempty"`
-	GasUsed          string    `json:"gasUsed"`
-	ActualFeePaid    string    `json:"actualFeePaid"`
-	PaymentTxHash    string    `json:"paymentTxHash"`
-	ExecutionTxHashes []string  `json:"executionTxHashes"`
+	ID                string     `json:"id" gorm:"primaryKey"`
+	TokenID           string     `json:"tokenId"`
+	WalletAddress     string     `json:"walletAddress"`
+	ChainID           string     `json:"chainId"`
+	PaymentTxHash     string     `json:"paymentTxHash"`
+	PaymentAddress    string     `json:"paymentAddress"`
+	ServiceFee        string     `json:"serviceFee"`
+	EstimatedGasFee   string     `json:"estimatedGasFee"`
+	ActualFeePaid     string     `json:"actualFeePaid"`
+	FeeDenom          string     `json:"feeDenom"`
+	Status            string     `json:"status"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
+	CompletedAt       *time.Time `json:"completedAt,omitempty"`
+	ClearingTxHash    string     `json:"clearingTxHash,omitempty"`
+	ErrorMessage      string     `json:"errorMessage,omitempty"`
+	PacketsCleared    int        `json:"packetsCleared"`
+	ExecutionTxHashes []string   `json:"executionTxHashes" gorm:"serializer:json"`
+	OperationType     string     `json:"operationType"`
+	StartedAt         time.Time  `json:"startedAt"`
+	RefundStatus      string     `json:"refundStatus,omitempty"`
 }

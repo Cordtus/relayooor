@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
@@ -88,11 +89,11 @@ func NewPool(ctx context.Context, config *PoolConfig, logger *zap.Logger) (*Pool
 	poolConfig.ConnConfig.ConnectTimeout = config.ConnectionTimeout
 
 	// Set up query logging for slow queries
-	poolConfig.BeforeAcquire = func(ctx context.Context, conn *pgxpool.Conn) bool {
+	poolConfig.BeforeAcquire = func(ctx context.Context, conn *pgx.Conn) bool {
 		return true // Could add custom logic here
 	}
 
-	poolConfig.AfterRelease = func(conn *pgxpool.Conn) bool {
+	poolConfig.AfterRelease = func(conn *pgx.Conn) bool {
 		return true // Could add custom logic here
 	}
 
@@ -109,7 +110,7 @@ func NewPool(ctx context.Context, config *PoolConfig, logger *zap.Logger) (*Pool
 	}
 
 	// Create sql.DB interface for compatibility
-	sqlDB := stdlib.OpenDBFromPool(pool)
+	sqlDB := stdlib.OpenDB(*poolConfig.ConnConfig)
 
 	logger.Info("Database pool created",
 		zap.Int32("max_connections", config.MaxConnections),
@@ -152,7 +153,7 @@ func (p *Pool) ExecuteWithTimeout(ctx context.Context, timeout time.Duration, qu
 		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
 
-	return &pgxResult{result}, nil
+	return &pgxResult{rowsAffected: result.RowsAffected()}, nil
 }
 
 // QueryWithTimeout executes a query with a timeout and returns rows
@@ -161,7 +162,7 @@ func (p *Pool) QueryWithTimeout(ctx context.Context, timeout time.Duration, quer
 	defer cancel()
 
 	start := time.Now()
-	rows, err := p.Query(ctx, query, args...)
+	rows, err := p.sqlDB.QueryContext(ctx, query, args...)
 	duration := time.Since(start)
 
 	// Log slow queries
@@ -177,8 +178,7 @@ func (p *Pool) QueryWithTimeout(ctx context.Context, timeout time.Duration, quer
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
 
-	// Convert pgx rows to sql.Rows
-	return stdlib.RowsFromRows(rows), nil
+	return rows, nil
 }
 
 // Transaction executes a function within a database transaction
@@ -224,7 +224,7 @@ func (p *Pool) HealthCheck(ctx context.Context) error {
 	p.logger.Debug("Pool health check",
 		zap.Int32("acquired_conns", stats.AcquiredConns()),
 		zap.Int32("idle_conns", stats.IdleConns()),
-		zap.Int64("total_conns", stats.TotalConns()),
+		zap.Int32("total_conns", stats.TotalConns()),
 		zap.Int64("new_conns_count", stats.NewConnsCount()),
 	)
 
@@ -271,7 +271,7 @@ func (p *Pool) Close() {
 
 // pgxResult wraps pgx result to implement sql.Result
 type pgxResult struct {
-	pgx.CommandTag
+	rowsAffected int64
 }
 
 func (r *pgxResult) LastInsertId() (int64, error) {
@@ -279,5 +279,5 @@ func (r *pgxResult) LastInsertId() (int64, error) {
 }
 
 func (r *pgxResult) RowsAffected() (int64, error) {
-	return r.CommandTag.RowsAffected(), nil
+	return r.rowsAffected, nil
 }

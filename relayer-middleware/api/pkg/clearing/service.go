@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,7 +18,6 @@ import (
 )
 
 var (
-	ErrDuplicatePayment = errors.New("duplicate payment detected")
 	ErrTokenExpired     = errors.New("token expired")
 	ErrInvalidToken     = errors.New("invalid token")
 )
@@ -85,7 +84,7 @@ func NewServiceV2(
 	// Create execution service
 	// TODO: Create actual Hermes client
 	var hermesClient HermesClient
-	tracker := NewOperationTracker()
+	tracker := &simpleOperationTracker{}
 	
 	service.executionService = NewExecutionServiceV2(
 		db,
@@ -431,7 +430,7 @@ func generatePaymentMemo(tokenID string) string {
 func (s *ServiceV2) GetStatus(ctx context.Context, tokenID string) (*ClearingStatus, error) {
 	// Try to get from Redis first (for tokens not yet verified)
 	tokenKey := fmt.Sprintf("token:%s", tokenID)
-	if tokenData, err := s.redisClient.Get(ctx, tokenKey).Result(); err == nil {
+	if _, err := s.redisClient.Get(ctx, tokenKey).Result(); err == nil {
 		// Token exists but not verified yet
 		return &ClearingStatus{
 			Status:    "pending_payment",
@@ -476,4 +475,25 @@ func (s *ServiceV2) GetStatus(ctx context.Context, tokenID string) (*ClearingSta
 		UpdatedAt: operation.UpdatedAt,
 		TxHashes:  []string{operation.ClearingTxHash},
 	}, nil
+}
+
+// simpleOperationTracker is a basic implementation of OperationTracker
+type simpleOperationTracker struct {
+	mu sync.Mutex
+	operations map[string]*ActiveOperation
+}
+
+func (t *simpleOperationTracker) Add(op *ActiveOperation) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.operations == nil {
+		t.operations = make(map[string]*ActiveOperation)
+	}
+	t.operations[op.ID] = op
+}
+
+func (t *simpleOperationTracker) Remove(id string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.operations, id)
 }

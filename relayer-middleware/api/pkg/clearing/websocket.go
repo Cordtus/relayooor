@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -534,10 +536,3 @@ func (m *WebSocketManager) GetConnectionStats() map[string]interface{} {
 		"timestamp":         time.Now(),
 	}
 }
-
-// Additional imports
-import (
-	"strings"
-
-	"github.com/google/uuid"
-)
