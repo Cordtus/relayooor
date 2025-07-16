@@ -4,7 +4,7 @@
     
     <div class="grid grid-cols-1 gap-6">
       <!-- Monitoring Configuration -->
-      <Card>
+      <div class="bg-white shadow sm:rounded-lg">
         <template #header>
           <h3 class="text-lg font-semibold">Monitoring Configuration</h3>
         </template>
@@ -53,10 +53,10 @@
             </label>
           </div>
         </div>
-      </Card>
+      </div>
 
       <!-- Connected Services -->
-      <Card>
+      <div class="bg-white shadow sm:rounded-lg">
         <template #header>
           <h3 class="text-lg font-semibold">Connected Services</h3>
         </template>
@@ -110,10 +110,10 @@
         >
           {{ testing ? 'Testing...' : 'Test Connections' }}
         </button>
-      </Card>
+      </div>
 
       <!-- Chain Configuration -->
-      <Card>
+      <div class="bg-white shadow sm:rounded-lg">
         <template #header>
           <h3 class="text-lg font-semibold">Chain Configuration</h3>
         </template>
@@ -138,10 +138,10 @@
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       <!-- Advanced Settings -->
-      <Card>
+      <div class="bg-white shadow sm:rounded-lg">
         <template #header>
           <h3 class="text-lg font-semibold">Advanced Settings</h3>
         </template>
@@ -189,7 +189,7 @@
             <p class="text-sm text-gray-500 mt-1">Shows additional debugging information</p>
           </div>
         </div>
-      </Card>
+      </div>
 
       <!-- Actions -->
       <div class="flex justify-between items-center">
@@ -222,7 +222,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from 'vue-toastification'
-import Card from '@/components/Card.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useConnectionStore } from '@/stores/connection'
 import { apiClient } from '@/services/api'

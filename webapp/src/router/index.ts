@@ -21,12 +21,13 @@ const routes: RouteRecordRaw[] = [
     path: '/analytics',
     name: 'analytics',
     component: () => import('@/views/Analytics.vue')
-  },
-  {
-    path: '/settings',
-    name: 'settings',
-    component: () => import('@/views/Settings.vue')
   }
+  // Temporarily disabled due to build issue
+  // {
+  //   path: '/settings',
+  //   name: 'settings',
+  //   component: () => import('@/views/Settings.vue')
+  // }
 ]
 
 export const router = createRouter({
