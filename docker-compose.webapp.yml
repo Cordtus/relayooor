@@ -1,0 +1,29 @@
+services:
+  # API Backend
+  api-backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ENVIRONMENT=development
+    networks:
+      - relayooor-net
+
+  # Web App
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api-backend
+    networks:
+      - relayooor-net
+
+networks:
+  relayooor-net:
+    driver: bridge

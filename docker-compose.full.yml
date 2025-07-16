@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Chainpulse monitoring service
+  chainpulse:
+    build:
+      context: ./monitoring/chainpulse
+      dockerfile: Dockerfile.fork
+    container_name: chainpulse
+    ports:
+      - "3000:3000"     # API port
+      - "3001:3001"     # Metrics port
+    volumes:
+      - ./config/chainpulse.toml:/app/chainpulse.toml
+      - chainpulse_data:/data
+    command: ["--config", "/app/chainpulse.toml"]
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+  # API Backend service
+  api-backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: api-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - CHAINPULSE_URL=http://chainpulse:3000
+      - PROMETHEUS_URL=http://prometheus:9090
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/relayooor
+    depends_on:
+      - chainpulse
+      - postgres
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+  # Vue.js webapp
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8080
+        - VITE_CHAINPULSE_URL=http://localhost:3000
+    container_name: webapp
+    ports:
+      - "80:80"
+    depends_on:
+      - api-backend
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=relayooor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+  # Grafana for visualization (optional)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3003:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana-poc/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana-poc/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - relayooor-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+  chainpulse_data:
+
+networks:
+  relayooor-network:
+    driver: bridge

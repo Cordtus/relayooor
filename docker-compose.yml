@@ -1,26 +1,25 @@
-version: '3.8'
-
 services:
-  # Relayer Middleware
-  relayer:
+  # Our working API Backend
+  api-backend:
     build:
-      context: ./relayer-middleware
+      context: ./api
       dockerfile: Dockerfile
     environment:
-      - ACTIVE_RELAYER=hermes
+      - API_PORT=3000
+      - CHAINPULSE_URL=http://chainpulse:3001
+      - DATABASE_URL=postgresql://relayooor:relayooor@postgres:5432/relayooor?sslmode=disable
+      - REDIS_URL=redis://redis:6379
       - RPC_USERNAME=${RPC_USERNAME}
       - RPC_PASSWORD=${RPC_PASSWORD}
-    volumes:
-      - ./config/hermes:/config/hermes:ro
-      - ./config/keys:/config/keys:ro
-      - hermes-data:/root/.hermes
-      - ./logs/relayer:/var/log/relayers
     ports:
-      - "3000:3000"  # Hermes REST API
-      - "3001:3001"  # Hermes telemetry
+      - "3000:8080"
     restart: unless-stopped
     networks:
       - relayooor-net
+    depends_on:
+      - chainpulse
+      - postgres
+      - redis
 
   # Chainpulse Monitoring
   chainpulse:
@@ -30,11 +29,59 @@ services:
     environment:
       - RPC_USERNAME=${RPC_USERNAME}
       - RPC_PASSWORD=${RPC_PASSWORD}
+      - COSMOS_WS_URL=${COSMOS_WS_URL:-wss://cosmos-rpc.polkachu.com/websocket}
+      - OSMOSIS_WS_URL=${OSMOSIS_WS_URL:-wss://osmosis-rpc.polkachu.com/websocket}
+      - NEUTRON_WS_URL=${NEUTRON_WS_URL:-wss://neutron-rpc.polkachu.com/websocket}
+      - NOBLE_WS_URL=${NOBLE_WS_URL:-wss://noble-rpc.polkachu.com/websocket}
     volumes:
-      - ./monitoring/config/chainpulse-cosmos-osmosis.toml:/config/chainpulse.toml:ro
+      - ./config/chainpulse-selected.toml:/config/chainpulse.toml:ro
       - chainpulse-data:/data
     ports:
-      - "3002:3001"  # Metrics endpoint (mapped to avoid conflict)
+      - "3001:3001"  # Metrics endpoint
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+
+  # Frontend Web Application
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_URL=http://api-backend:8080
+      - VITE_CHAINPULSE_URL=http://chainpulse:3001
+    ports:
+      - "80:80"
+    depends_on:
+      - api-backend
+      - chainpulse
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=relayooor
+      - POSTGRES_PASSWORD=relayooor
+      - POSTGRES_DB=relayooor
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
     restart: unless-stopped
     networks:
       - relayooor-net
@@ -57,7 +104,6 @@ services:
       - relayooor-net
     depends_on:
       - chainpulse
-      - relayer
 
   # Grafana
   grafana:
@@ -66,58 +112,42 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     volumes:
       - ./monitoring/config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/config/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "3003:3000"  # Grafana (mapped to avoid conflict)
+      - "3003:3000"
     restart: unless-stopped
     networks:
       - relayooor-net
     depends_on:
       - prometheus
 
-  # API Backend
-  api-backend:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+  # Hermes IBC Relayer
+  hermes:
+    image: ghcr.io/informalsystems/hermes:1.10.5
     environment:
-      - PORT=8080
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      - CHAINPULSE_URL=http://chainpulse:3001
-      - HERMES_API_URL=http://relayer:3000
-      - PROMETHEUS_URL=http://prometheus:9090
+      - RUST_LOG=info
+    volumes:
+      - ./config/hermes:/home/hermes/.hermes:ro
+      - hermes-data:/data
     ports:
-      - "8080:8080"
+      - "3010:3001"  # Telemetry
+      - "5185:5185"  # REST API
+    command: ["start"]
     restart: unless-stopped
     networks:
       - relayooor-net
-    depends_on:
-      - chainpulse
-      - relayer
-      - prometheus
-
-  # Web App
-  webapp:
-    build:
-      context: ./webapp
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    restart: unless-stopped
-    networks:
-      - relayooor-net
-    depends_on:
-      - api-backend
-
-volumes:
-  hermes-data:
-  chainpulse-data:
-  prometheus-data:
-  grafana-data:
 
 networks:
   relayooor-net:
     driver: bridge
+
+volumes:
+  chainpulse-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  hermes-data:

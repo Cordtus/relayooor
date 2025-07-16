@@ -1,131 +1,188 @@
-# Relayooor Web App
+# Relayooor Web Application
 
-User-friendly dashboard for IBC monitoring and packet clearing with wallet integration.
+Vue.js-based frontend for the IBC packet clearing platform that provides an interface for clearing stuck IBC transfers.
 
 ## Features
 
-- **Real-time Monitoring**: Live IBC metrics and packet flow visualization
-- **Wallet Integration**: Connect Keplr wallet to manage packets
-- **Packet Clearing**: Clear individual packets or entire channels
-- **Channel Overview**: View all IBC channels and their status
-- **Responsive Design**: Works on desktop and mobile devices
-
-## Tech Stack
-
-- React 18 with TypeScript
-- Vite for fast development
-- TailwindCSS for styling
-- React Query for data fetching
-- Chart.js for visualizations
-- CosmJS for blockchain interactions
-- Socket.io for real-time updates
-
-## Prerequisites
-
-- Node.js 20+
-- Keplr wallet extension (for packet clearing)
+- **Wallet Integration**: Connect with Keplr to view your stuck transfers
+- **Packet Clearing Wizard**: 5-step process for secure packet clearing
+- **Real-time Updates**: WebSocket integration for live clearing status
+- **Multi-chain Support**: Works with Osmosis, Cosmos Hub, Neutron, and more
+- **User Statistics**: Track your clearing history and success rates
 
 ## Development
 
-1. Install dependencies:
+### Prerequisites
+- Node.js 16+ and Yarn
+- Backend API running on port 3000
+- Redis for WebSocket support
+
+### Quick Start
+
 ```bash
+# Install dependencies
 yarn install
-```
 
-2. Start development server:
-```bash
+# Start development server
 yarn dev
+
+# Build for production
+yarn build
+
+# Run linting
+yarn lint
+
+# Run type checking
+yarn typecheck
 ```
 
-3. Open http://localhost:3000
+### Environment Variables
 
-## API Integration
+Create `.env` file:
+```env
+VITE_API_URL=http://localhost:3000
+VITE_WS_URL=ws://localhost:3000
+VITE_CHAINPULSE_URL=http://localhost:3001
+```
 
-The app expects the following backend services:
-- API backend on port 8080
-- WebSocket support for real-time updates
+## Project Structure
 
-Configure API endpoints in `vite.config.ts`.
+```
+src/
+├── components/         # Reusable UI components
+│   ├── clearing/      # Packet clearing wizard components
+│   └── monitoring/    # Monitoring and analytics components
+├── views/             # Page components
+│   ├── Home.vue       # Landing page
+│   ├── Clearing.vue   # Packet clearing interface
+│   └── Stats.vue      # User statistics page
+├── services/          # API service layers
+│   ├── api.ts         # Base API client
+│   ├── clearing.ts    # Clearing operations
+│   └── stats.ts       # Statistics fetching
+├── stores/            # Pinia state management
+│   ├── wallet.ts      # Wallet connection state
+│   └── clearing.ts    # Clearing operation state
+├── types/             # TypeScript type definitions
+└── utils/             # Helper functions
+```
+
+## Key Components
+
+### ClearingWizard.vue
+Main component that implements the 5-step clearing process:
+1. **Select** - Choose stuck packets to clear
+2. **Fees** - Review service and gas fees
+3. **Payment** - Make payment with memo
+4. **Clearing** - Monitor clearing progress
+5. **Complete** - View results
+
+### WalletConnect.vue
+Manages Keplr wallet integration:
+- Chain switching
+- Address management
+- Message signing for authentication
+
+### PacketSelector.vue
+Displays and manages stuck packet selection with sortable columns, batch operations, and status indicators.
+
+## Styling
+
+Uses TailwindCSS with custom configuration for responsive design, custom color palette, and utility classes.
+
+## Configuration
+
+### Supported Chains
+Configure in `src/config/chains.ts`:
+```typescript
+export const SUPPORTED_CHAINS = {
+  'osmosis-1': {
+    name: 'Osmosis',
+    logo: '/osmosis-logo.svg',
+    rpc: 'https://rpc.osmosis.zone',
+    denom: 'uosmo'
+  },
+  // Add more chains...
+}
+```
+
+### API Integration
+All API calls go through `src/services/api.ts`:
+- Automatic token refresh
+- Error handling
+- Request/response interceptors
+
+## Testing
+
+```bash
+# Run unit tests (when configured)
+yarn test
+
+# Run e2e tests (when configured)
+yarn test:e2e
+```
 
 ## Building for Production
 
 ```bash
+# Create production build
 yarn build
+
+# Preview production build
+yarn preview
+
+# Analyze bundle size
+yarn build --report
 ```
 
-The built files will be in the `dist` directory.
+## Deployment
 
-## Docker Deployment
+The application is configured for static hosting:
+- Nginx configuration in `../docker/nginx.conf`
+- Environment variables injected at build time
+- Health check endpoint at `/health`
 
-Build the Docker image:
+### Docker Deployment
 ```bash
 docker build -t relayooor-webapp .
-```
-
-Run the container:
-```bash
 docker run -p 80:80 relayooor-webapp
 ```
 
-## Environment Variables
+## Debugging
 
-Create a `.env` file for configuration:
-```env
-VITE_API_URL=http://localhost:8080
-VITE_WS_URL=ws://localhost:8080
-```
+### Development Tools
+- Vue DevTools for component inspection
+- Network tab for API debugging
+- Console for WebSocket messages
 
-## Pages
+### Common Issues
 
-### Dashboard
-Main overview with key metrics:
-- Stuck packets count
-- Active channels
-- Packet flow rate
-- Success rate
-- Real-time packet flow chart
-- Top stuck packets
+**Wallet Connection Failed**
+- Ensure Keplr is installed
+- Check chain configuration
+- Verify localhost is allowed in Keplr
 
-### Channels
-List of all IBC channels with:
-- Channel status (open/closed)
-- Source and destination chains
-- Pending packets count
-- Total packets processed
+**API Connection Issues**
+- Verify backend is running
+- Check CORS configuration
+- Confirm API URL in .env
 
-### Packet Clearing
-Wallet-connected interface for:
-- Viewing stuck packets
-- Filtering by wallet address
-- Selecting packets to clear
-- Clearing entire channels
-- Batch operations
-
-### Settings
-Configuration options:
-- Monitoring preferences
-- Refresh intervals
-- Service connection status
-
-## Wallet Integration
-
-The app uses Keplr wallet for:
-- User authentication
-- Signing transactions
-- Filtering packets by sender
-
-Supported chains:
-- Osmosis
-- Cosmos Hub
-- Sei Network
+**WebSocket Disconnections**
+- Check Redis is running
+- Verify WebSocket URL
+- Monitor network stability
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+1. Follow Vue 3 Composition API patterns
+2. Use TypeScript for all new code
+3. Maintain responsive design
+4. Add appropriate error handling
+5. Update tests for new features
 
-## License
+## Resources
 
-MIT
+- [Vue 3 Documentation](https://vuejs.org/)
+- [Pinia State Management](https://pinia.vuejs.org/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [Keplr Wallet Docs](https://docs.keplr.app/)

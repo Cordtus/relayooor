@@ -1,4 +1,10 @@
 # Chainpulse configuration for monitoring popular IBC paths
+# Based on the latest chainpulse with CometBFT 0.38 support
+
+# Global configuration
+[global]
+# IBC versions supported by this instance
+ibc_versions = ["v1"]
 
 # Database configuration
 [database]
@@ -9,28 +15,33 @@ path = "/data/chainpulse.db"
 enabled = true
 port = 3001
 stuck_packets = true
-populate_on_start = true
+populate_on_start = false  # Set to false for faster startup in Docker
 
-# Monitor popular mainnet chains
+# Monitor popular mainnet chains with proper version support
 [chains.cosmoshub-4]
 url = "wss://rpc.cosmos.network/websocket"
-comet_version = "0.37"
+comet_version = "0.34"  # Cosmos Hub still uses Tendermint 0.34
+ibc_version = "v1"
 
 [chains.osmosis-1]
 url = "wss://rpc.osmosis.zone/websocket"
-comet_version = "0.37"
+comet_version = "0.38"  # Osmosis uses CometBFT 0.38
+ibc_version = "v1"
 
 [chains.neutron-1]
-url = "wss://rpc-kralum.neutron-1.neutron.org/websocket"
-comet_version = "0.37"
+url = "wss://neutron-rpc.lavenderfive.com/websocket"
+comet_version = "0.37"  # Neutron uses CometBFT 0.37
+ibc_version = "v1"
 
 [chains.stride-1]
 url = "wss://stride-rpc.lavenderfive.com/websocket"
-comet_version = "0.37"
+comet_version = "0.37"  # Stride uses CometBFT 0.37
+ibc_version = "v1"
 
 [chains.noble-1]
-url = "wss://noble-rpc.lavenderfive.com/websocket"
-comet_version = "0.37"
+url = "wss://noble-rpc.polkachu.com/websocket"
+comet_version = "0.38"  # Noble uses CometBFT 0.38
+ibc_version = "v1"
 
 # Alternative public RPC endpoints (comment out above and use these if needed)
 # [chains.cosmoshub-4]

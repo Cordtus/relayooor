@@ -1,14 +1,17 @@
-# Build stage - using Rust 1.70 which should avoid the futures-util issue
-FROM rust:1.70-slim-bullseye as builder
+# Build stage - use latest Rust for compatibility
+FROM rust:1-slim-bullseye as builder
 
 # Install git to clone the repository
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src
 
-# Clone the forked chainpulse
-RUN git clone https://github.com/cordtus/chainpulse.git
+# Clone the forked chainpulse from main branch
+RUN git clone -b main https://github.com/cordtus/chainpulse.git
 WORKDIR /usr/src/chainpulse
+
+# Show commit info for debugging
+RUN git log -1 --oneline
 
 # Build the binary
 RUN cargo build --release
@@ -38,4 +41,4 @@ EXPOSE 3001
 VOLUME ["/data", "/config"]
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["chainpulse", "--config", "/config/chainpulse.toml"]
+CMD ["chainpulse"]

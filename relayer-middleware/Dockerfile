@@ -9,7 +9,7 @@ WORKDIR /build/hermes
 RUN cargo build --release --bin hermes
 
 # Build Hermes (legacy version for older networks)
-FROM rust:1-bookworm AS hermes-legacy-builder
+FROM rust:1.70-bookworm AS hermes-legacy-builder
 RUN apt-get update && apt-get install -y git protobuf-compiler
 WORKDIR /build
 RUN git clone https://github.com/informalsystems/hermes.git

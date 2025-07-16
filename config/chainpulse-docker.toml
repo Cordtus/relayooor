@@ -1,0 +1,57 @@
+# Chainpulse configuration for Docker deployment
+[server]
+listen_addr = "0.0.0.0:3000"
+metrics_addr = "0.0.0.0:3001"
+
+[database]
+# SQLite database for development
+path = "/app/chainpulse.db"
+
+[monitoring]
+# Interval in seconds for chain monitoring
+interval = 30
+# Timeout for RPC calls
+timeout = 10
+
+# Chain configurations
+[[chains]]
+id = "cosmoshub-4"
+name = "Cosmos Hub"
+rpc_endpoints = ["https://rpc.cosmos.directory/cosmoshub"]
+
+[[chains]]
+id = "osmosis-1"
+name = "Osmosis"
+rpc_endpoints = ["https://rpc.cosmos.directory/osmosis"]
+
+[[chains]]
+id = "juno-1"
+name = "Juno"
+rpc_endpoints = ["https://rpc.cosmos.directory/juno"]
+
+[[chains]]
+id = "axelar-dojo-1"
+name = "Axelar"
+rpc_endpoints = ["https://rpc.cosmos.directory/axelar"]
+
+# IBC paths to monitor
+[[paths]]
+name = "cosmos-osmosis"
+src_chain_id = "cosmoshub-4"
+dst_chain_id = "osmosis-1"
+src_channel_id = "channel-141"
+dst_channel_id = "channel-0"
+
+[[paths]]
+name = "osmosis-juno"
+src_chain_id = "osmosis-1"
+dst_chain_id = "juno-1"
+src_channel_id = "channel-42"
+dst_channel_id = "channel-0"
+
+[[paths]]
+name = "cosmos-axelar"
+src_chain_id = "cosmoshub-4"
+dst_chain_id = "axelar-dojo-1"
+src_channel_id = "channel-293"
+dst_channel_id = "channel-2"

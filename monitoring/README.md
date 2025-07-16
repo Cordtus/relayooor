@@ -15,11 +15,11 @@ Chainpulse-based monitoring system for IBC networks with Prometheus and Grafana 
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ Chainpulse  │────▶│ Prometheus  │────▶│   Grafana   │
+│ Chainpulse  │────>│ Prometheus  │────>│   Grafana   │
 │  (Metrics)  │     │ (Storage)   │     │ (Visualize) │
 └─────────────┘     └─────────────┘     └─────────────┘
        │
-       ▼
+       v
 ┌─────────────┐
 │IBC Networks │
 └─────────────┘

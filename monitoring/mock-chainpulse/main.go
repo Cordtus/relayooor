@@ -42,8 +42,8 @@ var (
 
 	ibcFrontrunCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "ibc_frontrun_counter",
-			Help: "Number of frontrunning events",
+			Name: "ibc_frontrun_total",
+			Help: "Total number of frontrunning events",
 		},
 		[]string{"chain_id", "frontrunned_by"},
 	)
@@ -55,6 +55,62 @@ var (
 		},
 		[]string{"chain_id", "channel", "counterparty_channel", "port", "state"},
 	)
+
+	// Additional metrics that are commonly used in IBC monitoring
+	ibcPacketAgeSeconds = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "ibc_packet_age_seconds",
+			Help: "Age of unrelayed packets in seconds",
+		},
+		[]string{"src_chain", "dst_chain", "channel", "sequence"},
+	)
+
+	ibcStuckPacketsDetailed = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "ibc_stuck_packets_detailed",
+			Help: "Detailed stuck packet tracking with user info",
+		},
+		[]string{"src_chain", "dst_chain", "channel", "sequence", "sender", "receiver", "amount", "denom"},
+	)
+
+	chainpulseChains = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "chainpulse_chains",
+			Help: "The number of chains being monitored",
+		},
+	)
+
+	chainpulseTxs = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "chainpulse_txs",
+			Help: "The number of txs processed",
+		},
+		[]string{"chain_id"},
+	)
+
+	chainpulsePackets = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "chainpulse_packets",
+			Help: "The number of packets processed",
+		},
+		[]string{"chain_id"},
+	)
+
+	chainpulseReconnects = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "chainpulse_reconnects",
+			Help: "The number of times we had to reconnect to the WebSocket",
+		},
+		[]string{"chain_id"},
+	)
+
+	chainpulseErrors = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "chainpulse_errors",
+			Help: "The number of times an error was encountered",
+		},
+		[]string{"chain_id", "error_type"},
+	)
 )
 
 func init() {
@@ -63,6 +119,13 @@ func init() {
 	prometheus.MustRegister(ibcUneffectedPackets)
 	prometheus.MustRegister(ibcFrontrunCounter)
 	prometheus.MustRegister(ibcHandshakeStates)
+	prometheus.MustRegister(ibcPacketAgeSeconds)
+	prometheus.MustRegister(ibcStuckPacketsDetailed)
+	prometheus.MustRegister(chainpulseChains)
+	prometheus.MustRegister(chainpulseTxs)
+	prometheus.MustRegister(chainpulsePackets)
+	prometheus.MustRegister(chainpulseReconnects)
+	prometheus.MustRegister(chainpulseErrors)
 }
 
 type ChannelPair struct {
@@ -119,6 +182,7 @@ func simulateMetrics() {
 				relayer := relayers[rand.Intn(len(relayers))]
 				
 				ibcFrontrunCounter.WithLabelValues(chain, relayer).Inc()
+				log.Printf("Frontrun event: chain=%s, relayer=%s", chain, relayer)
 			}
 
 			// Update channel states (should be OPEN)
@@ -131,8 +195,74 @@ func simulateMetrics() {
 					"OPEN",
 				).Set(3) // 3 = OPEN state
 			}
+
+			// Update chainpulse system metrics
+			chainpulseChains.Set(2) // Monitoring 2 chains
+			
+			chains := []string{"cosmoshub-4", "osmosis-1"}
+			for _, chain := range chains {
+				// Simulate transaction count
+				txCount := float64(rand.Intn(100) + 50)
+				chainpulseTxs.WithLabelValues(chain).Add(txCount)
+				
+				// Simulate packet count
+				packetCount := float64(rand.Intn(20) + 10)
+				chainpulsePackets.WithLabelValues(chain).Add(packetCount)
+				
+				// Occasionally simulate reconnects
+				if rand.Float32() < 0.1 {
+					chainpulseReconnects.WithLabelValues(chain).Inc()
+				}
+				
+				// Rarely simulate errors
+				if rand.Float32() < 0.05 {
+					errorTypes := []string{"timeout", "decode_error", "network_error"}
+					errorType := errorTypes[rand.Intn(len(errorTypes))]
+					chainpulseErrors.WithLabelValues(chain, errorType).Inc()
+				}
+			}
+
+			// Simulate packet age for stuck packets
+			for _, ch := range monitoredChannels {
+				// For each stuck packet, simulate age (we'll simulate 0-2 stuck packets)
+				stuckCount := rand.Intn(3)
+				for i := 0; i < stuckCount; i++ {
+					sequence := fmt.Sprintf("%d", rand.Intn(1000)+1)
+					age := float64(rand.Intn(3600) + 60) // 1 minute to 1 hour
+					ibcPacketAgeSeconds.WithLabelValues(ch.SrcChain, ch.DstChain, ch.SrcChannel, sequence).Set(age)
+					
+					// Add detailed stuck packet info
+					sender := fmt.Sprintf("%s1%s", ch.SrcChain[:4], generateRandomAddress())
+					receiver := fmt.Sprintf("%s1%s", ch.DstChain[:4], generateRandomAddress())
+					amount := fmt.Sprintf("%d", rand.Intn(10000)+100)
+					denom := "uatom"
+					if ch.SrcChain == "osmosis-1" {
+						denom = "uosmo"
+					}
+					
+					ibcStuckPacketsDetailed.WithLabelValues(
+						ch.SrcChain,
+						ch.DstChain,
+						ch.SrcChannel,
+						sequence,
+						sender,
+						receiver,
+						amount,
+						denom,
+					).Set(1)
+				}
+			}
 		}
 	}
+}
+
+func generateRandomAddress() string {
+	chars := "abcdefghijklmnopqrstuvwxyz0123456789"
+	result := make([]byte, 38)
+	for i := range result {
+		result[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(result)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {

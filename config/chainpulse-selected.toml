@@ -1,0 +1,39 @@
+# Chainpulse configuration for selected chains
+# Using Skip endpoints with authentication
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+
+# Cosmos Hub - Skip endpoint
+[chains.cosmoshub-4]
+url = "${COSMOS_WS_URL}"
+comet_version = "0.37"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Osmosis - Skip endpoint
+[chains.osmosis-1]
+url = "${OSMOSIS_WS_URL}"
+comet_version = "0.38"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Neutron - Skip endpoint
+[chains.neutron-1]
+url = "${NEUTRON_WS_URL}"
+comet_version = "0.37"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Noble - Skip endpoint
+[chains.noble-1]
+url = "${NOBLE_WS_URL}"
+comet_version = "0.38"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"

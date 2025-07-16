@@ -23,6 +23,9 @@ WORKDIR /app
 
 COPY --from=builder /build/api-server .
 
+# Set environment variables
+ENV CHAINPULSE_METRICS_URL=http://relayooor-chainpulse-1:3001
+
 EXPOSE 8080
 
 CMD ["./api-server"]

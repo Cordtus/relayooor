@@ -1,0 +1,34 @@
+# Build stage for API
+FROM golang:1.21-alpine AS api-builder
+RUN apk add --no-cache git gcc musl-dev
+
+WORKDIR /build
+COPY api/ ./api/
+
+WORKDIR /build/api
+RUN go mod download
+RUN go build -o /clearing-api cmd/server/main.go
+
+# Final runtime image
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy API binary
+COPY --from=api-builder /clearing-api /usr/local/bin/clearing-api
+
+# Add entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create necessary directories
+RUN mkdir -p /data /config
+
+EXPOSE 3000
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["clearing-api"]
