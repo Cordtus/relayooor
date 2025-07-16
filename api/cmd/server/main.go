@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -551,193 +552,149 @@ func main() {
 		// Try to get real data from Chainpulse
 		chainpulseURL := os.Getenv("CHAINPULSE_URL")
 		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3000"
+			chainpulseURL = "http://localhost:3001"
 		}
 		
 		// Fetch and parse real metrics
-		var metricsBody string
-		totalPackets := 11321 // default
-		totalTxs := 31519 // default
-		
 		metricsResp, err := http.Get(fmt.Sprintf("%s/metrics", chainpulseURL))
-		if err == nil && metricsResp.StatusCode == http.StatusOK {
-			defer metricsResp.Body.Close()
-			body, _ := io.ReadAll(metricsResp.Body)
-			metricsBody = string(body)
-			log.Printf("Successfully fetched metrics from Chainpulse")
-			
-			// Parse real packet counts
-			lines := strings.Split(metricsBody, "\n")
-			osmosisPackets := 0
-			cosmosPackets := 0
-			
-			for _, line := range lines {
-				if strings.Contains(line, "chainpulse_packets{") {
-					parts := strings.Fields(line)
-					if len(parts) == 2 {
-						if val, err := strconv.Atoi(parts[1]); err == nil {
-							if strings.Contains(line, "osmosis-1") {
-								osmosisPackets = val
-							} else if strings.Contains(line, "cosmoshub-4") {
-								cosmosPackets = val
+		if err != nil || metricsResp.StatusCode != http.StatusOK {
+			log.Printf("Failed to fetch from Chainpulse: %v", err)
+			// Return error response
+			w.WriteHeader(http.StatusServiceUnavailable)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Chainpulse unavailable"})
+			return
+		}
+		
+		defer metricsResp.Body.Close()
+		body, _ := io.ReadAll(metricsResp.Body)
+		metricsBody := string(body)
+		log.Printf("Successfully fetched metrics from Chainpulse")
+		
+		// Parse metrics using the comprehensive parser
+		parsedData := parsePrometheusMetrics(metricsBody)
+		
+		// Extract parsed data
+		chains := parsedData["chains"].([]map[string]interface{})
+		channels := parsedData["channels"].([]map[string]interface{})
+		
+		// Calculate totals from real data
+		totalChains := len(chains)
+		totalPackets := 0
+		totalTxs := 0
+		totalErrors := 0
+		
+		for _, chain := range chains {
+			if packets, ok := chain["packets_24h"].(int); ok {
+				totalPackets += packets
+			}
+			if txs, ok := chain["txs_total"].(int); ok {
+				totalTxs += txs
+			}
+			if errors, ok := chain["errors"].(int); ok {
+				totalErrors += errors
+			}
+		}
+		
+		log.Printf("Real totals - Chains: %d, Packets: %d, Txs: %d, Errors: %d", totalChains, totalPackets, totalTxs, totalErrors)
+		
+		// Extract relayer data from packet metrics
+		relayerMap := make(map[string]map[string]interface{})
+		
+		// Parse packet metrics to get relayer info
+		lines := strings.Split(metricsBody, "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "ibc_effected_packets{") || strings.HasPrefix(line, "ibc_uneffected_packets{") {
+				parts := strings.Split(line, " ")
+				if len(parts) >= 2 {
+					// Extract signer label
+					labelRe := regexp.MustCompile(`signer="([^"]+)"`)
+					matches := labelRe.FindStringSubmatch(parts[0])
+					if len(matches) > 1 {
+						signer := matches[1]
+						value, _ := strconv.ParseFloat(parts[1], 64)
+						
+						if relayerMap[signer] == nil {
+							relayerMap[signer] = map[string]interface{}{
+								"address": signer,
+								"effectedPackets": float64(0),
+								"uneffectedPackets": float64(0),
+								"totalPackets": float64(0),
 							}
 						}
-					}
-				} else if strings.Contains(line, "chainpulse_txs{") {
-					parts := strings.Fields(line)
-					if len(parts) == 2 {
-						if val, err := strconv.Atoi(parts[1]); err == nil {
-							totalTxs += val
+						
+						if strings.HasPrefix(line, "ibc_effected_packets{") {
+							relayerMap[signer]["effectedPackets"] = relayerMap[signer]["effectedPackets"].(float64) + value
+						} else {
+							relayerMap[signer]["uneffectedPackets"] = relayerMap[signer]["uneffectedPackets"].(float64) + value
 						}
+						relayerMap[signer]["totalPackets"] = relayerMap[signer]["effectedPackets"].(float64) + relayerMap[signer]["uneffectedPackets"].(float64)
 					}
 				}
 			}
-			
-			totalPackets = osmosisPackets + cosmosPackets
-			log.Printf("Real packet counts - Osmosis: %d, Cosmos: %d, Total: %d", osmosisPackets, cosmosPackets, totalPackets)
-		} else {
-			log.Printf("Failed to fetch from Chainpulse: %v", err)
 		}
+		
+		// Convert relayer map to array
+		relayers := []map[string]interface{}{}
+		for _, relayer := range relayerMap {
+			effected := relayer["effectedPackets"].(float64)
+			total := relayer["totalPackets"].(float64)
+			successRate := float64(0)
+			if total > 0 {
+				successRate = (effected / total) * 100
+			}
+			
+			relayers = append(relayers, map[string]interface{}{
+				"address": relayer["address"],
+				"totalPackets": int(total),
+				"effectedPackets": int(effected),
+				"uneffectedPackets": int(relayer["uneffectedPackets"].(float64)),
+				"successRate": successRate,
+				"frontrunCount": 0, // TODO: Calculate from frontrun metrics
+				"memo": "",
+				"software": "unknown",
+				"version": "unknown",
+			})
+		}
+		
+		// Sort relayers by total packets
+		sort.Slice(relayers, func(i, j int) bool {
+			return relayers[i]["totalPackets"].(int) > relayers[j]["totalPackets"].(int)
+		})
 		
 		// Create comprehensive metrics response matching MetricsSnapshot interface
 		now := time.Now()
 		
-		// Use real data if available, otherwise fall back to mock
+		// Transform chains data to match expected format
+		transformedChains := []map[string]interface{}{}
+		for _, chain := range chains {
+			transformedChains = append(transformedChains, map[string]interface{}{
+				"chainId": chain["chain_id"],
+				"chainName": chain["name"],
+				"totalTxs": chain["txs_total"],
+				"totalPackets": chain["packets_24h"],
+				"reconnects": 0, // Not available in metrics
+				"timeouts": 0,   // Not available in metrics
+				"errors": chain["errors"],
+				"status": chain["status"],
+				"lastUpdate": now,
+			})
+		}
+		
 		response := map[string]interface{}{
 			"system": map[string]interface{}{
-				"totalChains": 2,
-				"totalTransactions": 31519,
+				"totalChains": totalChains,
+				"totalTransactions": totalTxs,
 				"totalPackets": totalPackets,
-				"totalErrors": 47,
+				"totalErrors": totalErrors,
 				"uptime": 86400, // 24 hours in seconds
 				"lastSync": now,
 			},
-			"chains": []map[string]interface{}{
-				{
-					"chainId": "cosmoshub-4",
-					"chainName": "Cosmos Hub",
-					"totalTxs": 12543,
-					"totalPackets": 4532,
-					"reconnects": 2,
-					"timeouts": 0,
-					"errors": 23,
-					"status": "connected",
-					"lastUpdate": now,
-				},
-				{
-					"chainId": "osmosis-1",
-					"chainName": "Osmosis",
-					"totalTxs": 18976,
-					"totalPackets": 6789,
-					"reconnects": 1,
-					"timeouts": 1,
-					"errors": 24,
-					"status": "connected",
-					"lastUpdate": now,
-				},
-			},
-			"relayers": []map[string]interface{}{
-				{
-					"address": "cosmos1abc123",
-					"totalPackets": 980,
-					"effectedPackets": 856,
-					"uneffectedPackets": 124,
-					"frontrunCount": 12,
-					"successRate": 87.3,
-					"memo": "",
-					"software": "hermes",
-					"version": "1.8.0",
-				},
-				{
-					"address": "osmo1xyz789",
-					"totalPackets": 1432,
-					"effectedPackets": 1243,
-					"uneffectedPackets": 189,
-					"frontrunCount": 18,
-					"successRate": 86.8,
-					"memo": "",
-					"software": "rly",
-					"version": "2.5.1",
-				},
-				{
-					"address": "cosmos1relayer1",
-					"totalPackets": 567,
-					"effectedPackets": 512,
-					"uneffectedPackets": 55,
-					"frontrunCount": 5,
-					"successRate": 90.3,
-					"memo": "Validator relayer",
-					"software": "hermes",
-					"version": "1.8.2",
-				},
-			},
-			"channels": []map[string]interface{}{
-				{
-					"srcChain": "cosmoshub-4",
-					"dstChain": "osmosis-1",
-					"srcChannel": "channel-141",
-					"dstChannel": "channel-0",
-					"srcPort": "transfer",
-					"dstPort": "transfer",
-					"totalPackets": 2099,
-					"effectedPackets": 1856,
-					"uneffectedPackets": 243,
-					"successRate": 88.4,
-					"avgProcessingTime": 45.2,
-					"status": "active",
-				},
-				{
-					"srcChain": "osmosis-1",
-					"dstChain": "cosmoshub-4",
-					"srcChannel": "channel-0",
-					"dstChannel": "channel-141",
-					"srcPort": "transfer",
-					"dstPort": "transfer",
-					"totalPackets": 2543,
-					"effectedPackets": 2287,
-					"uneffectedPackets": 256,
-					"successRate": 89.9,
-					"avgProcessingTime": 42.7,
-					"status": "active",
-				},
-			},
-			"recentPackets": []map[string]interface{}{
-				{
-					"chain_id": "cosmoshub-4",
-					"src_channel": "channel-141",
-					"src_port": "transfer",
-					"dst_channel": "channel-0",
-					"dst_port": "transfer",
-					"sequence": 892193,
-					"signer": "cosmos1abc123",
-					"memo": "",
-					"effected": true,
-					"timestamp": now.Add(-5 * time.Minute),
-				},
-				{
-					"chain_id": "osmosis-1",
-					"src_channel": "channel-0",
-					"src_port": "transfer",
-					"dst_channel": "channel-141",
-					"dst_port": "transfer",
-					"sequence": 756234,
-					"signer": "osmo1xyz789",
-					"memo": "",
-					"effected": true,
-					"timestamp": now.Add(-7 * time.Minute),
-				},
-			},
+			"chains": transformedChains,
+			"relayers": relayers,
+			"channels": transformChannelsForMetrics(channels),
+			"recentPackets": []map[string]interface{}{}, // TODO: Extract from packet metrics
 			"stuckPackets": []map[string]interface{}{},
-			"frontrunEvents": []map[string]interface{}{
-				{
-					"chain_id": "cosmoshub-4",
-					"channel": "channel-141",
-					"signer": "cosmos1abc123",
-					"frontrunned_by": "cosmos1relayer1",
-					"count": 3,
-					"timestamp": now.Add(-1 * time.Hour),
-				},
-			},
+			"frontrunEvents": []map[string]interface{}{}, // TODO: Extract from frontrun metrics
 			"timestamp": now,
 		}
 		
@@ -1094,6 +1051,92 @@ func parsePrometheusMetrics(metricsText string) map[string]interface{} {
 	result["chains"] = chains
 	result["channels"] = channels
 	return result
+}
+
+// transformChannelsForMetrics transforms channel data from monitoring/data format to monitoring/metrics format
+func transformChannelsForMetrics(channels []map[string]interface{}) []map[string]interface{} {
+	transformed := []map[string]interface{}{}
+	
+	for _, channel := range channels {
+		// Get source chain from channel data
+		srcChain := ""
+		if src, ok := channel["src"].(string); ok {
+			srcChain = src
+		} else if chainId, ok := channel["chain_id"].(string); ok {
+			srcChain = chainId
+		}
+		
+		// Infer destination chain from channel numbers
+		dstChain := inferDestinationChain(srcChain, channel["src_channel"].(string))
+		
+		transformed = append(transformed, map[string]interface{}{
+			"srcChain": srcChain,
+			"dstChain": dstChain,
+			"srcChannel": channel["src_channel"],
+			"dstChannel": channel["dst_channel"],
+			"srcPort": channel["src_port"],
+			"dstPort": channel["dst_port"],
+			"totalPackets": channel["total_packets"],
+			"effectedPackets": channel["effected"],
+			"uneffectedPackets": channel["uneffected"],
+			"successRate": channel["success_rate"],
+			"avgProcessingTime": 45.0, // Default since not in metrics
+			"status": channel["status"],
+		})
+	}
+	
+	return transformed
+}
+
+// inferDestinationChain attempts to determine the destination chain based on known channel mappings
+func inferDestinationChain(srcChain, srcChannel string) string {
+	// Known channel mappings
+	channelMappings := map[string]map[string]string{
+		"cosmoshub-4": {
+			"channel-141": "osmosis-1",
+			"channel-536": "noble-1",
+			"channel-569": "neutron-1",
+		},
+		"osmosis-1": {
+			"channel-0": "cosmoshub-4",
+			"channel-750": "noble-1",
+			"channel-874": "neutron-1",
+		},
+		"neutron-1": {
+			"channel-1": "cosmoshub-4",
+			"channel-10": "osmosis-1",
+			"channel-30": "noble-1",
+		},
+		"noble-1": {
+			"channel-1": "osmosis-1",
+			"channel-4": "cosmoshub-4",
+			"channel-18": "neutron-1",
+		},
+	}
+	
+	if chainChannels, ok := channelMappings[srcChain]; ok {
+		if dstChain, ok := chainChannels[srcChannel]; ok {
+			return dstChain
+		}
+	}
+	
+	// Default fallback
+	return "unknown"
+}
+
+// getChainMap returns a map of chain IDs to chain names
+func getChainMap() map[string]string {
+	return map[string]string{
+		"cosmoshub-4": "Cosmos Hub",
+		"osmosis-1": "Osmosis",
+		"neutron-1": "Neutron",
+		"noble-1": "Noble",
+		"akash-1": "Akash",
+		"stargaze-1": "Stargaze",
+		"juno-1": "Juno",
+		"stride-1": "Stride",
+		"axelar-dojo-1": "Axelar",
+	}
 }
 
 func generateMockPrometheusMetrics() string {
