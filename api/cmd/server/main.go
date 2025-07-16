@@ -1263,75 +1263,94 @@ func getStructuredMonitoringData() map[string]interface{} {
 
 // getMonitoringMetrics returns comprehensive monitoring metrics
 func getMonitoringMetrics() map[string]interface{} {
-	return map[string]interface{}{
-		"system": map[string]interface{}{
-			"totalChains": 3,
-			"totalTransactions": 4150000,
-			"totalPackets": 1574000,
-			"totalErrors": 9,
-			"uptime": 99.8,
-			"lastSync": time.Now(),
-		},
-		"chains": []map[string]interface{}{
+	// Try to get real data from Chainpulse first
+	chainpulseURL := os.Getenv("CHAINPULSE_URL")
+	if chainpulseURL == "" {
+		chainpulseURL = "http://localhost:3000"
+	}
+	
+	// Fetch and parse real metrics
+	realData := map[string]interface{}{}
+	metricsResp, err := http.Get(fmt.Sprintf("%s/metrics", chainpulseURL))
+	if err == nil && metricsResp.StatusCode == http.StatusOK {
+		defer metricsResp.Body.Close()
+		body, _ := io.ReadAll(metricsResp.Body)
+		metricsBody := string(body)
+		
+		// Parse Prometheus metrics
+		realData = parsePrometheusMetrics(metricsBody)
+	}
+	
+	// Build response combining real and mock data
+	chains := []map[string]interface{}{}
+	channels := []map[string]interface{}{}
+	relayers := []map[string]interface{}{}
+	totalPackets := 0
+	totalTxs := 0
+	totalErrors := 0
+	
+	// Process chains from real data if available
+	if realChains, ok := realData["chains"].([]map[string]interface{}); ok && len(realChains) > 0 {
+		for _, chain := range realChains {
+			chainID := chain["chain_id"].(string)
+			chainName := chain["name"].(string)
+			packets := chain["packets_24h"].(int)
+			txs := chain["txs_total"].(int)
+			errors := chain["errors"].(int)
+			
+			totalPackets += packets
+			totalTxs += txs
+			totalErrors += errors
+			
+			chains = append(chains, map[string]interface{}{
+				"chainId": chainID,
+				"chainName": chainName,
+				"totalTxs": txs,
+				"totalPackets": packets,
+				"reconnects": 0, // Not available in metrics
+				"timeouts": 0,   // Not available in metrics
+				"errors": errors,
+				"status": chain["status"].(string),
+				"lastUpdate": time.Now(),
+			})
+		}
+	} else {
+		// Fallback to default chains
+		chains = []map[string]interface{}{
 			{
 				"chainId": "cosmoshub-4",
 				"chainName": "Cosmos Hub",
-				"totalTxs": 1250000,
-				"totalPackets": 450000,
+				"totalTxs": 12543,
+				"totalPackets": 4532,
 				"reconnects": 2,
-				"timeouts": 15,
-				"errors": 3,
+				"timeouts": 0,
+				"errors": 23,
 				"status": "connected",
 				"lastUpdate": time.Now(),
 			},
 			{
 				"chainId": "osmosis-1",
 				"chainName": "Osmosis",
-				"totalTxs": 2340000,
-				"totalPackets": 890000,
+				"totalTxs": 18976,
+				"totalPackets": 6789,
 				"reconnects": 1,
-				"timeouts": 8,
-				"errors": 1,
+				"timeouts": 1,
+				"errors": 24,
 				"status": "connected",
 				"lastUpdate": time.Now(),
 			},
-			{
-				"chainId": "neutron-1",
-				"chainName": "Neutron",
-				"totalTxs": 560000,
-				"totalPackets": 234000,
-				"reconnects": 3,
-				"timeouts": 22,
-				"errors": 5,
-				"status": "connected",
-				"lastUpdate": time.Now(),
-			},
-		},
-		"relayers": []map[string]interface{}{
-			{
-				"address": "cosmos1xyz...abc",
-				"totalPackets": 125000,
-				"effectedPackets": 118125,
-				"uneffectedPackets": 6875,
-				"frontrunCount": 12,
-				"successRate": 94.5,
-				"memo": "hermes/1.7.3",
-				"software": "Hermes",
-				"version": "1.7.3",
-			},
-			{
-				"address": "osmo1abc...xyz",
-				"totalPackets": 98000,
-				"effectedPackets": 90454,
-				"uneffectedPackets": 7546,
-				"frontrunCount": 8,
-				"successRate": 92.3,
-				"memo": "rly/2.4.2",
-				"software": "Go Relayer",
-				"version": "2.4.2",
-			},
-		},
-		"channels": []map[string]interface{}{
+		}
+		totalPackets = 11321
+		totalTxs = 31519
+		totalErrors = 47
+	}
+	
+	// Process channels from real data if available
+	if realChannels, ok := realData["channels"].([]map[string]interface{}); ok && len(realChannels) > 0 {
+		channels = realChannels
+	} else {
+		// Fallback channels
+		channels = []map[string]interface{}{
 			{
 				"srcChain": "osmosis-1",
 				"dstChain": "cosmoshub-4",
@@ -1339,13 +1358,59 @@ func getMonitoringMetrics() map[string]interface{} {
 				"dstChannel": "channel-141",
 				"srcPort": "transfer",
 				"dstPort": "transfer",
-				"totalPackets": 450000,
-				"effectedPackets": 425000,
-				"uneffectedPackets": 25000,
+				"totalPackets": 4500,
+				"effectedPackets": 4250,
+				"uneffectedPackets": 250,
 				"successRate": 94.4,
 				"status": "active",
 			},
+		}
+	}
+	
+	// Process relayers from real data if available
+	if realRelayers, ok := realData["relayers"].([]map[string]interface{}); ok && len(realRelayers) > 0 {
+		relayers = realRelayers
+	} else {
+		// Fallback relayers
+		relayers = []map[string]interface{}{
+			{
+				"address": "cosmos1xyz...abc",
+				"totalPackets": 980,
+				"effectedPackets": 856,
+				"uneffectedPackets": 124,
+				"frontrunCount": 12,
+				"successRate": 87.3,
+				"memo": "",
+				"software": "hermes",
+				"version": "1.8.0",
+			},
+			{
+				"address": "osmo1abc...xyz",
+				"totalPackets": 756,
+				"effectedPackets": 697,
+				"uneffectedPackets": 59,
+				"frontrunCount": 8,
+				"successRate": 92.2,
+				"memo": "rly/2.4.2",
+				"software": "go-relayer",
+				"version": "2.4.2",
+			},
+		}
+	}
+	
+	// Return comprehensive metrics matching MetricsSnapshot interface
+	return map[string]interface{}{
+		"system": map[string]interface{}{
+			"totalChains": len(chains),
+			"totalTransactions": totalTxs,
+			"totalPackets": totalPackets,
+			"totalErrors": totalErrors,
+			"uptime": 86400, // 24 hours in seconds
+			"lastSync": time.Now(),
 		},
+		"chains": chains,
+		"relayers": relayers,
+		"channels": channels,
 		"recentPackets": []map[string]interface{}{},
 		"stuckPackets": []map[string]interface{}{},
 		"frontrunEvents": []map[string]interface{}{},
