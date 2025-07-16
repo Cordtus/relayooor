@@ -341,3 +341,54 @@ Comprehensive internal documentation for Claude Code is available in the `.claud
 - Other technical documentation and analysis reports
 
 These documents contain detailed information about the codebase, known issues, and development workflows.
+
+## Running Single Tests
+
+### Frontend Tests
+```bash
+# Run a specific test file
+cd webapp && yarn test src/components/Card.test.ts
+
+# Run tests in watch mode
+cd webapp && yarn test:watch
+
+# Run tests with coverage
+cd webapp && yarn test:coverage
+```
+
+### Backend Tests
+```bash
+# Run tests for a specific package
+cd api && go test ./pkg/handlers -v
+
+# Run a single test function
+cd api && go test -run TestHealthHandler ./pkg/handlers
+
+# Run tests with coverage
+cd api && go test -cover ./...
+
+# For relayer-middleware API
+cd relayer-middleware/api && go test ./pkg/clearing -v
+```
+
+## Code Architecture Patterns
+
+### Frontend (Vue.js)
+- **Components**: Use composition API with TypeScript
+- **State Management**: Pinia stores in `/webapp/src/stores/`
+- **API Calls**: Centralized in `/webapp/src/services/api.ts`
+- **Types**: Shared types in `/webapp/src/types/`
+- **Composables**: Reusable logic in `/webapp/src/composables/`
+
+### Backend (Go)
+- **Handler Pattern**: HTTP handlers in `/api/pkg/handlers/`
+- **Middleware**: Auth, CORS, logging in `/api/pkg/middleware/`
+- **Services**: Business logic separated from handlers
+- **Database**: Repository pattern for data access
+- **Error Handling**: Consistent error types and responses
+
+### Cross-Service Communication
+- Frontend → API: REST endpoints with `/api/` prefix (proxied by nginx)
+- API → Chainpulse: HTTP calls to port 3001
+- API → Database: Connection pooling with pgx
+- WebSocket: Real-time updates on `/api/ws`
