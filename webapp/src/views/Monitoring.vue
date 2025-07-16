@@ -242,7 +242,7 @@ import StuckPacketsAlert from '@/components/monitoring/StuckPacketsAlert.vue'
 import ConnectionIssues from '@/components/monitoring/ConnectionIssues.vue'
 import PerformanceAlerts from '@/components/monitoring/PerformanceAlerts.vue'
 import ErrorLog from '@/components/monitoring/ErrorLog.vue'
-import InsightCard from '@/components/monitoring/InsightCard.vue'
+import InsightCard from '@/components/ui/InsightCard.vue'
 import PredictiveChart from '@/components/monitoring/PredictiveChart.vue'
 import RelayerChurn from '@/components/monitoring/RelayerChurn.vue'
 
