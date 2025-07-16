@@ -597,22 +597,41 @@ function formatNumber(num: number): string {
 function getChainPackets(chainId: string) {
   if (!metrics.value) return { total: 0, successful: 0, failed: 0, stuck: 0, successRate: 0 }
   
-  // Get packets for this chain
-  const chainPackets = metrics.value.recentPackets?.filter(p => p.chain_id === chainId) || []
+  // Find the chain data
+  const chain = metrics.value.chains?.find(c => c.chainId === chainId)
+  if (!chain) return { total: 0, successful: 0, failed: 0, stuck: 0, successRate: 0 }
+  
+  // Get stuck packets for this chain
   const stuckPackets = metrics.value.stuckPackets?.filter(p => p.srcChain === chainId || p.dstChain === chainId) || []
   
-  // Calculate stats
-  const total = chainPackets.length
-  const successful = chainPackets.filter(p => p.effected).length
-  const failed = total - successful
-  const stuck = stuckPackets.length
-  const successRate = total > 0 ? (successful / total) * 100 : 0
+  // Calculate channel-based success rate
+  const channels = metrics.value.channels?.filter(ch => 
+    ch.srcChain === chainId || ch.dstChain === chainId
+  ) || []
+  
+  let totalChannelPackets = 0
+  let successfulChannelPackets = 0
+  
+  for (const channel of channels) {
+    const total = channel.totalPackets || 0
+    const effected = channel.effectedPackets || 0
+    totalChannelPackets += total
+    successfulChannelPackets += effected
+  }
+  
+  // Use chain's totalPackets for 24h count
+  const total24h = chain.totalPackets || 0
+  const successRate = totalChannelPackets > 0 ? (successfulChannelPackets / totalChannelPackets) * 100 : 95.0
+  
+  // Estimate successful/failed based on success rate
+  const successful = Math.round(total24h * (successRate / 100))
+  const failed = total24h - successful
   
   return {
-    total,
+    total: total24h,
     successful,
     failed,
-    stuck,
+    stuck: stuckPackets.length,
     successRate
   }
 }

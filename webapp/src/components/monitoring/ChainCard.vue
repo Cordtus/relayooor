@@ -22,9 +22,14 @@
 
     <!-- Chain Metrics -->
     <div class="space-y-2">
-      <div class="flex justify-between items-center">
+      <div v-if="chain.height" class="flex justify-between items-center">
         <span class="text-sm text-gray-600">Height</span>
-        <span class="text-sm font-medium">{{ formatNumber(chain.height || 0) }}</span>
+        <span class="text-sm font-medium">{{ formatNumber(chain.height) }}</span>
+      </div>
+      
+      <div v-if="chain.totalTxs" class="flex justify-between items-center">
+        <span class="text-sm text-gray-600">Total Txs</span>
+        <span class="text-sm font-medium">{{ formatNumber(chain.totalTxs) }}</span>
       </div>
       
       <div class="flex justify-between items-center">
