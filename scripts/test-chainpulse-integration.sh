@@ -3,7 +3,7 @@
 echo "Testing Chainpulse Integration..."
 echo "================================"
 
-CHAINPULSE_URL="http://localhost:3000"
+CHAINPULSE_URL="http://localhost:3001"
 API_BACKEND_URL="http://localhost:8080"
 
 # Color codes
