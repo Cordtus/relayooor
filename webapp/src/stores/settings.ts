@@ -10,9 +10,19 @@ export interface Settings {
   devMode: boolean
 }
 
+export const REFRESH_INTERVALS = [
+  { value: 3000, label: '3s' },
+  { value: 5000, label: '5s' },
+  { value: 10000, label: '10s' },
+  { value: 15000, label: '15s' },
+  { value: 30000, label: '30s' },
+  { value: 60000, label: '60s' },
+  { value: 120000, label: '2m' }
+] as const
+
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref<Settings>({
-    refreshInterval: 30,
+    refreshInterval: 30000, // Default to 30 seconds
     stuckThreshold: 60,
     notifications: false,
     cacheTTL: 300,
@@ -37,7 +47,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function resetSettings() {
     settings.value = {
-      refreshInterval: 30,
+      refreshInterval: 30000, // Default to 30 seconds
       stuckThreshold: 60,
       notifications: false,
       cacheTTL: 300,
