@@ -8,6 +8,7 @@
 env.sh
 env.bash
 env.zsh
+webapp/.env.docker
 
 # Dependencies
 node_modules/
@@ -297,14 +298,12 @@ Cargo.lock
 *.orig
 
 # Claude/Cursor/LLM specific
-.claude/
+# .claude/ - Keep internal documentation
 .cursor/
 .cursorrules
-CLAUDE.md
 CLAUDE.local.md
-PROJECT_STATUS.md
 PROJECT_STATUS.local.md
-PROJECT_CONTEXT.md
+PROJECT_CONTEXT.local.md
 .aider*
 .copilot*
 
