@@ -714,6 +714,27 @@ func main() {
 		json.NewEncoder(w).Encode(metrics)
 	}).Methods("GET")
 
+	// Chain endpoints - provides REST API URLs for chains
+	api.HandleFunc("/chains/endpoints", func(w http.ResponseWriter, r *http.Request) {
+		endpoints := []map[string]string{
+			{"chain_id": "cosmoshub-4", "rest_url": "https://cosmos-rest.publicnode.com"},
+			{"chain_id": "osmosis-1", "rest_url": "https://osmosis-rest.publicnode.com"},
+			{"chain_id": "neutron-1", "rest_url": "https://neutron-rest.publicnode.com"},
+			{"chain_id": "noble-1", "rest_url": "https://noble-rest.publicnode.com"},
+			{"chain_id": "axelar-dojo-1", "rest_url": "https://axelar-rest.publicnode.com"},
+			{"chain_id": "stride-1", "rest_url": "https://stride-rest.publicnode.com"},
+			{"chain_id": "dydx-mainnet-1", "rest_url": "https://dydx-rest.publicnode.com"},
+			{"chain_id": "celestia", "rest_url": "https://celestia-rest.publicnode.com"},
+			{"chain_id": "injective-1", "rest_url": "https://injective-rest.publicnode.com"},
+			{"chain_id": "kava_2222-10", "rest_url": "https://kava-rest.publicnode.com"},
+			{"chain_id": "secret-4", "rest_url": "https://secret-rest.publicnode.com"},
+			{"chain_id": "stargaze-1", "rest_url": "https://stargaze-rest.publicnode.com"},
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"endpoints": endpoints,
+		})
+	}).Methods("GET")
+	
 	// Platform statistics endpoint
 	api.HandleFunc("/statistics/platform", func(w http.ResponseWriter, r *http.Request) {
 		// Get real metrics from Chainpulse
