@@ -124,6 +124,22 @@ services:
     depends_on:
       - prometheus
 
+  # Hermes IBC Relayer
+  hermes:
+    image: ghcr.io/informalsystems/hermes:1.10.5
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - ./config/hermes:/home/hermes/.hermes:ro
+      - hermes-data:/data
+    ports:
+      - "3010:3001"  # Telemetry
+      - "5185:5185"  # REST API
+    command: ["start"]
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+
 networks:
   relayooor-net:
     driver: bridge
@@ -134,3 +150,4 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
+  hermes-data:
