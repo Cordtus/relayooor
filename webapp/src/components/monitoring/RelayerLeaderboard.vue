@@ -35,7 +35,7 @@
               Efficiency
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fees Spent
+              Activity
             </th>
           </tr>
         </thead>
@@ -183,13 +183,8 @@ function calculateEfficiency(relayer: Relayer): number {
 }
 
 function estimateFeesSpent(relayer: Relayer): string {
-  // Estimate fees spent by relayer - in production, use real gas data
-  const avgGasFeePerPacket = 0.05 // USD estimate for gas fees
-  const totalFees = relayer.totalPackets * avgGasFeePerPacket
-  
-  if (totalFees >= 1000) {
-    return `$${(totalFees / 1000).toFixed(1)}k`
-  }
-  return `$${totalFees.toFixed(0)}`
+  // Calculate fees based on actual packet data
+  // For now, show packet count as fees are not tracked in the API
+  return `${formatNumber(relayer.totalPackets)} txs`
 }
 </script>
