@@ -210,10 +210,31 @@ onMounted(() => {
 })
 
 // Update chart when data changes
-watch(() => props.data, () => {
-  if (chart) {
-    chart.destroy()
-  }
-  createChart()
+watch(() => props.data, (newData) => {
+  if (!chart || !newData) return
+  
+  // Update existing chart data instead of recreating
+  const historicalData = newData
+  const futureData = generatePrediction(historicalData)
+  
+  // Update chart data without destroying
+  chart.data.labels = [
+    ...historicalData.map(d => d.time),
+    ...futureData.map(d => d.time)
+  ]
+  
+  chart.data.datasets[0].data = [
+    ...historicalData.map(d => d.value), 
+    ...Array(futureData.length).fill(null)
+  ]
+  
+  chart.data.datasets[1].data = [
+    ...Array(historicalData.length - 1).fill(null), 
+    historicalData[historicalData.length - 1].value, 
+    ...futureData.map(d => d.value)
+  ]
+  
+  // Update with animation disabled for smooth transition
+  chart.update('none')
 })
 </script>
