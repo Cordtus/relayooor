@@ -154,6 +154,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { formatNumber, formatAddress, formatNumberWithCommas, formatDuration, formatAmount } from '@/utils/formatting'
 import { REFRESH_INTERVALS } from '@/config/constants'
 import RefreshRateSelector from '@/components/RefreshRateSelector.vue'
+import { resolveChannels, type ChannelInfo } from '@/services/channel-resolver'
 
 const settingsStore = useSettingsStore()
 const lastUpdateTime = ref(new Date())
@@ -205,10 +206,11 @@ const recentActivity = ref<any[]>([])
 const topTokenRoutes = ref<any[]>([])
 const topRelayersByMemo = ref<any[]>([])
 const topChainsByTimeouts = ref<any[]>([])
+const resolvedChannels = ref<Map<string, ChannelInfo>>(new Map())
 
 // Update stats when data is loaded
 // Update stats function
-const updateStats = () => {
+const updateStats = async () => {
   if (comprehensiveMetrics.value) {
     // Use comprehensive metrics for all stats
     stats.value.chains = comprehensiveMetrics.value.system?.totalChains || 0
@@ -293,13 +295,46 @@ const updateStats = () => {
     
     // For recent activity, check if we have recentPackets, otherwise use monitoring data
     if (comprehensiveMetrics.value.recentPackets && comprehensiveMetrics.value.recentPackets.length > 0) {
-      recentActivity.value = comprehensiveMetrics.value.recentPackets.slice(0, 5).map((p: any) => ({
-        from_chain: p.chain_id,
-        to_chain: p.dst_chain || 'Unknown', // Use actual destination chain from API
-        channel: p.src_channel || p.dst_channel || 'unknown',
-        status: p.effected ? 'success' : 'pending',
-        timestamp: p.timestamp
-      }))
+      // Prepare channels that need resolution
+      const channelsToResolve = comprehensiveMetrics.value.recentPackets
+        .filter((p: any) => (!p.dst_chain || p.dst_chain === 'unknown') && p.src_channel)
+        .map((p: any) => ({
+          sourceChainId: p.chain_id,
+          channelId: p.src_channel,
+          portId: 'transfer'
+        }))
+      
+      // Resolve channels if needed
+      if (channelsToResolve.length > 0) {
+        try {
+          const resolved = await resolveChannels(channelsToResolve)
+          resolvedChannels.value = resolved
+        } catch (error) {
+          console.warn('Failed to resolve some channels:', error)
+        }
+      }
+      
+      // Map recent packets with resolved destinations
+      recentActivity.value = comprehensiveMetrics.value.recentPackets.slice(0, 5).map((p: any) => {
+        let destChain = p.dst_chain
+        
+        // Try to resolve if unknown
+        if (!destChain || destChain === 'unknown') {
+          const resolvedKey = `${p.chain_id}:${p.src_channel}`
+          const resolved = resolvedChannels.value.get(resolvedKey)
+          if (resolved) {
+            destChain = resolved.counterpartyChainId
+          }
+        }
+        
+        return {
+          from_chain: p.chain_id,
+          to_chain: destChain || 'Unknown',
+          channel: p.src_channel || p.dst_channel || 'unknown',
+          status: p.effected ? 'success' : 'pending',
+          timestamp: p.timestamp
+        }
+      })
     }
   }
   if (monitoringData.value) {
@@ -314,8 +349,8 @@ const updateStats = () => {
 }
 
 // Watch for data changes
-watchEffect(() => {
-  updateStats()
+watchEffect(async () => {
+  await updateStats()
 })
 
 // Update is handled by react-query refetch intervals
@@ -340,7 +375,28 @@ onMounted(async () => {
 
 // Helper for template usage
 function getChainNameSync(chainId: string): string {
-  return chainNames.value[chainId] || chainId
+  // If we have a loaded chain name, use it
+  if (chainNames.value[chainId]) {
+    return chainNames.value[chainId]
+  }
+  
+  // Otherwise try common mappings
+  const commonNames: Record<string, string> = {
+    'cosmoshub-4': 'Cosmos Hub',
+    'osmosis-1': 'Osmosis',
+    'neutron-1': 'Neutron',
+    'noble-1': 'Noble',
+    'axelar-dojo-1': 'Axelar',
+    'stride-1': 'Stride',
+    'dydx-mainnet-1': 'dYdX',
+    'celestia': 'Celestia',
+    'injective-1': 'Injective',
+    'kava_2222-10': 'Kava',
+    'secret-4': 'Secret',
+    'stargaze-1': 'Stargaze'
+  }
+  
+  return commonNames[chainId] || chainId
 }
 
 // Extract token name from IBC denom
