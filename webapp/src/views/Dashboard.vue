@@ -14,7 +14,7 @@
       </div>
       <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-sm font-medium text-gray-500">24h Packets</h3>
-        <p class="mt-2 text-3xl font-semibold text-gray-900">{{ stats.packets }}</p>
+        <p class="mt-2 text-3xl font-semibold text-gray-900">{{ formatNumber(stats.packets) }}</p>
       </div>
       <div class="bg-white p-6 rounded-lg shadow">
         <h3 class="text-sm font-medium text-gray-500">Success Rate</h3>
@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watchEffect } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { api, metricsService } from '@/services/api'
 import { configService } from '@/services/config'
@@ -129,15 +129,8 @@ const { data: monitoringData } = useQuery({
 const { data: comprehensiveMetrics } = useQuery({
   queryKey: ['comprehensive-metrics'],
   queryFn: async () => {
-    // Try to get structured metrics first
-    try {
-      const response = await api.get('/api/monitoring/metrics')
-      return response.data
-    } catch (error) {
-      // Fall back to parsing raw Prometheus metrics
-      const raw = await metricsService.getRawMetrics()
-      return metricsService.parsePrometheusMetrics(raw)
-    }
+    // Get structured metrics from the monitoring endpoint
+    return metricsService.getMonitoringMetrics()
   },
   refetchInterval: REFRESH_INTERVALS.NORMAL
 })
@@ -147,12 +140,12 @@ const { data: channelCongestion } = useQuery({
   queryKey: ['channel-congestion'],
   queryFn: async () => {
     try {
-      const response = await api.get('/api/channels/congestion')
+      const response = await api.get('/channels/congestion')
       return response.data
     } catch (error) {
       // Return channels from monitoring data
       const data = await metricsService.getMonitoringData()
-      return data.channels || []
+      return data
     }
   },
   refetchInterval: REFRESH_INTERVALS.RELAXED
@@ -161,7 +154,7 @@ const { data: channelCongestion } = useQuery({
 const stats = ref({
   chains: 0,
   relayers: 0,
-  packets: '0',
+  packets: 0,
   successRate: 0
 })
 
@@ -169,54 +162,60 @@ const topRelayers = ref<any[]>([])
 const recentActivity = ref<any[]>([])
 
 // Update stats when data is loaded
-onMounted(() => {
-  const updateStats = () => {
-    if (comprehensiveMetrics.value) {
-      // Use comprehensive metrics for all stats
-      stats.value.chains = comprehensiveMetrics.value.system?.totalChains || 0
-      stats.value.relayers = comprehensiveMetrics.value.relayers?.length || 0
-      stats.value.packets = formatPacketCount(comprehensiveMetrics.value.system?.totalPackets || 0)
-      
-      // Calculate success rate from channel data
-      const channels = comprehensiveMetrics.value.channels || []
-      if (channels.length > 0) {
-        const avgSuccessRate = channels.reduce((acc: number, ch: any) => acc + (ch.successRate || 0), 0) / channels.length
-        stats.value.successRate = Math.round(avgSuccessRate * 10) / 10
-      }
-      
-      // Use relayers from comprehensive metrics
-      topRelayers.value = comprehensiveMetrics.value.relayers?.slice(0, 5) || []
-      recentActivity.value = comprehensiveMetrics.value.recentPackets?.slice(0, 5).map((p: any) => ({
+// Update stats function
+const updateStats = () => {
+  if (comprehensiveMetrics.value) {
+    // Use comprehensive metrics for all stats
+    stats.value.chains = comprehensiveMetrics.value.system?.totalChains || 0
+    stats.value.relayers = comprehensiveMetrics.value.relayers?.length || 0
+    stats.value.packets = comprehensiveMetrics.value.system?.totalPackets || 0
+    
+    // Calculate success rate from channel data
+    const channels = comprehensiveMetrics.value.channels || []
+    if (channels.length > 0) {
+      const avgSuccessRate = channels.reduce((acc: number, ch: any) => acc + (ch.successRate || 0), 0) / channels.length
+      stats.value.successRate = Math.round(avgSuccessRate * 10) / 10
+    }
+    
+    // Use relayers from comprehensive metrics
+    topRelayers.value = comprehensiveMetrics.value.relayers?.slice(0, 5) || []
+    // For recent activity, check if we have recentPackets, otherwise use monitoring data
+    if (comprehensiveMetrics.value.recentPackets && comprehensiveMetrics.value.recentPackets.length > 0) {
+      recentActivity.value = comprehensiveMetrics.value.recentPackets.slice(0, 5).map((p: any) => ({
         from_chain: p.chain_id,
-        to_chain: p.dst_channel?.includes('channel-141') ? 'cosmoshub-4' : 'osmosis-1',
-        channel: p.src_channel,
+        to_chain: p.dst_channel === 'channel-0' ? 'osmosis-1' : 
+                   p.dst_channel === 'channel-141' ? 'osmosis-1' : 
+                   'cosmoshub-4',
+        channel: p.src_channel || p.dst_channel || 'unknown',
         status: p.effected ? 'success' : 'pending',
         timestamp: p.timestamp
-      })) || []
-    }
-    if (monitoringData.value) {
-      // Fallback to monitoring data if available
-      if (!topRelayers.value.length && monitoringData.value.top_relayers) {
-        topRelayers.value = monitoringData.value.top_relayers
-      }
-      if (!recentActivity.value.length && monitoringData.value.recent_activity) {
-        recentActivity.value = monitoringData.value.recent_activity
-      }
+      }))
     }
   }
-  
-  // Update immediately if data is available
+  if (monitoringData.value) {
+    // Use monitoring data to fill in any missing pieces
+    if (!topRelayers.value.length && monitoringData.value.top_relayers) {
+      topRelayers.value = monitoringData.value.top_relayers
+    }
+    if (!recentActivity.value.length && monitoringData.value.recent_activity) {
+      recentActivity.value = monitoringData.value.recent_activity
+    }
+  }
+}
+
+// Watch for data changes
+watchEffect(() => {
   updateStats()
-  
-  // Watch for changes
+})
+
+// Also update on interval for real-time feel
+onMounted(() => {
   const interval = setInterval(updateStats, REFRESH_INTERVALS.REAL_TIME)
   
   // Cleanup
   return () => clearInterval(interval)
 })
 
-// Alias for packet count formatting
-const formatPacketCount = formatNumber
 
 // Get chain name from config service
 async function getChainName(chainId: string): Promise<string> {
