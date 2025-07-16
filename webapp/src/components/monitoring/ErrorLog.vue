@@ -184,68 +184,10 @@ const dismissedErrors = ref(new Set<string>())
 const currentPage = ref(1)
 const pageSize = 10
 
-// Generate mock errors if none provided
+// Use real errors if provided, otherwise show empty state
 const allErrors = computed(() => {
-  if (props.errors && props.errors.length > 0) {
-    return props.errors.filter(e => !dismissedErrors.value.has(e.id))
-  }
-  
-  // Mock errors for demo
-  return [
-    {
-      id: '1',
-      type: 'connection' as const,
-      severity: 'critical' as const,
-      message: 'Failed to connect to Osmosis RPC endpoint',
-      source: 'hermes-relayer',
-      timestamp: new Date(Date.now() - 5 * 60000),
-      context: { chain: 'osmosis-1' },
-      details: 'Connection timeout after 30s. Error: ETIMEDOUT',
-      count: 3
-    },
-    {
-      id: '2',
-      type: 'transaction' as const,
-      severity: 'warning' as const,
-      message: 'Transaction failed: insufficient gas',
-      source: 'relayer-middleware',
-      timestamp: new Date(Date.now() - 15 * 60000),
-      context: {
-        channel: 'channel-0',
-        relayer: 'cosmos1abc...xyz',
-        txHash: '0x123...'
-      },
-      details: 'Gas wanted: 200000, Gas used: 250000',
-      count: 1
-    },
-    {
-      id: '3',
-      type: 'timeout' as const,
-      severity: 'warning' as const,
-      message: 'Packet timeout on channel-141',
-      source: 'ibc-monitor',
-      timestamp: new Date(Date.now() - 30 * 60000),
-      context: {
-        channel: 'channel-141',
-        chain: 'cosmoshub-4'
-      },
-      count: 5
-    },
-    {
-      id: '4',
-      type: 'validation' as const,
-      severity: 'info' as const,
-      message: 'Invalid packet format detected',
-      source: 'packet-validator',
-      timestamp: new Date(Date.now() - 45 * 60000),
-      context: {
-        channel: 'channel-10',
-        chain: 'neutron-1'
-      },
-      details: 'Missing required field: timeout_timestamp',
-      count: 1
-    }
-  ].filter(e => !dismissedErrors.value.has(e.id))
+  const errors = props.errors || []
+  return errors.filter(e => !dismissedErrors.value.has(e.id))
 })
 
 // Computed
