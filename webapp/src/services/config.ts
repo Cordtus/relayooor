@@ -25,6 +25,8 @@ export interface ChainRegistry {
   chains: Record<string, ChainConfig>
   channels: ChannelConfig[]
   api_version: string
+  clearingFees?: Record<string, string>
+  denoms?: Record<string, string>
 }
 
 class ConfigService {
@@ -89,6 +91,11 @@ class ConfigService {
       return `https://www.mintscan.io/${chainId}/txs/${txHash}`
     }
     return `${chain.explorer}/${txHash}`
+  }
+
+  async getRegistry(): Promise<ChainRegistry> {
+    // Return the full registry
+    return this.loadRegistry()
   }
 
   private getFallbackRegistry(): ChainRegistry {

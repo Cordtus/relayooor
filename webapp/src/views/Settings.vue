@@ -259,15 +259,50 @@ const chains = ref<Array<{
 // Load chains from config service
 onMounted(async () => {
   const allChains = await configService.getAllChains()
-  chains.value = allChains.map(chain => ({
-    id: chain.chain_id,
-    name: chain.chain_name,
-    clearingFee: '0.1', // TODO: Get from API
-    denom: chain.chain_id === 'osmosis-1' ? 'uosmo' : 
-           chain.chain_id === 'cosmoshub-4' ? 'uatom' :
-           chain.chain_id === 'neutron-1' ? 'untrn' : 'uusdc'
-  }))
+  
+  // Get clearing fees and denoms from API if available
+  try {
+    const registry = await configService.getRegistry()
+    const clearingFees = registry.clearingFees || {}
+    const denomMap = registry.denoms || {
+      'osmosis-1': 'uosmo',
+      'cosmoshub-4': 'uatom',
+      'neutron-1': 'untrn',
+      'noble-1': 'uusdc'
+    }
+    
+    chains.value = allChains.map(chain => ({
+      id: chain.chain_id,
+      name: chain.chain_name,
+      clearingFee: clearingFees[chain.chain_id] || '0.1',
+      denom: denomMap[chain.chain_id] || 'uatom'
+    }))
+  } catch (error) {
+    // Fallback to basic chain info
+    chains.value = allChains.map(chain => ({
+      id: chain.chain_id,
+      name: chain.chain_name,
+      clearingFee: '0.1',
+      denom: getDenomForChain(chain.chain_id)
+    }))
+  }
 })
+
+// Helper function to get denom based on chain ID
+function getDenomForChain(chainId: string): string {
+  const denomMap: Record<string, string> = {
+    'osmosis-1': 'uosmo',
+    'cosmoshub-4': 'uatom',
+    'neutron-1': 'untrn',
+    'noble-1': 'uusdc',
+    'akash-1': 'uakt',
+    'stargaze-1': 'ustars',
+    'juno-1': 'ujuno',
+    'stride-1': 'ustrd',
+    'axelar-1': 'uaxl'
+  }
+  return denomMap[chainId] || 'uatom'
+}
 
 const testing = ref(false)
 
@@ -342,15 +377,19 @@ function importSettings() {
         settings.value = { ...settings.value, ...data.settings }
       }
       if (data.supportedChains) {
-        // Only use chains that are in our centralized config
+        // Map chain IDs to our chain objects
+        const allChains = await configService.getAllChains()
         chains.value = data.supportedChains
-          .filter((chainId: string) => chainId in CHAIN_CONFIG)
-          .map((chainId: string) => ({
-            id: chainId,
-            name: CHAIN_CONFIG[chainId].name,
-            clearingFee: CHAIN_CONFIG[chainId].clearingFee || '0.1',
-            denom: CHAIN_CONFIG[chainId].denom
-          }))
+          .map((chainId: string) => {
+            const chain = allChains.find(c => c.chain_id === chainId)
+            return chain ? {
+              id: chain.chain_id,
+              name: chain.chain_name,
+              clearingFee: '0.1',
+              denom: getDenomForChain(chain.chain_id)
+            } : null
+          })
+          .filter(Boolean)
       }
       
       saveSettings()
