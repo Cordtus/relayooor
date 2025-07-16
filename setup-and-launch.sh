@@ -86,9 +86,37 @@ cleanup() {
 build_services() {
     print_status "Building services..."
     
-    # Build with progress output
-    if ! docker-compose build --progress=plain; then
-        print_error "Build failed. Check the error messages above."
+    # First build the frontend
+    print_status "Building frontend..."
+    cd webapp
+    if ! yarn install; then
+        print_error "Failed to install frontend dependencies"
+        exit 1
+    fi
+    
+    if ! yarn build; then
+        print_error "Failed to build frontend"
+        exit 1
+    fi
+    cd ..
+    print_status "Frontend built successfully ✓"
+    
+    # Build API binary (optional - Docker will handle this)
+    if [ -d "api" ]; then
+        print_status "Building API server..."
+        cd api
+        if ! go build -o api-server ./cmd/server; then
+            print_warning "Failed to build API server locally (Docker will build it)"
+        else
+            print_status "API server built successfully ✓"
+        fi
+        cd ..
+    fi
+    
+    # Build Docker containers
+    print_status "Building Docker containers..."
+    if ! docker-compose build; then
+        print_error "Docker build failed. Check the error messages above."
         exit 1
     fi
     

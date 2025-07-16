@@ -54,43 +54,43 @@ export interface ClearPacketResponse {
 export const packetsService = {
   // Get transfers for a specific wallet
   async getUserTransfers(walletAddress: string): Promise<UserTransfer[]> {
-    const response = await api.get(`/api/user/${walletAddress}/transfers`)
+    const response = await api.get(`/user/${walletAddress}/transfers`)
     return response.data
   },
 
   // Get stuck packets for a specific wallet
   async getUserStuckPackets(walletAddress: string): Promise<UserTransfer[]> {
-    const response = await api.get(`/api/user/${walletAddress}/stuck`)
+    const response = await api.get(`/user/${walletAddress}/stuck`)
     return response.data
   },
 
   // Get all stuck packets (global view)
   async getAllStuckPackets(): Promise<StuckPacket[]> {
-    const response = await api.get('/api/packets/stuck')
+    const response = await api.get('/packets/stuck')
     return response.data
   },
 
   // Clear stuck packets
   async clearPackets(request: ClearPacketRequest): Promise<ClearPacketResponse> {
-    const response = await api.post('/api/packets/clear', request)
+    const response = await api.post('/packets/clear', request)
     return response.data
   },
 
   // Get packet status from the chainpulse integration
   async getPacketDetails(chain: string, channel: string, sequence: number): Promise<any> {
-    const response = await api.get(`/api/v1/chainpulse/packets/${chain}/${channel}/${sequence}`)
+    const response = await api.get(`/packets/${chain}/${channel}/${sequence}`)
     return response.data
   },
 
   // Get channel congestion data
   async getChannelCongestion(): Promise<any[]> {
-    const response = await api.get('/api/v1/chainpulse/channels/congestion')
+    const response = await api.get('/channels/congestion')
     return response.data
   },
 
   // Stream stuck packets (SSE)
   subscribeToStuckPackets(callback: (packets: StuckPacket[]) => void): EventSource {
-    const eventSource = new EventSource(`${api.defaults.baseURL}/api/v1/packets/stuck/stream`)
+    const eventSource = new EventSource(`${api.defaults.baseURL}/packets/stuck/stream`)
     
     eventSource.onmessage = (event) => {
       try {

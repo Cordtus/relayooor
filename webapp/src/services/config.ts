@@ -45,7 +45,7 @@ class ConfigService {
     }
 
     // Start loading
-    this.loadPromise = api.get<ChainRegistry>('/api/config')
+    this.loadPromise = api.get<ChainRegistry>('/config')
       .then(response => {
         this.registry = response.data
         return this.registry

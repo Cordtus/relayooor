@@ -120,7 +120,7 @@ export interface PlatformStatistics {
 
 // Service class
 export class ClearingService {
-  private baseUrl = '/api/v1'
+  private baseUrl = '/api'
   private wsConnection: WebSocket | null = null
   private statusCallbacks: Map<string, (status: ClearingStatus) => void> = new Map()
 
@@ -329,8 +329,8 @@ export class ClearingService {
 
   private connectWebSocket() {
     const wsUrl = window.location.protocol === 'https:' 
-      ? `wss://${window.location.host}/api/v1/ws/clearing-updates`
-      : `ws://${window.location.host}/api/v1/ws/clearing-updates`
+      ? `wss://${window.location.host}/api/ws/clearing-updates`
+      : `ws://${window.location.host}/api/ws/clearing-updates`
 
     this.wsConnection = new WebSocket(wsUrl)
     

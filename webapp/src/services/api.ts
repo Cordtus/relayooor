@@ -15,37 +15,37 @@ export const apiClient = api
 export const analyticsService = {
   // Get platform-wide statistics
   async getPlatformStatistics(): Promise<any> {
-    const response = await api.get('/api/v1/statistics/platform')
+    const response = await api.get('/statistics/platform')
     return response.data
   },
 
   // Get network flow data
   async getNetworkFlows(): Promise<any> {
-    const response = await api.get('/api/v1/metrics/packet-flow')
+    const response = await api.get('/metrics/packet-flow')
     return response.data
   },
 
   // Get channel congestion data
   async getChannelCongestion(): Promise<any> {
-    const response = await api.get('/api/v1/chainpulse/channels/congestion')
+    const response = await api.get('/channels/congestion')
     return response.data
   },
 
   // Get stuck packets analytics
   async getStuckPacketsAnalytics(): Promise<any> {
-    const response = await api.get('/api/v1/metrics/stuck-packets')
+    const response = await api.get('/metrics/stuck-packets')
     return response.data
   },
 
   // Get relayer performance analytics
   async getRelayerPerformance(): Promise<any> {
-    const response = await api.get('/api/v1/metrics/relayer-performance')
+    const response = await api.get('/metrics/relayer-performance')
     return response.data
   },
 
   // Get historical data for trend analysis
   async getHistoricalTrends(timeRange: string): Promise<any> {
-    const response = await api.get('/api/v1/metrics/trends', {
+    const response = await api.get('/metrics/trends', {
       params: { range: timeRange }
     })
     return response.data
@@ -57,7 +57,7 @@ export const chainRegistryService = {
   chainCache: new Map<string, ChainInfo>(),
 
   async getChainRegistry(): Promise<{ chains: ChainInfo[] }> {
-    const response = await api.get('/api/chains/registry')
+    const response = await api.get('/chains/registry')
     const data = response.data as { chains: ChainInfo[] }
     // Cache the chains
     data.chains.forEach(chain => {
@@ -115,7 +115,7 @@ export const metricsService = {
   // Fetch raw Prometheus metrics from Chainpulse
   async getRawMetrics(): Promise<string> {
     try {
-      const response = await api.get('/api/v1/chainpulse/metrics', {
+      const response = await api.get('/metrics/chainpulse', {
         responseType: 'text'
       })
       return response.data
@@ -127,14 +127,14 @@ export const metricsService = {
 
   // Fetch structured monitoring metrics
   async getMonitoringMetrics(): Promise<any> {
-    const response = await api.get('/api/monitoring/metrics')
+    const response = await api.get('/monitoring/metrics')
     return response.data
   },
 
   // Fetch structured monitoring data
   async getMonitoringData(): Promise<any> {
     try {
-      const response = await api.get('/api/v1/monitoring/data')
+      const response = await api.get('/monitoring/data')
       return response.data
     } catch (error) {
       // Fall back to parsing raw metrics
