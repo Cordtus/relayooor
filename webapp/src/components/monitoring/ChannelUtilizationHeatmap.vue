@@ -1,6 +1,7 @@
 <template>
   <div class="bg-white p-4 rounded-lg">
     <h3 class="text-lg font-medium mb-4">Channel Utilization Heatmap</h3>
+    <p class="text-xs text-gray-500 mb-3">Shows direct IBC channels between chains. Some packets may use multi-hop routes not shown here.</p>
     <div class="overflow-x-auto">
       <table class="min-w-full">
         <thead>
@@ -36,27 +37,32 @@
     <div class="mt-4 flex items-center justify-center space-x-4 text-xs">
       <div class="flex items-center">
         <div class="w-4 h-4 bg-green-500 rounded mr-1"></div>
-        <span>High (>1000)</span>
+        <span>High (>10k packets)</span>
       </div>
       <div class="flex items-center">
         <div class="w-4 h-4 bg-yellow-500 rounded mr-1"></div>
-        <span>Medium (100-1000)</span>
+        <span>Medium (1k-10k)</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-orange-500 rounded mr-1"></div>
+        <span>Low (100-1k)</span>
       </div>
       <div class="flex items-center">
         <div class="w-4 h-4 bg-red-500 rounded mr-1"></div>
-        <span>Low (<100)</span>
+        <span>Minimal (<100)</span>
       </div>
       <div class="flex items-center">
         <div class="w-4 h-4 bg-gray-300 rounded mr-1"></div>
-        <span>No Activity</span>
+        <span>No Direct Channel</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ChannelMetrics } from '@/types/monitoring'
+import { resolveChannels, type ChannelInfo } from '@/services/channel-resolver'
 
 interface Props {
   channels?: ChannelMetrics[]
@@ -64,24 +70,109 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Store resolved channel information
+const resolvedChannels = ref<Map<string, ChannelInfo>>(new Map())
+
 const uniqueChains = computed(() => {
   if (!props.channels) return []
   const chains = new Set<string>()
+  
+  // First add all source chains
   props.channels.forEach(channel => {
     chains.add(channel.srcChain)
-    chains.add(channel.dstChain)
+    
+    // Add destination chains, including inferred ones
+    if (channel.dstChain && channel.dstChain !== 'unknown') {
+      chains.add(channel.dstChain)
+    } else {
+      // Try to infer destination for unknown channels
+      const inferred = inferDestinationChain(channel.dstChannel)
+      if (inferred) {
+        chains.add(inferred)
+      }
+    }
   })
-  return Array.from(chains).sort()
+  
+  // Always include major chains to show the full picture
+  const majorChains = ['cosmoshub-4', 'osmosis-1', 'noble-1', 'neutron-1', 'axelar-dojo-1', 'stride-1']
+  majorChains.forEach(chain => chains.add(chain))
+  
+  return Array.from(chains).filter(c => c !== 'unknown').sort()
 })
 
 const channelMap = computed(() => {
-  const map = new Map<string, ChannelMetrics>()
+  const map = new Map<string, { totalPackets: number, channels: ChannelMetrics[] }>()
+  
   props.channels?.forEach(channel => {
-    const key = `${channel.srcChain}-${channel.dstChain}`
-    map.set(key, channel)
+    let dstChain = channel.dstChain
+    
+    // If destination is unknown, check resolved channels first
+    if (!dstChain || dstChain === 'unknown') {
+      const resolvedKey = `${channel.srcChain}:${channel.srcChannel}`
+      const resolved = resolvedChannels.value.get(resolvedKey)
+      
+      if (resolved) {
+        dstChain = resolved.counterpartyChainId
+      } else {
+        // Fall back to inference from channel ID patterns
+        const inferredDst = inferDestinationChain(channel.dstChannel)
+        if (inferredDst) {
+          dstChain = inferredDst
+        } else {
+          return // Skip this channel
+        }
+      }
+    }
+    
+    const key = `${channel.srcChain}-${dstChain}`
+    const existing = map.get(key)
+    
+    if (existing) {
+      existing.totalPackets += channel.totalPackets
+      existing.channels.push(channel)
+    } else {
+      map.set(key, {
+        totalPackets: channel.totalPackets,
+        channels: [channel]
+      })
+    }
   })
+  
   return map
 })
+
+function inferDestinationChain(dstChannel: string): string | null {
+  // Common channel mappings based on typical IBC channel patterns
+  const channelMappings: Record<string, string> = {
+    // Cosmos Hub channels
+    'channel-0': 'cosmoshub-4',
+    'channel-141': 'cosmoshub-4',
+    'channel-301': 'cosmoshub-4',
+    
+    // Noble channels
+    'channel-1': 'noble-1',
+    'channel-750': 'noble-1',
+    'channel-169': 'noble-1',
+    
+    // Osmosis channels
+    'channel-42': 'osmosis-1',
+    'channel-251': 'osmosis-1',
+    'channel-362': 'osmosis-1',
+    
+    // Neutron channels
+    'channel-874': 'neutron-1',
+    'channel-653': 'neutron-1',
+    
+    // Axelar channels
+    'channel-208': 'axelar-dojo-1',
+    'channel-4': 'axelar-dojo-1',
+    
+    // Stride channels
+    'channel-326': 'stride-1',
+    'channel-391': 'stride-1'
+  }
+  return channelMappings[dstChannel] || null
+}
 
 function getChainShortName(chainId: string): string {
   const names: Record<string, string> = {
@@ -93,27 +184,65 @@ function getChainShortName(chainId: string): string {
 }
 
 function getCellValue(src: string, dst: string): string {
-  const channel = channelMap.value.get(`${src}-${dst}`)
-  if (!channel) return ''
-  return channel.totalPackets > 1000 ? `${(channel.totalPackets / 1000).toFixed(1)}k` :
-         channel.totalPackets.toString()
+  const data = channelMap.value.get(`${src}-${dst}`)
+  if (!data || data.totalPackets === 0) return ''
+  return data.totalPackets > 1000 ? `${(data.totalPackets / 1000).toFixed(1)}k` :
+         data.totalPackets.toString()
 }
 
 function getCellClass(src: string, dst: string): string {
-  const channel = channelMap.value.get(`${src}-${dst}`)
-  if (!channel) return 'bg-gray-300 text-gray-600'
+  const data = channelMap.value.get(`${src}-${dst}`)
+  if (!data || data.totalPackets === 0) return 'bg-gray-300 text-gray-600'
   
-  if (channel.totalPackets > 1000) return 'bg-green-500 text-white'
-  if (channel.totalPackets > 100) return 'bg-yellow-500 text-white'
-  if (channel.totalPackets > 0) return 'bg-red-500 text-white'
+  if (data.totalPackets > 10000) return 'bg-green-500 text-white'
+  if (data.totalPackets > 1000) return 'bg-yellow-500 text-white'
+  if (data.totalPackets > 100) return 'bg-orange-500 text-white'
+  if (data.totalPackets > 0) return 'bg-red-500 text-white'
   return 'bg-gray-300 text-gray-600'
 }
 
 function getCellTooltip(src: string, dst: string): string {
-  const channel = channelMap.value.get(`${src}-${dst}`)
-  if (!channel) return 'No channel activity'
-  return `${channel.srcChannel} → ${channel.dstChannel}\n` +
-         `Packets: ${channel.totalPackets.toLocaleString()}\n` +
-         `Success Rate: ${channel.successRate.toFixed(1)}%`
+  const data = channelMap.value.get(`${src}-${dst}`)
+  if (!data || data.totalPackets === 0) return 'No channel activity'
+  
+  const channelList = data.channels
+    .map(ch => `${ch.srcChannel} → ${ch.dstChannel}`)
+    .join('\n')
+  
+  return `Total Packets: ${data.totalPackets.toLocaleString()}\n` +
+         `Channels (${data.channels.length}):\n${channelList}`
 }
+
+// Resolve unknown channels dynamically
+async function resolveUnknownChannels() {
+  if (!props.channels) return
+  
+  // Find channels with unknown destinations
+  const unknownChannels = props.channels
+    .filter(ch => !ch.dstChain || ch.dstChain === 'unknown')
+    .map(ch => ({
+      sourceChainId: ch.srcChain,
+      channelId: ch.srcChannel,
+      portId: 'transfer'
+    }))
+  
+  if (unknownChannels.length === 0) return
+  
+  try {
+    // Resolve channels in batches
+    const resolved = await resolveChannels(unknownChannels)
+    resolvedChannels.value = resolved
+  } catch (error) {
+    console.warn('Failed to resolve some channels:', error)
+  }
+}
+
+// Watch for channel changes and resolve unknown ones
+watch(() => props.channels, async () => {
+  await resolveUnknownChannels()
+}, { immediate: true })
+
+onMounted(async () => {
+  await resolveUnknownChannels()
+})
 </script>
