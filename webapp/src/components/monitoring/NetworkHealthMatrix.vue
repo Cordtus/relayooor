@@ -7,6 +7,9 @@
         :class="getHealthClass(chain)">
         <h4 class="font-medium text-gray-900">{{ chain.chainName }}</h4>
         <p class="text-sm text-gray-600 mt-1">{{ chain.chainId }}</p>
+        <p v-if="chain.chainId === 'neutron-1'" class="text-xs text-blue-600 mt-1" title="Neutron uses Slinky oracle vote extensions which require special handling">
+          ⚠️ Limited monitoring
+        </p>
         
         <!-- Health Indicators -->
         <div class="mt-3 space-y-1">
@@ -52,6 +55,9 @@ interface Props {
 const props = defineProps<Props>()
 
 function getHealthClass(chain: ChainMetrics): string {
+  // Special case for Neutron - show as info/warning due to Slinky compatibility
+  if (chain.chainId === 'neutron-1') return 'border-blue-300 bg-blue-50'
+  
   if (chain.errors > 50) return 'border-red-300 bg-red-50'
   if (chain.errors > 20 || chain.reconnects > 10) return 'border-yellow-300 bg-yellow-50'
   return 'border-green-300 bg-green-50'

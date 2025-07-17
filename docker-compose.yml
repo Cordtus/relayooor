@@ -34,7 +34,7 @@ services:
       - NEUTRON_WS_URL=${NEUTRON_WS_URL:-wss://neutron-rpc.polkachu.com/websocket}
       - NOBLE_WS_URL=${NOBLE_WS_URL:-wss://noble-rpc.polkachu.com/websocket}
     volumes:
-      - ./config/chainpulse-selected.toml:/config/chainpulse.toml:ro
+      - ./config/chainpulse-selected-no-neutron.toml:/config/chainpulse.toml:ro
       - chainpulse-data:/data
     ports:
       - "3001:3001"  # Metrics endpoint
@@ -129,9 +129,13 @@ services:
     image: ghcr.io/informalsystems/hermes:1.10.5
     environment:
       - RUST_LOG=info
+      - RPC_USERNAME=${RPC_USERNAME}
+      - RPC_PASSWORD=${RPC_PASSWORD}
     volumes:
-      - ./config/hermes:/home/hermes/.hermes:ro
+      - ./config/hermes:/config:ro
+      - ./config/hermes/entrypoint.sh:/entrypoint.sh:ro
       - hermes-data:/data
+    entrypoint: ["/entrypoint.sh"]
     ports:
       - "3010:3001"  # Telemetry
       - "5185:5185"  # REST API

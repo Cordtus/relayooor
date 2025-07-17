@@ -166,6 +166,11 @@ func main() {
 				relayer.POST("/rly/stop", originalHandlers.StopGoRelayer)
 				relayer.GET("/config", originalHandlers.GetRelayerConfig)
 				relayer.PUT("/config", originalHandlers.UpdateRelayerConfig)
+				
+				// New Hermes-specific endpoints
+				relayer.GET("/hermes/version", originalHandlers.GetHermesVersion)
+				relayer.GET("/hermes/health", originalHandlers.GetHermesHealth)
+				relayer.POST("/hermes/clear", originalHandlers.ClearPacketsWithHermes)
 			}
 
 			// Metrics and monitoring

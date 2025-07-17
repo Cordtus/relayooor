@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 
 // GetMonitoringData returns structured monitoring data
 func (h *Handler) GetMonitoringData(c *gin.Context) {
-	ctx := context.Background()
 	
 	// Get chain data from chainpulse metrics
 	chains := []gin.H{
@@ -289,7 +287,7 @@ func (h *Handler) GetPacketFlowMetrics(c *gin.Context) {
 }
 
 // GetStuckPackets returns analytics for stuck packets
-func (h *Handler) GetStuckPackets(c *gin.Context) {
+func (h *Handler) GetMonitoringStuckPackets(c *gin.Context) {
 	stuckPackets := []gin.H{
 		{
 			"channelId": "channel-0",

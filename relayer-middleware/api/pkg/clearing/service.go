@@ -82,8 +82,8 @@ func NewServiceV2(
 	}
 	
 	// Create execution service
-	// TODO: Create actual Hermes client
-	var hermesClient HermesClient
+	// Create Hermes client
+	hermesClient := NewHermesClient(config.HermesURL)
 	tracker := &simpleOperationTracker{}
 	
 	service.executionService = NewExecutionServiceV2(

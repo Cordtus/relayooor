@@ -142,12 +142,17 @@ volumes/
 
 # Relayer specific
 # Keep example configs but ignore actual configs with potential secrets
-config/hermes/config.toml
 config/hermes/keys/
 config/relayer/*
-!config/hermes/config.toml.example
+!config/hermes/config.toml
+!config/hermes/entrypoint.sh
 !config/hermes/.gitkeep
 !config/relayer/.gitkeep
+
+# Hermes runtime data
+hermes-data/
+.hermes/
+*.hermes.db
 
 # Configuration files that might contain credentials
 # Allow tracked configs with placeholders, but ignore any local overrides
