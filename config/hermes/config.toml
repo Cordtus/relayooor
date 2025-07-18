@@ -37,7 +37,7 @@ latency_confirmed = { start = 1000, end = 30000, buckets = 10 }
 id = 'cosmoshub-4'
 type = 'CosmosSdk'
 rpc_addr = 'https://cosmoshub-4-skip-rpc.polkachu.com'
-grpc_addr = 'https://cosmoshub-4-skip-grpc.polkachu.com:14990'
+grpc_addr = 'cosmoshub-4-skip-grpc.polkachu.com:14990'
 event_source = { mode = 'push', url = 'wss://cosmoshub-4-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
@@ -63,7 +63,7 @@ sequential_batch_tx = false
 id = 'osmosis-1'
 type = 'CosmosSdk'
 rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com'
-grpc_addr = 'https://osmosis-1-skip-grpc.polkachu.com:12590'
+grpc_addr = 'osmosis-1-skip-grpc.polkachu.com:12590'
 event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
@@ -89,7 +89,7 @@ sequential_batch_tx = false
 id = 'noble-1'
 type = 'CosmosSdk'
 rpc_addr = 'https://noble-1-skip-rpc.polkachu.com'
-grpc_addr = 'https://noble-1-skip-grpc.polkachu.com:21590'
+grpc_addr = 'noble-1-skip-grpc.polkachu.com:21590'
 event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
@@ -114,9 +114,9 @@ sequential_batch_tx = false
 [[chains]]
 id = 'stride-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://stride-1-skip-rpc.polkachu.com'
-grpc_addr = 'https://stride-1-skip-grpc.polkachu.com:12290'
-event_source = { mode = 'push', url = 'wss://stride-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://stride-rpc.lavenderfive.com'
+grpc_addr = 'stride-grpc.lavenderfive.com:443'
+event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'stride'
@@ -135,3 +135,55 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+# Jackal
+[[chains]]
+id = 'jackal-1'
+type = 'CosmosSdk'
+rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com'
+grpc_addr = 'jackal-1-skip-grpc.polkachu.com:17590'
+event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_timeout = '10s'
+trusted_node = false
+account_prefix = 'jkl'
+key_name = 'relayer'
+key_store_type = 'Test'
+store_prefix = 'ibc'
+default_gas = 100000
+max_gas = 400000
+gas_price = { price = 0.002, denom = 'ujkl' }
+gas_multiplier = 1.1
+max_msg_num = 30
+max_tx_size = 1800000
+max_grpc_decoding_size = 33554432
+clock_drift = '5s'
+max_block_time = '10s'
+ccv_consumer_chain = false
+memo_prefix = 'Relayed by Relayooor'
+sequential_batch_tx = false
+
+# Axelar
+[[chains]]
+id = 'axelar-dojo-1'
+type = 'CosmosSdk'
+rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com'
+grpc_addr = 'axelar-dojo-1-skip-grpc.polkachu.com:15190'
+event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_timeout = '10s'
+trusted_node = false
+account_prefix = 'axelar'
+key_name = 'relayer'
+key_store_type = 'Test'
+store_prefix = 'ibc'
+default_gas = 100000
+max_gas = 400000
+gas_price = { price = 0.05, denom = 'uaxl' }
+gas_multiplier = 1.1
+max_msg_num = 30
+max_tx_size = 1800000
+max_grpc_decoding_size = 33554432
+clock_drift = '5s'
+max_block_time = '10s'
+ccv_consumer_chain = false
+memo_prefix = 'Relayed by Relayooor'
+sequential_batch_tx = false
+EOF < /dev/null

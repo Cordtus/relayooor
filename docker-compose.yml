@@ -33,8 +33,10 @@ services:
       - OSMOSIS_WS_URL=${OSMOSIS_WS_URL:-wss://osmosis-rpc.polkachu.com/websocket}
       - NEUTRON_WS_URL=${NEUTRON_WS_URL:-wss://neutron-rpc.polkachu.com/websocket}
       - NOBLE_WS_URL=${NOBLE_WS_URL:-wss://noble-rpc.polkachu.com/websocket}
+      - JACKAL_WS_URL=${JACKAL_WS_URL:-wss://jackal-rpc.polkachu.com/websocket}
+      - AXELAR_WS_URL=${AXELAR_WS_URL:-wss://axelar-rpc.polkachu.com/websocket}
     volumes:
-      - ./config/chainpulse-selected-no-neutron.toml:/config/chainpulse.toml:ro
+      - ./config/chainpulse-extended.toml:/config/chainpulse.toml:ro
       - chainpulse-data:/data
     ports:
       - "3001:3001"  # Metrics endpoint

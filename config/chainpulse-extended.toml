@@ -1,0 +1,51 @@
+# Chainpulse configuration for extended chains including Jackal and Axelar
+# Using Skip endpoints with authentication
+
+[database]
+path = "/data/chainpulse.db"
+
+[metrics]
+enabled = true
+port = 3001
+stuck_packets = true
+populate_on_start = true
+
+# Cosmos Hub - Skip endpoint
+[chains.cosmoshub-4]
+url = "${COSMOS_WS_URL}"
+comet_version = "0.37"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Osmosis - Skip endpoint
+[chains.osmosis-1]
+url = "${OSMOSIS_WS_URL}"
+comet_version = "0.38"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Noble - Skip endpoint
+[chains.noble-1]
+url = "${NOBLE_WS_URL}"
+comet_version = "0.38"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Stride - Public endpoint (no Skip endpoint available)
+[chains.stride-1]
+url = "wss://stride-rpc.lavenderfive.com/websocket"
+comet_version = "0.37"
+
+# Jackal - Skip endpoint
+[chains.jackal-1]
+url = "wss://jackal-1-skip-rpc.polkachu.com/websocket"
+comet_version = "0.37"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
+
+# Axelar - Skip endpoint
+[chains.axelar-dojo-1]
+url = "wss://axelar-dojo-1-skip-rpc.polkachu.com/websocket"
+comet_version = "0.37"
+username = "${RPC_USERNAME}"
+password = "${RPC_PASSWORD}"
