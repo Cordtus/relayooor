@@ -34,9 +34,10 @@ A comprehensive platform for IBC packet clearing and monitoring that provides se
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Vue.js App    │────▶│  API Gateway    │────▶│   Chainpulse    │
-│ (User Interface)│     │  (Go + Redis)   │     │  (Monitoring)   │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+│   Vue.js Apps   │────▶│  API Gateway    │────▶│   Chainpulse    │
+│ - Main Dashboard│     │  (Go + Redis)   │     │  (Monitoring)   │
+│ - Packet Manager│     └─────────────────┘     └─────────────────┘
+└─────────────────┘
          │                       │                        │
          │                       ▼                        ▼
          │              ┌─────────────────┐     ┌─────────────────┐
@@ -172,6 +173,18 @@ yarn dev  # Note: May have issues on M1/M4 Macs, use Docker instead
 - Per-packet fee: 0.1 TOKEN
 - Gas fees: Estimated based on current network conditions
 - Automatic refunds for overpayments
+
+## Tools and Access Points
+
+### Web Applications
+- **Main Dashboard** (http://localhost:8080): Full-featured IBC monitoring and packet clearing platform
+- **Packet Manager** (http://localhost:5174): Simplified tool for querying and clearing stuck packets
+
+### API Endpoints
+- **Main API**: http://localhost:3000/api/v1
+- **Hermes REST API**: http://localhost:5185
+- **Hermes Metrics**: http://localhost:3010/metrics
+- **Chainpulse Metrics**: http://localhost:3001
 
 ## Configuration
 

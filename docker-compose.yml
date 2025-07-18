@@ -144,6 +144,21 @@ services:
     networks:
       - relayooor-net
 
+  # Packet Manager - Simplified IBC packet management tool
+  packet-manager:
+    build:
+      context: ./packet-manager
+      dockerfile: Dockerfile
+    ports:
+      - "5174:80"
+    restart: unless-stopped
+    networks:
+      - relayooor-net
+    depends_on:
+      - api-backend
+      - hermes
+      - chainpulse
+
 networks:
   relayooor-net:
     driver: bridge
