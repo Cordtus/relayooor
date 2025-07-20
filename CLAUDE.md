@@ -18,8 +18,8 @@ Relayooor is an IBC (Inter-Blockchain Communication) packet clearing platform fo
 
 ### Backend APIs
 
-- **Simple API (/api)**: Basic mock implementation - DO NOT USE for production features
-- **Full API (/relayer-middleware/api)**: Complete implementation with packet clearing logic - THIS IS THE MAIN API
+- **Simple API (/api)**: Main API implementation using Chainpulse APIs directly
+- **Full API (/relayer-middleware/api)**: Advanced implementation with packet clearing logic (for future features)
 
 ### Services
 
@@ -73,11 +73,12 @@ psql -h localhost -U relayooor_user -d relayooor
 
 ### API Integration
 
-The frontend expects the full-featured API at `/api/*`. Currently, a simple mock API is deployed. When implementing features:
+The frontend uses the simple API implementation at `/api/cmd/server/main.go` which provides all necessary endpoints:
 
-1. Check if endpoint exists in `/relayer-middleware/api/handlers/`
-2. If not, implement in the full API, not the simple one
-3. Frontend API client is at `webapp/src/api/client.ts`
+1. The main API is in `/api/cmd/server/main.go` (not `/api/handlers/` which is unused)
+2. Frontend API client is at `webapp/src/services/api.ts`
+3. All packet data comes from Chainpulse APIs, not Prometheus metrics parsing
+4. The api/handlers package exists but is not currently used in the application
 
 ### State Management Pattern
 
@@ -107,6 +108,16 @@ func TestHandler(t *testing.T) {
     assert.Equal(t, expected, actual)
 }
 ```
+
+## Recent Features
+
+### Packet Search (Added 2025-07-20)
+- Comprehensive search functionality for IBC packets
+- Search by wallet address (as sender or receiver)
+- Filter by chain, token/denom, and age
+- Export results to CSV
+- Component: `webapp/src/components/search/PacketSearch.vue`
+- API endpoint: `GET /api/packets/search`
 
 ## Known Issues & Workarounds
 
@@ -160,9 +171,9 @@ func TestHandler(t *testing.T) {
 ### Common Development Tasks
 
 1. **Adding a new API endpoint**:
-   - Implement handler in `/relayer-middleware/api/handlers/`
-   - Add route in `/relayer-middleware/api/routes/routes.go`
-   - Update frontend API client if needed
+   - Add handler function in `/api/cmd/server/main.go`
+   - Register route with the Gorilla Mux router
+   - Update frontend API client in `webapp/src/services/api.ts`
 
 2. **Creating a new Vue component**:
    - Follow existing patterns in `webapp/src/components/`

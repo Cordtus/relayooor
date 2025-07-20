@@ -220,12 +220,18 @@ HERMES_REST_URL=http://localhost:5185
 - `POST /api/v1/clearing/verify-payment` - Verify payment transaction
 - `GET /api/v1/clearing/status/:token` - Check clearing status
 
+### Packet Queries
+- `GET /api/packets/search` - Search packets by sender, receiver, chain, denom, age
+- `GET /api/packets/stuck` - Get all stuck packets across chains
+- `GET /api/user/:wallet/transfers` - Get transfers for a specific wallet
+
 ### User Management
 - `POST /api/v1/auth/wallet-sign` - Authenticate with wallet signature
 - `GET /api/v1/users/statistics` - Get user clearing statistics
 
 ### Platform Analytics
 - `GET /api/v1/statistics/platform` - Platform-wide statistics
+- `GET /api/metrics` - Real-time platform metrics
 
 ## Production Deployment
 
