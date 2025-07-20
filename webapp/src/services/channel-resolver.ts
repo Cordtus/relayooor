@@ -6,6 +6,7 @@
  */
 
 import { api } from './api'
+import { fetchChainRegistry } from './chain-registry'
 
 interface ChannelInfo {
   channelId: string
@@ -27,15 +28,22 @@ interface ChainRPCEndpoint {
 // Cache for channel information to avoid repeated API calls
 const channelCache = new Map<string, ChannelInfo>()
 
-// Known chain REST endpoints - in production, these would come from config
-const chainEndpoints: ChainRPCEndpoint[] = [
-  { chainId: 'cosmoshub-4', restUrl: 'https://cosmos-rest.publicnode.com' },
-  { chainId: 'osmosis-1', restUrl: 'https://osmosis-rest.publicnode.com' },
-  { chainId: 'neutron-1', restUrl: 'https://neutron-rest.publicnode.com' },
-  { chainId: 'noble-1', restUrl: 'https://noble-rest.publicnode.com' },
-  { chainId: 'axelar-dojo-1', restUrl: 'https://axelar-rest.publicnode.com' },
-  { chainId: 'stride-1', restUrl: 'https://stride-rest.publicnode.com' }
-]
+// Get chain endpoints from the centralized registry
+async function getChainEndpoints(): Promise<ChainRPCEndpoint[]> {
+  const registry = await fetchChainRegistry()
+  const endpoints: ChainRPCEndpoint[] = []
+  
+  for (const [chainId, chain] of Object.entries(registry.chains)) {
+    if (chain.rest_endpoint) {
+      endpoints.push({
+        chainId,
+        restUrl: chain.rest_endpoint
+      })
+    }
+  }
+  
+  return endpoints
+}
 
 /**
  * Sanitize URL by removing trailing slashes
@@ -64,8 +72,9 @@ async function fetchData<T>(url: string): Promise<T | null> {
 /**
  * Get REST endpoint for a given chain ID
  */
-function getChainEndpoint(chainId: string): string | null {
-  const endpoint = chainEndpoints.find(e => e.chainId === chainId)
+async function getChainEndpoint(chainId: string): Promise<string | null> {
+  const endpoints = await getChainEndpoints()
+  const endpoint = endpoints.find(e => e.chainId === chainId)
   return endpoint ? endpoint.restUrl : null
 }
 
@@ -83,7 +92,7 @@ export async function resolveChannel(
     return channelCache.get(cacheKey)!
   }
 
-  const restUrl = getChainEndpoint(sourceChainId)
+  const restUrl = await getChainEndpoint(sourceChainId)
   if (!restUrl) {
     console.warn(`No REST endpoint configured for chain ${sourceChainId}`)
     return null

@@ -9,6 +9,7 @@ Relayooor is an IBC (Inter-Blockchain Communication) packet clearing platform fo
 ## Key Architecture Components
 
 ### Frontend (webapp/)
+
 - Vue 3 with TypeScript, Composition API, and `<script setup>` syntax
 - Pinia for state management
 - Tailwind CSS for styling
@@ -16,10 +17,12 @@ Relayooor is an IBC (Inter-Blockchain Communication) packet clearing platform fo
 - Vite as build tool
 
 ### Backend APIs
+
 - **Simple API (/api)**: Basic mock implementation - DO NOT USE for production features
 - **Full API (/relayer-middleware/api)**: Complete implementation with packet clearing logic - THIS IS THE MAIN API
 
 ### Services
+
 - **Chainpulse**: Fork of IBC monitoring service with CometBFT 0.38 support
 - **PostgreSQL**: Main database with optimized schemas
 - **Redis**: Caching layer
@@ -28,6 +31,7 @@ Relayooor is an IBC (Inter-Blockchain Communication) packet clearing platform fo
 ## Essential Development Commands
 
 ### Frontend Development
+
 ```bash
 cd webapp
 yarn install
@@ -40,6 +44,7 @@ yarn type-check    # Run TypeScript type checking
 ```
 
 ### Backend Development
+
 ```bash
 # From project root
 make dev-backend   # Start backend services
@@ -54,6 +59,7 @@ go run .           # Start API server
 ```
 
 ### Database Management
+
 ```bash
 # Apply migrations
 cd relayer-middleware/api
@@ -66,12 +72,15 @@ psql -h localhost -U relayooor_user -d relayooor
 ## Critical Implementation Notes
 
 ### API Integration
+
 The frontend expects the full-featured API at `/api/*`. Currently, a simple mock API is deployed. When implementing features:
+
 1. Check if endpoint exists in `/relayer-middleware/api/handlers/`
 2. If not, implement in the full API, not the simple one
 3. Frontend API client is at `webapp/src/api/client.ts`
 
 ### State Management Pattern
+
 ```typescript
 // Use Pinia stores in webapp/src/stores/
 const store = usePacketStore()
@@ -79,12 +88,14 @@ await store.fetchPackets()
 ```
 
 ### Component Structure
+
 - Components use `<script setup lang="ts">` syntax
 - Props defined with `defineProps<{...}>()`
 - Emit events with `defineEmits<{...}>()`
 - Follow existing patterns in `webapp/src/components/`
 
 ### Testing Approach
+
 ```typescript
 // Frontend component tests
 import { render, screen } from '@testing-library/vue'
@@ -106,11 +117,13 @@ func TestHandler(t *testing.T) {
 ## Project-Specific Conventions
 
 ### Git Workflow
+
 - Feature branches: `feature/description`
 - Bug fixes: `fix/description`
 - Commit format: `type: description` (feat, fix, docs, refactor, test)
 
 ### API Response Format
+
 ```json
 {
   "success": true,
@@ -120,10 +133,12 @@ func TestHandler(t *testing.T) {
 ```
 
 ### Error Handling
+
 - Frontend: Use toast notifications for user-facing errors
 - Backend: Return structured error responses with appropriate HTTP status codes
 
 ### Security Considerations
+
 - All packet clearing requests require JWT authentication
 - Token validation happens in middleware
 - Never log sensitive information (keys, tokens)
@@ -131,11 +146,13 @@ func TestHandler(t *testing.T) {
 ## Debugging Tips
 
 ### Frontend Debugging
+
 - Vue DevTools for component inspection
 - Network tab for API calls
 - Check Pinia stores for state issues
 
 ### Backend Debugging
+
 - Enable debug logging: `LOG_LEVEL=debug`
 - Check PostgreSQL logs for query issues
 - Monitor Redis for caching problems
@@ -156,3 +173,47 @@ func TestHandler(t *testing.T) {
    - Create migration in `/relayer-middleware/api/migrations/`
    - Test migration up and down
    - Update models in `/relayer-middleware/api/models/`
+
+## Internal Documentation
+
+Comprehensive internal documentation is maintained in the `.claude` directory. This documentation provides detailed guidance for all aspects of development, deployment, and operations.
+
+### Documentation Index
+
+#### Core Documentation
+- **[.claude/PROJECT_BLUEPRINT.md](.claude/PROJECT_BLUEPRINT.md)** - System architecture and design overview
+- **[.claude/BUILD_AND_DEPLOYMENT.md](.claude/BUILD_AND_DEPLOYMENT.md)** - Complete build and deployment procedures
+- **[.claude/FILE_MAPPING.md](.claude/FILE_MAPPING.md)** - Comprehensive file reference and structure
+- **[.claude/API_INTERFACES.md](.claude/API_INTERFACES.md)** - External API documentation (Hermes, Chainpulse)
+- **[.claude/TROUBLESHOOTING.md](.claude/TROUBLESHOOTING.md)** - Common issues and solutions
+
+#### Module Blueprints
+- **[.claude/implementations/FRONTEND_MODULE.md](.claude/implementations/FRONTEND_MODULE.md)** - Frontend architecture details
+- **[.claude/implementations/API_MODULE.md](.claude/implementations/API_MODULE.md)** - Backend API implementation
+- **[.claude/implementations/CHAINPULSE_MODULE.md](.claude/implementations/CHAINPULSE_MODULE.md)** - Monitoring service details
+- **[.claude/implementations/HERMES_MODULE.md](.claude/implementations/HERMES_MODULE.md)** - IBC relayer integration
+
+#### Working Documentation
+- **[.claude/sessions/DEVELOPMENT_CACHE.md](.claude/sessions/DEVELOPMENT_CACHE.md)** - Current development status and notes
+- **[.claude/INDEX.md](.claude/INDEX.md)** - Complete documentation index with usage guide
+
+### When to Consult Internal Docs
+
+- **Starting development**: Read PROJECT_BLUEPRINT and BUILD_AND_DEPLOYMENT
+- **Adding features**: Consult relevant module blueprint
+- **Debugging issues**: Check TROUBLESHOOTING first
+- **Finding files**: Use FILE_MAPPING reference
+- **API integration**: Refer to API_INTERFACES
+- **Current work**: Review DEVELOPMENT_CACHE
+
+### Quick Access Commands
+```bash
+# View all documentation
+ls -la .claude/
+
+# Search documentation
+grep -r "search-term" .claude/
+
+# Open documentation index
+cat .claude/INDEX.md
+```

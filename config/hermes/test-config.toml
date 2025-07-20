@@ -1,0 +1,56 @@
+[global]
+log_level = "debug"
+
+[mode.clients]
+enabled = false
+refresh = false
+misbehaviour = false
+
+[mode.connections]
+enabled = false
+
+[mode.channels]
+enabled = false
+
+[mode.packets]
+enabled = true
+clear_interval = 0
+clear_on_start = false
+tx_confirmation = true
+
+[rest]
+enabled = true
+host = "0.0.0.0"
+port = 5185
+
+[telemetry]
+enabled = true
+host = "0.0.0.0"
+port = 3001
+
+# Test with just Cosmos Hub
+[[chains]]
+id = 'cosmoshub-4'
+type = 'CosmosSdk'
+rpc_addr = 'https://skip:p01kachu%3F%21@cosmoshub-4-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://cosmoshub-4-skip-grpc.polkachu.com:14990'
+event_source = { mode = 'push', url = 'wss://skip:p01kachu%3F%21@cosmoshub-4-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+rpc_timeout = '10s'
+trusted_node = false
+account_prefix = 'cosmos'
+key_name = 'relayer'
+key_store_type = 'Test'
+store_prefix = 'ibc'
+default_gas = 100000
+max_gas = 400000
+gas_price = { price = 0.025, denom = 'uatom' }
+gas_multiplier = 1.1
+max_msg_num = 30
+max_tx_size = 1800000
+max_grpc_decoding_size = 33554432
+clock_drift = '5s'
+max_block_time = '10s'
+ccv_consumer_chain = false
+memo_prefix = 'Relayed by Relayooor'
+sequential_batch_tx = false
+compat_mode = '0.37'

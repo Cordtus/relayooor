@@ -15,6 +15,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"relayooor/api/internal/config"
 	"relayooor/api/pkg/types"
 )
 
@@ -664,10 +665,19 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 func parseChainRPCs() map[string]string {
 	rpcs := make(map[string]string)
-	// Parse from environment or use defaults
-	rpcs["osmosis-1"] = getEnvOrDefault("RPC_OSMOSIS", "https://rpc.osmosis.zone")
-	rpcs["cosmoshub-4"] = getEnvOrDefault("RPC_COSMOSHUB", "https://rpc.cosmos.network")
-	rpcs["neutron-1"] = getEnvOrDefault("RPC_NEUTRON", "https://rpc.neutron.org")
+	registry := config.DefaultChainRegistry()
+	
+	// Use centralized registry with environment override support
+	for chainID, chain := range registry.Chains {
+		// Check for environment override first
+		envKey := fmt.Sprintf("RPC_%s", strings.ToUpper(strings.ReplaceAll(chainID, "-", "_")))
+		if envRPC := os.Getenv(envKey); envRPC != "" {
+			rpcs[chainID] = envRPC
+		} else if chain.RPCEndpoint != "" {
+			rpcs[chainID] = chain.RPCEndpoint
+		}
+	}
+	
 	return rpcs
 }
 

@@ -36,9 +36,9 @@ latency_confirmed = { start = 1000, end = 30000, buckets = 10 }
 [[chains]]
 id = 'cosmoshub-4'
 type = 'CosmosSdk'
-rpc_addr = 'https://cosmoshub-4-skip-rpc.polkachu.com'
-grpc_addr = 'cosmoshub-4-skip-grpc.polkachu.com:14990'
-event_source = { mode = 'push', url = 'wss://cosmoshub-4-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://cosmoshub-4-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://cosmoshub-4-skip-grpc.polkachu.com:14990'
+event_source = { mode = 'push', url = 'wss://cosmoshub-4-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'cosmos'
@@ -57,14 +57,15 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+compat_mode = '0.37'
 
 # Osmosis
 [[chains]]
 id = 'osmosis-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com'
-grpc_addr = 'osmosis-1-skip-grpc.polkachu.com:12590'
-event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://osmosis-1-skip-grpc.polkachu.com:12590'
+event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'osmo'
@@ -83,14 +84,15 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+compat_mode = '0.37'
 
 # Noble
 [[chains]]
 id = 'noble-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://noble-1-skip-rpc.polkachu.com'
-grpc_addr = 'noble-1-skip-grpc.polkachu.com:21590'
-event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://noble-1-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://noble-1-skip-grpc.polkachu.com:21590'
+event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'noble'
@@ -109,14 +111,15 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+compat_mode = '0.37'
 
 # Stride
 [[chains]]
 id = 'stride-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://stride-rpc.lavenderfive.com'
-grpc_addr = 'stride-grpc.lavenderfive.com:443'
-event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://stride-rpc.lavenderfive.com:443'
+grpc_addr = 'http://stride-grpc.lavenderfive.com:443'
+event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'stride'
@@ -135,13 +138,14 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+compat_mode = '0.37'
 # Jackal
 [[chains]]
 id = 'jackal-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com'
-grpc_addr = 'jackal-1-skip-grpc.polkachu.com:17590'
-event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://jackal-1-skip-grpc.polkachu.com:17590'
+event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'jkl'
@@ -160,14 +164,15 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
+compat_mode = '0.37'
 
 # Axelar
 [[chains]]
 id = 'axelar-dojo-1'
 type = 'CosmosSdk'
-rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com'
-grpc_addr = 'axelar-dojo-1-skip-grpc.polkachu.com:15190'
-event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com:443'
+grpc_addr = 'http://axelar-dojo-1-skip-grpc.polkachu.com:15190'
+event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'axelar'
@@ -186,4 +191,4 @@ max_block_time = '10s'
 ccv_consumer_chain = false
 memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
-EOF < /dev/null
+compat_mode = '0.37'

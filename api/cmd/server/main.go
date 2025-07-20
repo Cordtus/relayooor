@@ -11,9 +11,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/relayooor/api/internal/config"
 	"github.com/rs/cors"
 )
 
@@ -86,6 +88,20 @@ type ClearPacketResponse struct {
 	Message   string   `json:"message,omitempty"`
 }
 
+// ChannelInfo stores counterparty chain information for a channel
+type ChannelInfo struct {
+	CounterpartyChainID string
+	CounterpartyChannel string
+	QueryTime           time.Time
+}
+
+// Global channel cache with mutex for thread safety
+var (
+	channelCache      = make(map[string]ChannelInfo) // key: "chainID/channelID"
+	channelCacheMutex sync.RWMutex
+	chainRegistry     = config.DefaultChainRegistry()
+)
+
 // loggingMiddleware logs all incoming requests
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +165,7 @@ func main() {
 		// Try to get data from Chainpulse
 		chainpulseURL := os.Getenv("CHAINPULSE_URL")
 		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3000"
+			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
 		}
 
 		// Forward query parameters
@@ -169,18 +185,26 @@ func main() {
 					stuckPackets := make([]StuckPacket, 0)
 					for _, p := range packets {
 						if packet, ok := p.(map[string]interface{}); ok {
+							// Extract packet data
+							sourceChain := fmt.Sprintf("%v", packet["chain_id"])
+							srcChannel := fmt.Sprintf("%v", packet["src_channel"])
+							receiver := fmt.Sprintf("%v", packet["receiver"])
+							
+							// Get destination chain using cached lookup
+							destChain := getDestinationChain(sourceChain, srcChannel, receiver)
+							
 							sp := StuckPacket{
 								ID:               fmt.Sprintf("%v-%v", packet["chain_id"], packet["sequence"]),
-								ChannelID:        fmt.Sprintf("%v", packet["src_channel"]),
+								ChannelID:        srcChannel,
 								Sequence:         int(getFloat64(packet["sequence"])),
-								SourceChain:      fmt.Sprintf("%v", packet["chain_id"]),
-								DestinationChain: fmt.Sprintf("%v", packet["dst_channel"]),
+								SourceChain:      sourceChain,
+								DestinationChain: destChain,
 								StuckDuration:    formatDuration(int(getFloat64(packet["age_seconds"]))),
 								Amount:           fmt.Sprintf("%v", packet["amount"]),
 								Denom:            fmt.Sprintf("%v", packet["denom"]),
 								Sender:           fmt.Sprintf("%v", packet["sender"]),
-								Receiver:         fmt.Sprintf("%v", packet["receiver"]),
-								TxHash:           fmt.Sprintf("%v", packet["tx_hash"]),
+								Receiver:         receiver,
+								TxHash:           "", // Not provided by Chainpulse
 							}
 							
 							// Calculate timestamp from age
@@ -193,14 +217,29 @@ func main() {
 								sp.RelayAttempts = int(getFloat64(attempts))
 							}
 							
+							// Add IBC version if available
+							if version, ok := packet["ibc_version"]; ok {
+								sp.IBCVersion = fmt.Sprintf("%v", version)
+							}
+							
+							// Add last attempt by if available
+							if lastAttempt, ok := packet["last_attempt_by"]; ok {
+								sp.LastAttemptBy = fmt.Sprintf("%v", lastAttempt)
+							}
+							
 							stuckPackets = append(stuckPackets, sp)
 						}
 					}
 					
+					log.Printf("Successfully fetched %d stuck packets from Chainpulse", len(stuckPackets))
 					json.NewEncoder(w).Encode(stuckPackets)
 					return
 				}
 			}
+		} else if err != nil {
+			log.Printf("Failed to fetch stuck packets from Chainpulse: %v", err)
+		} else {
+			log.Printf("Chainpulse returned status %d for stuck packets", resp.StatusCode)
 		}
 		
 		// Fallback to empty array if Chainpulse is not available
@@ -223,7 +262,7 @@ func main() {
 		// Try to get data from Chainpulse
 		chainpulseURL := os.Getenv("CHAINPULSE_URL")
 		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3000"
+			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
 		}
 
 		resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/by-user?address=%s", chainpulseURL, wallet))
@@ -391,7 +430,7 @@ func main() {
 	api.HandleFunc("/channels/congestion", func(w http.ResponseWriter, r *http.Request) {
 		chainpulseURL := os.Getenv("CHAINPULSE_URL")
 		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3000"
+			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
 		}
 
 		resp, err := http.Get(fmt.Sprintf("%s/api/v1/channels/congestion", chainpulseURL))
@@ -434,7 +473,7 @@ func main() {
 
 		chainpulseURL := os.Getenv("CHAINPULSE_URL")
 		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3000"
+			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
 		}
 
 		resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/%s/%s/%s", chainpulseURL, chain, channel, sequence))
@@ -1159,33 +1198,10 @@ func transformChannelsForMetrics(channels []map[string]interface{}) []map[string
 
 // inferDestinationChain attempts to determine the destination chain based on known channel mappings
 func inferDestinationChain(srcChain, srcChannel string) string {
-	// Known channel mappings
-	channelMappings := map[string]map[string]string{
-		"cosmoshub-4": {
-			"channel-141": "osmosis-1",
-			"channel-536": "noble-1",
-			"channel-569": "neutron-1",
-		},
-		"osmosis-1": {
-			"channel-0": "cosmoshub-4",
-			"channel-750": "noble-1",
-			"channel-874": "neutron-1",
-		},
-		"neutron-1": {
-			"channel-1": "cosmoshub-4",
-			"channel-10": "osmosis-1",
-			"channel-30": "noble-1",
-		},
-		"noble-1": {
-			"channel-1": "osmosis-1",
-			"channel-4": "cosmoshub-4",
-			"channel-18": "neutron-1",
-		},
-	}
-	
-	if chainChannels, ok := channelMappings[srcChain]; ok {
-		if dstChain, ok := chainChannels[srcChannel]; ok {
-			return dstChain
+	// Look for matching channel in the registry
+	for _, channel := range chainRegistry.Channels {
+		if channel.SourceChain == srcChain && channel.SourceChannel == srcChannel {
+			return channel.DestChain
 		}
 	}
 	
@@ -1193,19 +1209,128 @@ func inferDestinationChain(srcChain, srcChannel string) string {
 	return "unknown"
 }
 
+// inferChainFromAddress attempts to determine the chain ID from a bech32 address prefix
+func inferChainFromAddress(address string) string {
+	// Extract prefix from address (everything before "1")
+	idx := strings.Index(address, "1")
+	if idx <= 0 {
+		return ""
+	}
+	prefix := address[:idx]
+	
+	// Look up chain by prefix in the registry
+	if chain, ok := chainRegistry.GetChainByPrefix(prefix); ok {
+		return chain.ChainID
+	}
+	
+	return ""
+}
+
+// queryChannelInfo queries the chain REST API to get counterparty chain information
+func queryChannelInfo(chainID, channelID string) (*ChannelInfo, error) {
+	chain, ok := chainRegistry.GetChainByID(chainID)
+	if !ok {
+		return nil, fmt.Errorf("chain %s not found in registry", chainID)
+	}
+	
+	if chain.RESTEndpoint == "" {
+		return nil, fmt.Errorf("no REST endpoint configured for chain %s", chainID)
+	}
+	
+	// Query the IBC channel client state to get counterparty chain ID
+	url := fmt.Sprintf("%s/ibc/core/channel/v1/channels/%s/ports/transfer/client_state", chain.RESTEndpoint, channelID)
+	
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query REST API: %v", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("REST API returned status %d", resp.StatusCode)
+	}
+	
+	var result struct {
+		IdentifiedClientState struct {
+			ClientState struct {
+				ChainID string `json:"chain_id"`
+			} `json:"client_state"`
+		} `json:"identified_client_state"`
+	}
+	
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+	
+	counterpartyChainID := result.IdentifiedClientState.ClientState.ChainID
+	if counterpartyChainID == "" {
+		return nil, fmt.Errorf("no counterparty chain ID in response")
+	}
+	
+	return &ChannelInfo{
+		CounterpartyChainID: counterpartyChainID,
+		QueryTime:           time.Now(),
+	}, nil
+}
+
+// getDestinationChain gets the destination chain for a channel, using cache when possible
+func getDestinationChain(sourceChain, srcChannel, receiverAddr string) string {
+	cacheKey := fmt.Sprintf("%s/%s", sourceChain, srcChannel)
+	
+	// Check cache first
+	channelCacheMutex.RLock()
+	if info, ok := channelCache[cacheKey]; ok {
+		channelCacheMutex.RUnlock()
+		// Cache entries are valid for 1 hour
+		if time.Since(info.QueryTime) < time.Hour {
+			return info.CounterpartyChainID
+		}
+	} else {
+		channelCacheMutex.RUnlock()
+	}
+	
+	// Try static mappings first (faster)
+	if destChain := inferDestinationChain(sourceChain, srcChannel); destChain != "unknown" {
+		// Cache the result
+		channelCacheMutex.Lock()
+		channelCache[cacheKey] = ChannelInfo{
+			CounterpartyChainID: destChain,
+			QueryTime:           time.Now(),
+		}
+		channelCacheMutex.Unlock()
+		return destChain
+	}
+	
+	// Try to query the REST API
+	if info, err := queryChannelInfo(sourceChain, srcChannel); err == nil {
+		// Cache the result
+		channelCacheMutex.Lock()
+		channelCache[cacheKey] = *info
+		channelCacheMutex.Unlock()
+		log.Printf("Cached channel info: %s/%s -> %s", sourceChain, srcChannel, info.CounterpartyChainID)
+		return info.CounterpartyChainID
+	} else {
+		log.Printf("Failed to query channel info for %s/%s: %v", sourceChain, srcChannel, err)
+	}
+	
+	// Fallback: try to infer from receiver address
+	if receiverAddr != "" && receiverAddr != "<nil>" {
+		if destChain := inferChainFromAddress(receiverAddr); destChain != "" {
+			return destChain
+		}
+	}
+	
+	return "unknown"
+}
+
 // getChainMap returns a map of chain IDs to chain names
 func getChainMap() map[string]string {
-	return map[string]string{
-		"cosmoshub-4": "Cosmos Hub",
-		"osmosis-1": "Osmosis",
-		"neutron-1": "Neutron",
-		"noble-1": "Noble",
-		"akash-1": "Akash",
-		"stargaze-1": "Stargaze",
-		"juno-1": "Juno",
-		"stride-1": "Stride",
-		"axelar-dojo-1": "Axelar",
+	chainMap := make(map[string]string)
+	for chainID, chain := range chainRegistry.Chains {
+		chainMap[chainID] = chain.ChainName
 	}
+	return chainMap
 }
 
 // extractRecentPackets extracts recent packet information from metrics
@@ -1580,105 +1705,39 @@ func getMonitoringMetrics() map[string]interface{} {
 
 // getChainRegistry returns the chain configuration registry
 func getChainRegistry() map[string]interface{} {
-	// In production, this should be loaded from a database or config file
-	// For now, return a static configuration that can be extended
-	
-	// Define chain configurations
-	chainConfigs := []map[string]interface{}{
-		{
-			"chain_id":       "cosmoshub-4",
-			"chain_name":     "Cosmos Hub",
-			"address_prefix": "cosmos",
-			"explorer":       "https://www.mintscan.io/cosmos/txs",
-			"logo":           "/images/chains/cosmos.svg",
-		},
-		{
-			"chain_id":       "osmosis-1",
-			"chain_name":     "Osmosis",
-			"address_prefix": "osmo",
-			"explorer":       "https://www.mintscan.io/osmosis/txs",
-			"logo":           "/images/chains/osmosis.svg",
-		},
-		{
-			"chain_id":       "neutron-1",
-			"chain_name":     "Neutron",
-			"address_prefix": "neutron",
-			"explorer":       "https://www.mintscan.io/neutron/txs",
-			"logo":           "/images/chains/neutron.svg",
-		},
-		{
-			"chain_id":       "noble-1",
-			"chain_name":     "Noble",
-			"address_prefix": "noble",
-			"explorer":       "https://www.mintscan.io/noble/txs",
-			"logo":           "/images/chains/noble.svg",
-		},
-		{
-			"chain_id":       "akash-1",
-			"chain_name":     "Akash",
-			"address_prefix": "akash",
-			"explorer":       "https://www.mintscan.io/akash/txs",
-			"logo":           "/images/chains/akash.svg",
-		},
-		{
-			"chain_id":       "stargaze-1",
-			"chain_name":     "Stargaze",
-			"address_prefix": "stars",
-			"explorer":       "https://www.mintscan.io/stargaze/txs",
-			"logo":           "/images/chains/stargaze.svg",
-		},
-		{
-			"chain_id":       "juno-1",
-			"chain_name":     "Juno",
-			"address_prefix": "juno",
-			"explorer":       "https://www.mintscan.io/juno/txs",
-			"logo":           "/images/chains/juno.svg",
-		},
-		{
-			"chain_id":       "stride-1",
-			"chain_name":     "Stride",
-			"address_prefix": "stride",
-			"explorer":       "https://www.mintscan.io/stride/txs",
-			"logo":           "/images/chains/stride.svg",
-		},
-		{
-			"chain_id":       "axelar-1",
-			"chain_name":     "Axelar",
-			"address_prefix": "axelar",
-			"explorer":       "https://www.mintscan.io/axelar/txs",
-			"logo":           "/images/chains/axelar.svg",
-		},
-	}
-	
-	// Convert to map for easy lookup
+	// Convert the centralized registry to the API response format
 	chainsMap := make(map[string]interface{})
-	for _, chain := range chainConfigs {
-		chainsMap[chain["chain_id"].(string)] = chain
+	for chainID, chain := range chainRegistry.Chains {
+		chainsMap[chainID] = map[string]interface{}{
+			"chain_id":       chain.ChainID,
+			"chain_name":     chain.ChainName,
+			"address_prefix": chain.AddressPrefix,
+			"rpc_endpoint":   chain.RPCEndpoint,
+			"rest_endpoint":  chain.RESTEndpoint,
+			"ws_endpoint":    chain.WSEndpoint,
+			"grpc_endpoint":  chain.GRPCEndpoint,
+			"explorer":       chain.Explorer,
+			"logo":           chain.Logo,
+		}
 	}
 	
-	// Define channel configurations
-	channels := []map[string]interface{}{
-		// Cosmos Hub channels
-		{"source_chain": "cosmoshub-4", "source_channel": "channel-141", "dest_chain": "osmosis-1", "dest_channel": "channel-0", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "cosmoshub-4", "source_channel": "channel-536", "dest_chain": "noble-1", "dest_channel": "channel-4", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "cosmoshub-4", "source_channel": "channel-569", "dest_chain": "neutron-1", "dest_channel": "channel-1", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		// Osmosis channels
-		{"source_chain": "osmosis-1", "source_channel": "channel-0", "dest_chain": "cosmoshub-4", "dest_channel": "channel-141", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "osmosis-1", "source_channel": "channel-750", "dest_chain": "noble-1", "dest_channel": "channel-1", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "osmosis-1", "source_channel": "channel-874", "dest_chain": "neutron-1", "dest_channel": "channel-10", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		// Noble channels
-		{"source_chain": "noble-1", "source_channel": "channel-1", "dest_chain": "osmosis-1", "dest_channel": "channel-750", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "noble-1", "source_channel": "channel-4", "dest_chain": "cosmoshub-4", "dest_channel": "channel-536", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "noble-1", "source_channel": "channel-18", "dest_chain": "neutron-1", "dest_channel": "channel-30", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		// Neutron channels
-		{"source_chain": "neutron-1", "source_channel": "channel-1", "dest_chain": "cosmoshub-4", "dest_channel": "channel-569", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "neutron-1", "source_channel": "channel-10", "dest_chain": "osmosis-1", "dest_channel": "channel-874", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
-		{"source_chain": "neutron-1", "source_channel": "channel-30", "dest_chain": "noble-1", "dest_channel": "channel-18", "source_port": "transfer", "dest_port": "transfer", "status": "active"},
+	// Convert channels to interface slice
+	channels := make([]map[string]interface{}, len(chainRegistry.Channels))
+	for i, ch := range chainRegistry.Channels {
+		channels[i] = map[string]interface{}{
+			"source_chain":   ch.SourceChain,
+			"source_channel": ch.SourceChannel,
+			"dest_chain":     ch.DestChain,
+			"dest_channel":   ch.DestChannel,
+			"source_port":    ch.SourcePort,
+			"dest_port":      ch.DestPort,
+			"status":         ch.Status,
+		}
 	}
 	
 	return map[string]interface{}{
-		"chains":   chainsMap,
-		"channels": channels,
+		"chains":      chainsMap,
+		"channels":    channels,
 		"api_version": "1.0",
 	}
 }
