@@ -77,10 +77,10 @@ function getTrendClass(): string {
 }
 
 function createChart() {
-  if (!chartCanvas.value) return
+  if (!chartCanvas.value || !props.data || props.data.length === 0) return
   
   // Generate prediction data
-  const historicalData = props.data || generateMockData()
+  const historicalData = props.data
   const futureData = generatePrediction(historicalData)
   
   const labels = [
@@ -154,26 +154,6 @@ function createChart() {
   })
 }
 
-function generateMockData() {
-  const data = []
-  const now = Date.now()
-  const baseValue = props.type === 'rate' ? 85 : 50000
-  
-  for (let i = 48; i > 0; i--) {
-    const time = new Date(now - i * 3600000).toISOString()
-    // Use hour-based variation instead of random
-    const hourVariation = Math.sin(i * Math.PI / 24) * 0.1
-    const trend = props.type === 'rate' ? -0.001 * i : 100 * i
-    const value = baseValue * (1 + hourVariation) + trend
-    
-    data.push({
-      time,
-      value: Math.max(0, value)
-    })
-  }
-  
-  return data
-}
 
 function generatePrediction(historicalData: any[]) {
   const predictions = []

@@ -16,7 +16,6 @@ export const config = {
   
   // Feature Flags
   features: {
-    mockData: import.meta.env.VITE_MOCK_DATA === 'true',
     debugMode: import.meta.env.VITE_DEBUG === 'true',
     analyticsEnabled: import.meta.env.VITE_ANALYTICS_ENABLED !== 'false',
   },

@@ -114,14 +114,10 @@ const churnedRelayers = computed(() => {
   const historical = props.historical || []
   const currentAddresses = new Set(current.map(r => r.address))
   
-  // Mock last seen times for demo
   return historical
     .filter(r => !currentAddresses.has(r.address))
-    .map(r => ({
-      ...r,
-      lastSeen: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Random time in last 7 days
-    }))
-    .sort((a, b) => b.lastSeen.getTime() - a.lastSeen.getTime())
+    .filter(r => r.lastSeen) // Only include relayers with actual lastSeen data
+    .sort((a, b) => (b.lastSeen?.getTime() || 0) - (a.lastSeen?.getTime() || 0))
 })
 
 // Calculate churn rate

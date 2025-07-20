@@ -214,43 +214,17 @@ const activeIssues = computed((): ConnectionIssue[] => {
   return issues
 })
 
-// Mock recent connection events
+// Recent connection events from chain status changes
 const recentEvents = computed((): ConnectionEvent[] => {
-  const events: ConnectionEvent[] = [
-    {
-      id: '1',
-      chainName: 'Osmosis',
-      type: 'connected',
-      message: 'Successfully connected',
-      timestamp: new Date(Date.now() - 5 * 60000)
-    },
-    {
-      id: '2',
-      chainName: 'Cosmos Hub',
-      type: 'reconnecting',
-      message: 'Connection lost, attempting reconnect...',
-      timestamp: new Date(Date.now() - 15 * 60000)
-    },
-    {
-      id: '3',
-      chainName: 'Neutron',
-      type: 'connected',
-      message: 'Restored after 2 attempts',
-      timestamp: new Date(Date.now() - 30 * 60000)
-    }
-  ]
-  
-  return events
+  // In production, this would come from a store that tracks connection state changes
+  // For now, return empty array when no real data is available
+  return []
 })
 
 function getAffectedChannels(chainId: string): string[] {
-  // Mock affected channels based on chain
-  const channelMap: Record<string, string[]> = {
-    'osmosis-1': ['channel-0', 'channel-1', 'channel-42'],
-    'cosmoshub-4': ['channel-141', 'channel-207'],
-    'neutron-1': ['channel-10', 'channel-11']
-  }
-  return channelMap[chainId] || []
+  // In production, this should query actual channel data from the API
+  // Return empty array when no real data is available
+  return []
 }
 
 function getIssueSeverityClass(severity: string): string {

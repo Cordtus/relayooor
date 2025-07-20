@@ -137,33 +137,22 @@ const flowData = computed(() => {
     
     return {
       nodes: Array.from(nodes).map(id => ({ id, name: formatChainName(id) })),
-      links: props.flows.map(f => ({ ...f, trend: Math.floor((Math.random() - 0.5) * 20) }))
+      links: props.flows // Use actual data from API
     }
   }
   
-  // Object format from mock data
+  // Object format from API data
   if (props.flows && 'nodes' in props.flows) {
     return {
       nodes: props.flows.nodes,
-      links: props.flows.links.map(link => ({ ...link, trend: Math.floor((Math.random() - 0.5) * 20) }))
+      links: props.flows.links // Use actual trend data from API
     }
   }
   
-  // Default mock data
+  // Return empty data when no real data is provided
   return {
-    nodes: [
-      { id: 'osmosis', name: 'Osmosis' },
-      { id: 'cosmos', name: 'Cosmos Hub' },
-      { id: 'neutron', name: 'Neutron' },
-      { id: 'stargaze', name: 'Stargaze' }
-    ],
-    links: [
-      { source: 'osmosis', target: 'cosmos', value: 1234567, trend: 5 },
-      { source: 'cosmos', target: 'osmosis', value: 987654, trend: -3 },
-      { source: 'neutron', target: 'osmosis', value: 456789, trend: 12 },
-      { source: 'osmosis', target: 'neutron', value: 345678, trend: 8 },
-      { source: 'stargaze', target: 'osmosis', value: 234567, trend: -2 }
-    ]
+    nodes: [],
+    links: []
   }
 })
 

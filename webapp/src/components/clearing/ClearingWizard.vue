@@ -239,22 +239,12 @@ onMounted(async () => {
         }))
     } catch (error) {
       console.error('Failed to load stuck packets:', error)
-      // Fallback to mock data if API fails
-      const inferredChain = inferChainFromAddress(walletStore.address || '')
-      stuckPackets.value = [
-        {
-          id: '1',
-          chain: inferredChain || 'osmosis-1',
-          channel: 'channel-0',
-          sequence: 12345,
-          sender: walletStore.address || 'osmo1abc...',
-          receiver: 'cosmos1xyz...',
-          amount: '1000000',
-          denom: 'uosmo',
-          age: 7200,
-          attempts: 0
-        }
-      ]
+      // Clear packets on error instead of using mock data
+      stuckPackets.value = []
+      // Optionally show error to user
+      if (error instanceof Error) {
+        console.error('Error loading packets:', error.message)
+      }
     } finally {
       loading.value = false
     }

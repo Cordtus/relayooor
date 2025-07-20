@@ -299,8 +299,8 @@ const frontrunRate = computed(() => {
 })
 
 const newRelayers = computed(() => {
-  // Mock data - would need historical data to calculate
-  return 3
+  // Count relayers marked as new in the data
+  return relayers.value.filter(r => r.isNew).length
 })
 
 const topRelayers = computed(() => {
