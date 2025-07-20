@@ -810,6 +810,107 @@ func main() {
 		})
 	}).Methods("GET")
 
+	// Packet search endpoint - comprehensive search across all packet data
+	api.HandleFunc("/packets/search", func(w http.ResponseWriter, r *http.Request) {
+		// Parse query parameters
+		sender := r.URL.Query().Get("sender")
+		receiver := r.URL.Query().Get("receiver")
+		chainID := r.URL.Query().Get("chain_id")
+		denom := r.URL.Query().Get("denom")
+		minAgeStr := r.URL.Query().Get("min_age_seconds")
+		limitStr := r.URL.Query().Get("limit")
+		
+		minAge := 0
+		if minAgeStr != "" {
+			fmt.Sscanf(minAgeStr, "%d", &minAge)
+		}
+		
+		limit := 100
+		if limitStr != "" {
+			fmt.Sscanf(limitStr, "%d", &limit)
+		}
+		
+		// Get stuck packets first
+		stuckResp, err := chainpulseClient.GetStuckPackets(minAge, limit)
+		if err != nil {
+			log.Printf("Error fetching stuck packets: %v", err)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"packets": []interface{}{},
+				"error": "Failed to fetch packets",
+			})
+			return
+		}
+		
+		// Filter results based on search criteria
+		filteredPackets := []chainpulse.Packet{}
+		for _, packet := range stuckResp.Packets {
+			// Apply filters
+			if sender != "" && packet.Sender != sender {
+				continue
+			}
+			if receiver != "" && packet.Receiver != receiver {
+				continue
+			}
+			if chainID != "" && packet.ChainID != chainID {
+				continue
+			}
+			if denom != "" && !strings.Contains(packet.Denom, denom) {
+				continue
+			}
+			
+			filteredPackets = append(filteredPackets, packet)
+		}
+		
+		// Also search for user-specific packets if wallet address provided
+		if (sender != "" || receiver != "") && chainID == "" {
+			// If we have a wallet address but no chain filter, also query user packets
+			address := sender
+			if address == "" {
+				address = receiver
+			}
+			
+			userResp, err := chainpulseClient.GetPacketsByUser(address, "", limit, 0)
+			if err == nil {
+				// Merge results, avoiding duplicates
+				existingPackets := make(map[string]bool)
+				for _, p := range filteredPackets {
+					key := fmt.Sprintf("%s-%d", p.ChainID, p.Sequence)
+					existingPackets[key] = true
+				}
+				
+				for _, packet := range userResp.Packets {
+					key := fmt.Sprintf("%s-%d", packet.ChainID, packet.Sequence)
+					if !existingPackets[key] {
+						// Apply same filters
+						if sender != "" && packet.Sender != sender {
+							continue
+						}
+						if receiver != "" && packet.Receiver != receiver {
+							continue
+						}
+						if denom != "" && !strings.Contains(packet.Denom, denom) {
+							continue
+						}
+						filteredPackets = append(filteredPackets, packet)
+					}
+				}
+			}
+		}
+		
+		// Return results
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"packets": filteredPackets,
+			"total": len(filteredPackets),
+			"filters_applied": map[string]interface{}{
+				"sender": sender,
+				"receiver": receiver,
+				"chain_id": chainID,
+				"denom": denom,
+				"min_age_seconds": minAge,
+			},
+		})
+	}).Methods("GET")
+
 	// Chain registry endpoint - returns known chain information
 	api.HandleFunc("/chains/registry", func(w http.ResponseWriter, r *http.Request) {
 		// Enhanced chain registry with more chains and RPC endpoints
