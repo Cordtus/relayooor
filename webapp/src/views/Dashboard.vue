@@ -25,6 +25,9 @@
       </div>
     </div>
 
+    <!-- Packet Search -->
+    <PacketSearch @view-packet="viewPacketDetails" />
+
     <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Recent Activity -->
@@ -154,10 +157,13 @@ import { useSettingsStore } from '@/stores/settings'
 import { formatNumber, formatAddress, formatNumberWithCommas, formatDuration, formatAmount } from '@/utils/formatting'
 import { REFRESH_INTERVALS } from '@/config/constants'
 import RefreshRateSelector from '@/components/RefreshRateSelector.vue'
+import PacketSearch from '@/components/search/PacketSearch.vue'
 import { resolveChannels, type ChannelInfo } from '@/services/channel-resolver'
+import { useRouter } from 'vue-router'
 
 const settingsStore = useSettingsStore()
 const lastUpdateTime = ref(new Date())
+const router = useRouter()
 
 // Fetch monitoring data
 const { data: monitoringData } = useQuery({
@@ -366,6 +372,26 @@ async function getChainName(chainId: string): Promise<string> {
 const chainNames = ref<Record<string, string>>({})
 
 // Load chain names on mount
+// Handle packet details view
+function viewPacketDetails(packet: any) {
+  // Navigate to packet clearing view with the packet pre-selected
+  router.push({
+    name: 'packet-clearing',
+    query: {
+      packet: JSON.stringify({
+        id: `${packet.chain_id}-${packet.sequence}`,
+        channelId: packet.src_channel,
+        sequence: packet.sequence,
+        sourceChain: packet.chain_id,
+        amount: packet.amount,
+        denom: packet.denom,
+        sender: packet.sender,
+        receiver: packet.receiver
+      })
+    }
+  })
+}
+
 onMounted(async () => {
   const chains = await configService.getAllChains()
   chains.forEach(chain => {
