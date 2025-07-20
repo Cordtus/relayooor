@@ -36,9 +36,9 @@ latency_confirmed = { start = 1000, end = 30000, buckets = 10 }
 [[chains]]
 id = 'cosmoshub-4'
 type = 'CosmosSdk'
-rpc_addr = 'https://cosmoshub-4-skip-rpc.polkachu.com:443'
-grpc_addr = 'http://cosmoshub-4-skip-grpc.polkachu.com:14990'
-event_source = { mode = 'push', url = 'wss://cosmoshub-4-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+rpc_addr = 'https://rpc.cosmos.quokkastake.io:443'
+grpc_addr = 'https://grpc.cosmos.quokkastake.io:443'
+event_source = { mode = 'push', url = 'wss://rpc.cosmos.quokkastake.io:443/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'cosmos'
