@@ -14,7 +14,7 @@ type ChainEndpoint struct {
 }
 
 // GetChainEndpoints returns known chain REST endpoints
-func (h *Handlers) GetChainEndpoints(c *gin.Context) {
+func (h *Handler) GetChainEndpoints(c *gin.Context) {
 	registry := config.DefaultChainRegistry()
 	
 	endpoints := make([]ChainEndpoint, 0, len(registry.Chains))
@@ -33,7 +33,7 @@ func (h *Handlers) GetChainEndpoints(c *gin.Context) {
 }
 
 // GetChainRegistry returns the complete chain registry with all endpoints
-func (h *Handlers) GetChainRegistry(c *gin.Context) {
+func (h *Handler) GetChainRegistry(c *gin.Context) {
 	registry := config.DefaultChainRegistry()
 	c.JSON(http.StatusOK, registry)
 }

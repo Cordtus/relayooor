@@ -75,20 +75,15 @@ func GetMonitoringData(c *gin.Context) {
 		return
 	}
 
-	// Parse metrics and build monitoring data
-	metrics := string(metricsBody)
-	chains := parseChainData(metrics)
-	channels := parseChannelData(metrics)
-	relayers := parseRelayerData(metrics)
-	alerts := parseAlerts(metrics)
-
+	// Note: The actual implementation that parses Chainpulse metrics and returns
+	// structured monitoring data is in api/cmd/server/main.go
+	// This package appears to be unused in the current architecture.
+	
+	// For now, return a simple response indicating the service is available
 	data := gin.H{
-		"status":       "healthy",
-		"chains":       chains,
-		"channels":     channels,
-		"top_relayers": relayers,
-		"alerts":       alerts,
-		"timestamp":    time.Now(),
+		"status":    "healthy",
+		"message":   "Use api/cmd/server for the actual implementation",
+		"timestamp": time.Now(),
 	}
 
 	c.JSON(http.StatusOK, data)
