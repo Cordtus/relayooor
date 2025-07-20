@@ -615,6 +615,201 @@ func main() {
 		json.NewEncoder(w).Encode(packet)
 	}).Methods("GET")
 
+	// Expired packets endpoint - returns packets that have already timed out
+	api.HandleFunc("/packets/expired", func(w http.ResponseWriter, r *http.Request) {
+		// Use Chainpulse client to get expired packets
+		expiredResp, err := chainpulseClient.GetExpiredPackets()
+		if err != nil {
+			log.Printf("Error fetching expired packets: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Failed to fetch expired packets",
+				"packets": []interface{}{},
+			})
+			return
+		}
+		
+		// Transform response to match expected format
+		packets := []map[string]interface{}{}
+		for _, p := range expiredResp.Packets {
+			packets = append(packets, map[string]interface{}{
+				"id":                      fmt.Sprintf("%s-%s-%d", p.ChainID, p.SrcChannel, p.Sequence),
+				"chain_id":                p.ChainID,
+				"sequence":                p.Sequence,
+				"src_channel":             p.SrcChannel,
+				"dst_channel":             p.DstChannel,
+				"sender":                  p.Sender,
+				"receiver":                p.Receiver,
+				"amount":                  p.Amount,
+				"denom":                   p.Denom,
+				"seconds_since_timeout":   p.SecondsSinceTimeout,
+				"timeout_type":            p.TimeoutType,
+				"age_seconds":             p.AgeSeconds,
+			})
+		}
+		
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"packets": packets,
+			"api_version": expiredResp.APIVersion,
+		})
+	}).Methods("GET")
+
+	// Expiring packets endpoint - returns packets that will timeout soon
+	api.HandleFunc("/packets/expiring", func(w http.ResponseWriter, r *http.Request) {
+		// Get minutes parameter from query
+		minutes := 60 // Default to 60 minutes
+		if m := r.URL.Query().Get("minutes"); m != "" {
+			if parsed, err := strconv.Atoi(m); err == nil && parsed > 0 {
+				minutes = parsed
+			}
+		}
+		
+		// Use Chainpulse client to get expiring packets
+		expiringResp, err := chainpulseClient.GetExpiringPackets(minutes)
+		if err != nil {
+			log.Printf("Error fetching expiring packets: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Failed to fetch expiring packets",
+				"packets": []interface{}{},
+			})
+			return
+		}
+		
+		// Transform response to match expected format
+		packets := []map[string]interface{}{}
+		for _, p := range expiringResp.Packets {
+			packets = append(packets, map[string]interface{}{
+				"id":                     fmt.Sprintf("%s-%s-%d", p.ChainID, p.SrcChannel, p.Sequence),
+				"chain_id":               p.ChainID,
+				"sequence":               p.Sequence,
+				"src_channel":            p.SrcChannel,
+				"dst_channel":            p.DstChannel,
+				"sender":                 p.Sender,
+				"receiver":               p.Receiver,
+				"amount":                 p.Amount,
+				"denom":                  p.Denom,
+				"seconds_until_timeout":  p.SecondsUntilTimeout,
+				"timeout_type":           p.TimeoutType,
+				"timeout_value":          p.TimeoutValue,
+				"age_seconds":            p.AgeSeconds,
+			})
+		}
+		
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"packets": packets,
+			"api_version": expiringResp.APIVersion,
+		})
+	}).Methods("GET")
+
+	// Duplicate packets endpoint - returns packets with duplicate data
+	api.HandleFunc("/packets/duplicates", func(w http.ResponseWriter, r *http.Request) {
+		// Use Chainpulse client to get duplicate packets
+		duplicatesResp, err := chainpulseClient.GetDuplicatePackets()
+		if err != nil {
+			log.Printf("Error fetching duplicate packets: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Failed to fetch duplicate packets",
+				"duplicates": []interface{}{},
+			})
+			return
+		}
+		
+		// Transform response to match expected format
+		duplicates := []map[string]interface{}{}
+		for _, d := range duplicatesResp.Duplicates {
+			packets := []map[string]interface{}{}
+			for _, p := range d.Packets {
+				packets = append(packets, map[string]interface{}{
+					"chain_id":    p.ChainID,
+					"sequence":    p.Sequence,
+					"src_channel": p.SrcChannel,
+					"sender":      p.Sender,
+					"created_at":  p.CreatedAt,
+				})
+			}
+			
+			duplicates = append(duplicates, map[string]interface{}{
+				"data_hash": d.DataHash,
+				"count":     d.Count,
+				"packets":   packets,
+			})
+		}
+		
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"duplicates": duplicates,
+			"api_version": duplicatesResp.APIVersion,
+		})
+	}).Methods("GET")
+
+	// User transfer history endpoint using Chainpulse
+	api.HandleFunc("/user/{wallet}/history", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		wallet := vars["wallet"]
+		
+		// Validate wallet address format
+		if !isValidWalletAddress(wallet) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid wallet address"})
+			return
+		}
+		
+		// Get query parameters
+		role := r.URL.Query().Get("role") // sender, receiver, or both
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+		
+		if limit <= 0 {
+			limit = 100
+		}
+		
+		// Use Chainpulse client to get user packets
+		packetsResp, err := chainpulseClient.GetPacketsByUser(wallet, role, limit, offset)
+		if err != nil {
+			log.Printf("Error fetching user packets: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Failed to fetch user transfer history",
+				"transfers": []interface{}{},
+			})
+			return
+		}
+		
+		// Transform to transfer format
+		transfers := []map[string]interface{}{}
+		for _, p := range packetsResp.Packets {
+			transfer := map[string]interface{}{
+				"id":                fmt.Sprintf("%s-%s-%d", p.ChainID, p.SrcChannel, p.Sequence),
+				"chain_id":          p.ChainID,
+				"channel_id":        p.SrcChannel,
+				"sequence":          p.Sequence,
+				"source_chain":      p.ChainID,
+				"destination_chain": inferDestinationChain(p.ChainID, p.SrcChannel),
+				"sender":            p.Sender,
+				"receiver":          p.Receiver,
+				"amount":            p.Amount,
+				"denom":             p.Denom,
+				"status":            "pending", // All stuck packets are pending
+				"age_seconds":       p.AgeSeconds,
+				"relay_attempts":    p.RelayAttempts,
+			}
+			
+			// Calculate timestamp from age
+			if p.AgeSeconds > 0 {
+				transfer["timestamp"] = time.Now().Add(-time.Duration(p.AgeSeconds) * time.Second)
+			}
+			
+			transfers = append(transfers, transfer)
+		}
+		
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"transfers": transfers,
+			"total": packetsResp.Total,
+			"api_version": packetsResp.APIVersion,
+		})
+	}).Methods("GET")
+
 	// Chain registry endpoint - returns known chain information
 	api.HandleFunc("/chains/registry", func(w http.ResponseWriter, r *http.Request) {
 		// Enhanced chain registry with more chains and RPC endpoints
