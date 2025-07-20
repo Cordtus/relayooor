@@ -12,6 +12,27 @@ export const api = axios.create({
 // Alias for backwards compatibility
 export const apiClient = api
 
+// Search packets with various filters
+api.searchPackets = async function(params: {
+  sender?: string
+  receiver?: string
+  chain_id?: string
+  denom?: string
+  min_age_seconds?: number
+  limit?: number
+}): Promise<{ packets: any[], total: number, filters_applied: any }> {
+  const queryParams = new URLSearchParams()
+  if (params.sender) queryParams.set('sender', params.sender)
+  if (params.receiver) queryParams.set('receiver', params.receiver)
+  if (params.chain_id) queryParams.set('chain_id', params.chain_id)
+  if (params.denom) queryParams.set('denom', params.denom)
+  if (params.min_age_seconds !== undefined) queryParams.set('min_age_seconds', params.min_age_seconds.toString())
+  if (params.limit) queryParams.set('limit', params.limit.toString())
+
+  const response = await api.get(`/packets/search?${queryParams}`)
+  return response.data
+}
+
 export const analyticsService = {
   // Get platform-wide statistics
   async getPlatformStatistics(): Promise<any> {
