@@ -135,7 +135,7 @@ services:
       - RPC_PASSWORD=${RPC_PASSWORD}
     volumes:
       - ./config/hermes:/config:ro
-      - ./config/hermes/entrypoint.sh:/entrypoint.sh:ro
+      - ./config/hermes/entrypoint-no-auth.sh:/entrypoint.sh:ro
       - hermes-data:/data
     entrypoint: ["/entrypoint.sh"]
     ports:

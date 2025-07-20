@@ -3,7 +3,7 @@
  * Fetches chain configuration from the backend API instead of hardcoding
  */
 
-import { api } from '@/api/client'
+import { api } from '@/services/api'
 
 export interface ChainConfig {
   chain_id: string

@@ -32,7 +32,7 @@ port = 3001
 latency_submitted = { start = 500, end = 20000, buckets = 10 }
 latency_confirmed = { start = 1000, end = 30000, buckets = 10 }
 
-# Cosmos Hub
+# Cosmos Hub - Using Quokkastake endpoint (no auth required)
 [[chains]]
 id = 'cosmoshub-4'
 type = 'CosmosSdk'
@@ -59,136 +59,138 @@ memo_prefix = 'Relayed by Relayooor'
 sequential_batch_tx = false
 compat_mode = '0.37'
 
-# Osmosis
-[[chains]]
-id = 'osmosis-1'
-type = 'CosmosSdk'
-rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com:443'
-grpc_addr = 'http://osmosis-1-skip-grpc.polkachu.com:12590'
-event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
-rpc_timeout = '10s'
-trusted_node = false
-account_prefix = 'osmo'
-key_name = 'relayer'
-key_store_type = 'Test'
-store_prefix = 'ibc'
-default_gas = 100000
-max_gas = 400000
-gas_price = { price = 0.025, denom = 'uosmo' }
-gas_multiplier = 1.1
-max_msg_num = 30
-max_tx_size = 1800000
-max_grpc_decoding_size = 33554432
-clock_drift = '5s'
-max_block_time = '10s'
-ccv_consumer_chain = false
-memo_prefix = 'Relayed by Relayooor'
-sequential_batch_tx = false
-compat_mode = '0.37'
+# Other chains commented out for now
+# # Osmosis
+# [[chains]]
+# id = 'osmosis-1'
+# type = 'CosmosSdk'
+# rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com:443'
+# grpc_addr = 'http://osmosis-1-skip-grpc.polkachu.com:12590'
+# event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# rpc_timeout = '10s'
+# trusted_node = false
+# account_prefix = 'osmo'
+# key_name = 'relayer'
+# key_store_type = 'Test'
+# store_prefix = 'ibc'
+# default_gas = 100000
+# max_gas = 400000
+# gas_price = { price = 0.025, denom = 'uosmo' }
+# gas_multiplier = 1.1
+# max_msg_num = 30
+# max_tx_size = 1800000
+# max_grpc_decoding_size = 33554432
+# clock_drift = '5s'
+# max_block_time = '10s'
+# ccv_consumer_chain = false
+# memo_prefix = 'Relayed by Relayooor'
+# sequential_batch_tx = false
+# compat_mode = '0.37'
 
-# Noble
-[[chains]]
-id = 'noble-1'
-type = 'CosmosSdk'
-rpc_addr = 'https://noble-1-skip-rpc.polkachu.com:443'
-grpc_addr = 'http://noble-1-skip-grpc.polkachu.com:21590'
-event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
-rpc_timeout = '10s'
-trusted_node = false
-account_prefix = 'noble'
-key_name = 'relayer'
-key_store_type = 'Test'
-store_prefix = 'ibc'
-default_gas = 100000
-max_gas = 400000
-gas_price = { price = 0.1, denom = 'uusdc' }
-gas_multiplier = 1.1
-max_msg_num = 30
-max_tx_size = 1800000
-max_grpc_decoding_size = 33554432
-clock_drift = '5s'
-max_block_time = '10s'
-ccv_consumer_chain = false
-memo_prefix = 'Relayed by Relayooor'
-sequential_batch_tx = false
-compat_mode = '0.37'
+# # Noble
+# [[chains]]
+# id = 'noble-1'
+# type = 'CosmosSdk'
+# rpc_addr = 'https://noble-1-skip-rpc.polkachu.com:443'
+# grpc_addr = 'http://noble-1-skip-grpc.polkachu.com:21590'
+# event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# rpc_timeout = '10s'
+# trusted_node = false
+# account_prefix = 'noble'
+# key_name = 'relayer'
+# key_store_type = 'Test'
+# store_prefix = 'ibc'
+# default_gas = 100000
+# max_gas = 400000
+# gas_price = { price = 0.1, denom = 'uusdc' }
+# gas_multiplier = 1.1
+# max_msg_num = 30
+# max_tx_size = 1800000
+# max_grpc_decoding_size = 33554432
+# clock_drift = '5s'
+# max_block_time = '10s'
+# ccv_consumer_chain = false
+# memo_prefix = 'Relayed by Relayooor'
+# sequential_batch_tx = false
+# compat_mode = '0.37'
 
-# Stride
-[[chains]]
-id = 'stride-1'
-type = 'CosmosSdk'
-rpc_addr = 'https://stride-rpc.lavenderfive.com:443'
-grpc_addr = 'http://stride-grpc.lavenderfive.com:443'
-event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com:443/websocket', batch_delay = '500ms' }
-rpc_timeout = '10s'
-trusted_node = false
-account_prefix = 'stride'
-key_name = 'relayer'
-key_store_type = 'Test'
-store_prefix = 'ibc'
-default_gas = 100000
-max_gas = 400000
-gas_price = { price = 0.01, denom = 'ustrd' }
-gas_multiplier = 1.1
-max_msg_num = 30
-max_tx_size = 1800000
-max_grpc_decoding_size = 33554432
-clock_drift = '5s'
-max_block_time = '10s'
-ccv_consumer_chain = false
-memo_prefix = 'Relayed by Relayooor'
-sequential_batch_tx = false
-compat_mode = '0.37'
-# Jackal
-[[chains]]
-id = 'jackal-1'
-type = 'CosmosSdk'
-rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com:443'
-grpc_addr = 'http://jackal-1-skip-grpc.polkachu.com:17590'
-event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
-rpc_timeout = '10s'
-trusted_node = false
-account_prefix = 'jkl'
-key_name = 'relayer'
-key_store_type = 'Test'
-store_prefix = 'ibc'
-default_gas = 100000
-max_gas = 400000
-gas_price = { price = 0.002, denom = 'ujkl' }
-gas_multiplier = 1.1
-max_msg_num = 30
-max_tx_size = 1800000
-max_grpc_decoding_size = 33554432
-clock_drift = '5s'
-max_block_time = '10s'
-ccv_consumer_chain = false
-memo_prefix = 'Relayed by Relayooor'
-sequential_batch_tx = false
-compat_mode = '0.37'
+# # Stride
+# [[chains]]
+# id = 'stride-1'
+# type = 'CosmosSdk'
+# rpc_addr = 'https://stride-rpc.lavenderfive.com:443'
+# grpc_addr = 'http://stride-grpc.lavenderfive.com:443'
+# event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com:443/websocket', batch_delay = '500ms' }
+# rpc_timeout = '10s'
+# trusted_node = false
+# account_prefix = 'stride'
+# key_name = 'relayer'
+# key_store_type = 'Test'
+# store_prefix = 'ibc'
+# default_gas = 100000
+# max_gas = 400000
+# gas_price = { price = 0.01, denom = 'ustrd' }
+# gas_multiplier = 1.1
+# max_msg_num = 30
+# max_tx_size = 1800000
+# max_grpc_decoding_size = 33554432
+# clock_drift = '5s'
+# max_block_time = '10s'
+# ccv_consumer_chain = false
+# memo_prefix = 'Relayed by Relayooor'
+# sequential_batch_tx = false
+# compat_mode = '0.37'
 
-# Axelar
-[[chains]]
-id = 'axelar-dojo-1'
-type = 'CosmosSdk'
-rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com:443'
-grpc_addr = 'http://axelar-dojo-1-skip-grpc.polkachu.com:15190'
-event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
-rpc_timeout = '10s'
-trusted_node = false
-account_prefix = 'axelar'
-key_name = 'relayer'
-key_store_type = 'Test'
-store_prefix = 'ibc'
-default_gas = 100000
-max_gas = 400000
-gas_price = { price = 0.05, denom = 'uaxl' }
-gas_multiplier = 1.1
-max_msg_num = 30
-max_tx_size = 1800000
-max_grpc_decoding_size = 33554432
-clock_drift = '5s'
-max_block_time = '10s'
-ccv_consumer_chain = false
-memo_prefix = 'Relayed by Relayooor'
-sequential_batch_tx = false
-compat_mode = '0.37'
+# # Jackal
+# [[chains]]
+# id = 'jackal-1'
+# type = 'CosmosSdk'
+# rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com:443'
+# grpc_addr = 'http://jackal-1-skip-grpc.polkachu.com:17590'
+# event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# rpc_timeout = '10s'
+# trusted_node = false
+# account_prefix = 'jkl'
+# key_name = 'relayer'
+# key_store_type = 'Test'
+# store_prefix = 'ibc'
+# default_gas = 100000
+# max_gas = 400000
+# gas_price = { price = 0.002, denom = 'ujkl' }
+# gas_multiplier = 1.1
+# max_msg_num = 30
+# max_tx_size = 1800000
+# max_grpc_decoding_size = 33554432
+# clock_drift = '5s'
+# max_block_time = '10s'
+# ccv_consumer_chain = false
+# memo_prefix = 'Relayed by Relayooor'
+# sequential_batch_tx = false
+# compat_mode = '0.37'
+
+# # Axelar
+# [[chains]]
+# id = 'axelar-dojo-1'
+# type = 'CosmosSdk'
+# rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com:443'
+# grpc_addr = 'http://axelar-dojo-1-skip-grpc.polkachu.com:15190'
+# event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# rpc_timeout = '10s'
+# trusted_node = false
+# account_prefix = 'axelar'
+# key_name = 'relayer'
+# key_store_type = 'Test'
+# store_prefix = 'ibc'
+# default_gas = 100000
+# max_gas = 400000
+# gas_price = { price = 0.05, denom = 'uaxl' }
+# gas_multiplier = 1.1
+# max_msg_num = 30
+# max_tx_size = 1800000
+# max_grpc_decoding_size = 33554432
+# clock_drift = '5s'
+# max_block_time = '10s'
+# ccv_consumer_chain = false
+# memo_prefix = 'Relayed by Relayooor'
+# sequential_batch_tx = false
+# compat_mode = '0.37'

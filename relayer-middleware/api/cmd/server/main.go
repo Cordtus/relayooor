@@ -18,6 +18,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	
+	"relayooor/api/pkg/chainpulse"
 	"relayooor/api/pkg/clearing"
 	"relayooor/api/pkg/database"
 	"relayooor/api/pkg/handlers"
@@ -67,8 +68,16 @@ func main() {
 	// Initialize clearing handlers with improved error handling
 	clearingHandlers := clearing.NewHandlersV2(db, redisClient, logger)
 
+	// Initialize Chainpulse client first (needed by payment handler)
+	chainpulseURL := os.Getenv("CHAINPULSE_URL")
+	if chainpulseURL == "" {
+		// Default to local chainpulse instance on correct port
+		chainpulseURL = "http://localhost:3000"
+	}
+	chainpulseClient := chainpulse.NewClient(chainpulseURL, logger)
+
 	// Initialize payment handler for UX improvements
-	paymentHandler := handlers.NewPaymentHandler(db, redisClient, logger)
+	paymentHandler := handlers.NewPaymentHandler(db, redisClient, chainpulseClient, logger)
 
 	// Initialize help handler for tooltips
 	helpHandler := handlers.NewHelpHandler()
@@ -81,11 +90,6 @@ func main() {
 	originalHandlers := handlers.NewHandler()
 
 	// Initialize Chainpulse handler
-	chainpulseURL := os.Getenv("CHAINPULSE_URL")
-	if chainpulseURL == "" {
-		// Default to local chainpulse instance on correct port
-		chainpulseURL = "http://localhost:3000"
-	}
 	chainpulseHandler := handlers.NewChainpulseHandler(chainpulseURL, logger)
 
 	// API routes

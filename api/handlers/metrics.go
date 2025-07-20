@@ -78,7 +78,7 @@ func GetMonitoringData(c *gin.Context) {
 	// Note: The actual implementation that parses Chainpulse metrics and returns
 	// structured monitoring data is in api/cmd/server/main.go
 	// This package appears to be unused in the current architecture.
-	
+
 	// For now, return a simple response indicating the service is available
 	data := gin.H{
 		"status":    "healthy",

@@ -12,21 +12,25 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	
+	"relayooor/api/pkg/chainpulse"
 )
 
 // PaymentHandler handles payment-related endpoints for UX improvements
 type PaymentHandler struct {
-	db     *gorm.DB
-	redis  *redis.Client
-	logger *zap.Logger
+	db              *gorm.DB
+	redis           *redis.Client
+	logger          *zap.Logger
+	chainpulseClient *chainpulse.Client
 }
 
 // NewPaymentHandler creates a new payment handler
-func NewPaymentHandler(db *gorm.DB, redis *redis.Client, logger *zap.Logger) *PaymentHandler {
+func NewPaymentHandler(db *gorm.DB, redis *redis.Client, chainpulseClient *chainpulse.Client, logger *zap.Logger) *PaymentHandler {
 	return &PaymentHandler{
-		db:     db,
-		redis:  redis,
-		logger: logger.With(zap.String("component", "payment_handler")),
+		db:               db,
+		redis:            redis,
+		logger:           logger.With(zap.String("component", "payment_handler")),
+		chainpulseClient: chainpulseClient,
 	}
 }
 
@@ -97,38 +101,15 @@ func (h *PaymentHandler) GetPaymentURI(c *gin.Context) {
 	})
 }
 
-// GetPriceUSD handles GET /api/v1/prices/:denom
-// Returns USD price for a given denomination
+// GetPriceUSD is deprecated - we no longer use price oracles
+// This endpoint returns a deprecation notice
 func (h *PaymentHandler) GetPriceUSD(c *gin.Context) {
-	denom := c.Param("denom")
-	
-	// Check cache first
-	cacheKey := fmt.Sprintf("price:%s", denom)
-	cached, err := h.redis.Get(c.Request.Context(), cacheKey).Result()
-	if err == nil {
-		var price map[string]interface{}
-		if err := json.Unmarshal([]byte(cached), &price); err == nil {
-			c.JSON(http.StatusOK, price)
-			return
-		}
-	}
-
-	// Get price from external source (mock for now)
-	price := h.fetchPrice(denom)
-	
-	// Cache for 5 minutes
-	priceData := gin.H{
-		"denom":      denom,
-		"price":      price,
-		"timestamp":  time.Now().Unix(),
-		"expires_at": time.Now().Add(5 * time.Minute).Unix(),
-	}
-	
-	if data, err := json.Marshal(priceData); err == nil {
-		h.redis.Set(c.Request.Context(), cacheKey, data, 5*time.Minute)
-	}
-
-	c.JSON(http.StatusOK, priceData)
+	c.JSON(http.StatusGone, gin.H{
+		"error": gin.H{
+			"code":    "DEPRECATED",
+			"message": "Price oracle functionality has been removed. Fees are calculated in native tokens only.",
+		},
+	})
 }
 
 // GetSimplifiedStatus handles GET /api/v1/clearing/simple-status
@@ -225,21 +206,7 @@ func (h *PaymentHandler) generateQRCode(uri string) (string, error) {
 	return "", nil
 }
 
-func (h *PaymentHandler) fetchPrice(denom string) float64 {
-	// Mock prices - would fetch from price oracle
-	prices := map[string]float64{
-		"uosmo": 0.75,
-		"uatom": 9.25,
-		"untrn": 0.45,
-		"uusdc": 1.0,
-	}
-	
-	if price, ok := prices[denom]; ok {
-		return price
-	}
-	
-	return 0.0
-}
+// fetchPrice is no longer used - removed price oracle dependency
 
 type PacketsSummary struct {
 	TotalCount       int                       `json:"total_count"`
@@ -259,33 +226,105 @@ type ChainSummary struct {
 }
 
 func (h *PaymentHandler) getStuckPacketsSummary(ctx context.Context, wallet string) *PacketsSummary {
-	// Mock implementation - would query actual data
+	// Query stuck packets for the user from Chainpulse
+	packets, err := h.chainpulseClient.GetPacketsByUser(ctx, wallet)
+	if err != nil {
+		h.logger.Error("Failed to fetch user packets from Chainpulse", zap.Error(err), zap.String("wallet", wallet))
+		return &PacketsSummary{
+			TotalCount:   0,
+			TotalValue:   "0",
+			PrimaryDenom: "",
+			Chains:       []ChainSummary{},
+			EstimatedFees: map[string]string{
+				"service_fee": "0",
+				"gas_fee":     "0",
+				"total":       "0",
+			},
+			PotentialSavings: "0",
+		}
+	}
+
+	// Aggregate packets by chain
+	chainMap := make(map[string]*ChainSummary)
+	totalValueByDenom := make(map[string]int64)
+	var primaryDenom string
+	var maxDenomValue int64
+
+	for _, packet := range packets {
+		// Skip if not stuck (check if age is significant)
+		// Since we don't have a Status field, we'll assume all returned packets are stuck
+		
+		// Get or create chain summary
+		chainSummary, exists := chainMap[packet.Chain]
+		if !exists {
+			chainSummary = &ChainSummary{
+				ChainID:     packet.Chain,
+				ChainName:   packet.Chain, // Would need chain name mapping
+				PacketCount: 0,
+				TotalValue:  "0",
+				Denom:       packet.Denom,
+			}
+			chainMap[packet.Chain] = chainSummary
+		}
+
+		// Update counts
+		chainSummary.PacketCount++
+
+		// Parse and aggregate amounts
+		var amountValue int64
+		fmt.Sscanf(packet.Amount, "%d", &amountValue)
+		
+		var currentTotal int64
+		fmt.Sscanf(chainSummary.TotalValue, "%d", &currentTotal)
+		
+		newTotal := currentTotal + amountValue
+		chainSummary.TotalValue = fmt.Sprintf("%d", newTotal)
+		
+		// Track total by denom
+		totalValueByDenom[packet.Denom] += amountValue
+		if totalValueByDenom[packet.Denom] > maxDenomValue {
+			maxDenomValue = totalValueByDenom[packet.Denom]
+			primaryDenom = packet.Denom
+		}
+	}
+
+	// Convert map to slice
+	chains := make([]ChainSummary, 0, len(chainMap))
+	for _, chain := range chainMap {
+		chains = append(chains, *chain)
+	}
+
+	// Calculate total value (using primary denom for simplicity)
+	totalValue := fmt.Sprintf("%d", maxDenomValue)
+
+	// Calculate estimated fees based on packet count
+	packetCount := len(packets)
+	baseFee := int64(1000000)  // 1 TOKEN
+	perPacketFee := int64(100000) // 0.1 TOKEN
+	gasPrice := int64(25000)    // 0.025 TOKEN
+	baseGas := int64(150000)
+	perPacketGas := int64(50000)
+
+	serviceFee := baseFee + (perPacketFee * int64(packetCount))
+	gasAmount := baseGas + (perPacketGas * int64(packetCount))
+	gasFee := gasAmount * gasPrice / 1000000
+	totalFee := serviceFee + gasFee
+
+	// Calculate potential savings (vs manual retry)
+	manualRetryCost := gasFee * 3 // Assume 3 retries
+	savings := manualRetryCost - totalFee
+
 	return &PacketsSummary{
-		TotalCount:   5,
-		TotalValue:   "1000000", // 1 OSMO
-		PrimaryDenom: "uosmo",
-		Chains: []ChainSummary{
-			{
-				ChainID:     "osmosis-1",
-				ChainName:   "Osmosis",
-				PacketCount: 3,
-				TotalValue:  "600000",
-				Denom:       "uosmo",
-			},
-			{
-				ChainID:     "cosmoshub-4",
-				ChainName:   "Cosmos Hub",
-				PacketCount: 2,
-				TotalValue:  "400000",
-				Denom:       "uatom",
-			},
-		},
+		TotalCount:   packetCount,
+		TotalValue:   totalValue,
+		PrimaryDenom: primaryDenom,
+		Chains:       chains,
 		EstimatedFees: map[string]string{
-			"service_fee": "50000",
-			"gas_fee":     "25000",
-			"total":       "75000",
+			"service_fee": fmt.Sprintf("%d", serviceFee),
+			"gas_fee":     fmt.Sprintf("%d", gasFee),
+			"total":       fmt.Sprintf("%d", totalFee),
 		},
-		PotentialSavings: "150000", // vs manual retry
+		PotentialSavings: fmt.Sprintf("%d", savings),
 	}
 }
 
@@ -309,15 +348,11 @@ func (h *PaymentHandler) calculateFeeBreakdown(packetCount string, chainID strin
 
 	// Get denom for chain
 	denom := h.getDenomForChain(chainID)
-	
-	// Get USD prices
-	tokenPrice := h.fetchPrice(denom)
 
 	return gin.H{
 		"service_fee": gin.H{
 			"amount":     fmt.Sprintf("%d", serviceFee),
 			"denom":      denom,
-			"usd_value":  serviceFee * int64(tokenPrice) / 1000000,
 			"breakdown": gin.H{
 				"base_fee":       fmt.Sprintf("%d", baseFee),
 				"per_packet_fee": fmt.Sprintf("%d", perPacketFee),
@@ -327,7 +362,6 @@ func (h *PaymentHandler) calculateFeeBreakdown(packetCount string, chainID strin
 		"gas_fee": gin.H{
 			"amount":      fmt.Sprintf("%d", gasFee),
 			"denom":       denom,
-			"usd_value":   gasFee * int64(tokenPrice) / 1000000,
 			"gas_amount":  gasAmount,
 			"gas_price":   gasPrice,
 			"is_estimate": true,
@@ -335,17 +369,11 @@ func (h *PaymentHandler) calculateFeeBreakdown(packetCount string, chainID strin
 		"total": gin.H{
 			"amount":    fmt.Sprintf("%d", total),
 			"denom":     denom,
-			"usd_value": total * int64(tokenPrice) / 1000000,
 		},
 		"comparison": gin.H{
 			"manual_retry_cost": fmt.Sprintf("%d", gasFee*3), // 3 retries
 			"savings":           fmt.Sprintf("%d", gasFee*3-total),
 			"savings_percent":   fmt.Sprintf("%.0f", float64(gasFee*3-total)/float64(gasFee*3)*100),
-		},
-		"price_info": gin.H{
-			"denom":      denom,
-			"price_usd":  tokenPrice,
-			"updated_at": time.Now().Unix(),
 		},
 	}
 }
