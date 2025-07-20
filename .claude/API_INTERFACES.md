@@ -209,6 +209,12 @@ hermes_tx_latency_confirmed_bucket{chain="cosmoshub-4",le="+Inf"} 92
 - **Authentication**: None required
 - **Protocol**: Prometheus metrics + REST API (NEW)
 
+### Endpoints Overview
+
+- **Base URL**: `http://localhost:3001`
+- **API Base**: `http://localhost:3001/api/v1`
+- **Metrics**: `http://localhost:3001/metrics`
+
 ### Verified Endpoints
 
 #### 1. Prometheus Metrics
@@ -256,6 +262,22 @@ ibc_stuck_packets{dst_chain="channel-0",src_chain="osmosis-1",src_channel="chann
 
 # HELP ibc_packet_age_seconds Age of unrelayed packets in seconds
 # TYPE ibc_packet_age_seconds gauge
+
+# HELP ibc_packets_near_timeout Number of packets nearing their timeout deadline
+# TYPE ibc_packets_near_timeout gauge
+ibc_packets_near_timeout{src_chain="osmosis-1",dst_chain="cosmoshub-4",src_channel="channel-0",dst_channel="channel-141",timeout_type="timestamp"} 2
+
+# HELP ibc_packet_timeout_seconds Time until packet timeout in seconds (negative if expired)
+# TYPE ibc_packet_timeout_seconds gauge
+ibc_packet_timeout_seconds{src_chain="osmosis-1",dst_chain="cosmoshub-4",src_channel="channel-0",dst_channel="channel-141"} -1800
+
+# HELP ibc_stuck_packets_by_user Number of stuck packets by user address
+# TYPE ibc_stuck_packets_by_user gauge
+ibc_stuck_packets_by_user{address="osmo1...",role="sender"} 3
+
+# HELP ibc_stuck_value Total value stuck in packets by denomination
+# TYPE ibc_stuck_value gauge
+ibc_stuck_value{denom="uosmo",src_chain="osmosis-1",dst_chain="cosmoshub-4"} 1500000000
 ```
 
 #### 2. REST API Endpoints (NEW in v0.4.0-pre)
@@ -347,6 +369,68 @@ Returns complete transfer history for a user address.
 GET /api/v1/packets/analytics?chain_id={chain}&period={24h|7d|30d}
 
 Returns analytics including delivery rates, timeout statistics, and total value transferred.
+```
+
+##### Get Expired Packets (NEW)
+```http
+GET /api/v1/packets/expired
+
+Response:
+{
+  "packets": [
+    {
+      "chain_id": "osmosis-1",
+      "sequence": 123456,
+      "src_channel": "channel-0",
+      "dst_channel": "channel-141",
+      "sender": "osmo1abc...",
+      "receiver": "cosmos1xyz...",
+      "amount": "1000000",
+      "denom": "uosmo",
+      "seconds_since_timeout": 1800,
+      "timeout_type": "height"
+    }
+  ],
+  "api_version": "1.0"
+}
+```
+
+##### Find Duplicate Packets (NEW)
+```http
+GET /api/v1/packets/duplicates
+
+Response:
+{
+  "duplicates": [
+    {
+      "data_hash": "2ec9535148dfadb1c99e22ec8a9a7fb3b07b3d40fbd63225aef93ef112ec34eb",
+      "count": 41,
+      "packets": [
+        {
+          "chain_id": "osmosis-1",
+          "sequence": 361754,
+          "src_channel": "channel-19774",
+          "sender": "osmo1w70qj355ra7yu43d0pma5ds6zft043zhjgr5d6",
+          "created_at": "2025-07-19 23:35:05"
+        }
+      ]
+    }
+  ],
+  "api_version": "1.0"
+}
+```
+
+##### Enhanced User Queries (NEW)
+```http
+GET /api/v1/packets/by-user?address={address}&role={sender|receiver}&limit={limit}&offset={offset}
+
+Query Parameters:
+- address (required): User address
+- role (optional): Filter by sender or receiver, default: both
+- limit (optional): Max results, default: 100
+- offset (optional): Pagination offset
+
+Response includes comprehensive packet data with relay attempts and timeout info.
 ```
 
 ### Relayooor API Facade (Verified Endpoints)

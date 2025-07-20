@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/relayooor/api/internal/config"
+	"github.com/relayooor/api/pkg/chainpulse"
 	"github.com/rs/cors"
 )
 
@@ -111,6 +112,13 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Initialize Chainpulse client
+	chainpulseURL := os.Getenv("CHAINPULSE_URL")
+	if chainpulseURL == "" {
+		chainpulseURL = "http://localhost:3001"
+	}
+	chainpulseClient := chainpulse.NewClient(chainpulseURL)
+	
 	r := mux.NewRouter()
 
 	// Add logging middleware
@@ -422,46 +430,156 @@ func main() {
 
 	// Structured monitoring data endpoint
 	api.HandleFunc("/monitoring/data", func(w http.ResponseWriter, r *http.Request) {
-		data := getStructuredMonitoringData()
+		// Use Chainpulse API to get real data
+		stuckPacketsResp, err := chainpulseClient.GetStuckPackets(900, 100)
+		if err != nil {
+			log.Printf("Error fetching stuck packets: %v", err)
+		}
+		
+		congestionResp, err := chainpulseClient.GetChannelCongestion()
+		if err != nil {
+			log.Printf("Error fetching channel congestion: %v", err)
+		}
+		
+		// Get chain registry for metadata
+		registry := config.DefaultChainRegistry()
+		
+		// Build chains data
+		chains := []map[string]interface{}{}
+		for chainID, chainConfig := range registry.Chains {
+			chains = append(chains, map[string]interface{}{
+				"chain_id": chainID,
+				"name":     chainConfig.ChainName,
+				"status":   "connected",
+				"height":   0, // TODO: Get from metrics
+				"packets_24h": 0, // TODO: Get from metrics
+			})
+		}
+		
+		// Build channel data from congestion response
+		channels := []map[string]interface{}{}
+		if congestionResp != nil {
+			for _, ch := range congestionResp.Channels {
+				// Try to determine source chain from stuck packets
+				srcChain := "unknown"
+				if stuckPacketsResp != nil {
+					for _, packet := range stuckPacketsResp.Packets {
+						if packet.SrcChannel == ch.SrcChannel {
+							srcChain = packet.ChainID
+							break
+						}
+					}
+				}
+				
+				channels = append(channels, map[string]interface{}{
+					"src":             srcChain,
+					"dst":             inferDestinationChain(srcChain, ch.SrcChannel),
+					"src_channel":     ch.SrcChannel,
+					"dst_channel":     ch.DstChannel,
+					"status":          "active",
+					"packets_pending": ch.StuckCount,
+					"success_rate":    0.0, // TODO: Calculate from metrics
+				})
+			}
+		}
+		
+		// Build top relayers from stuck packets
+		relayerMap := make(map[string]map[string]interface{})
+		if stuckPacketsResp != nil {
+			for _, packet := range stuckPacketsResp.Packets {
+				if packet.LastAttemptBy != "" {
+					if _, exists := relayerMap[packet.LastAttemptBy]; !exists {
+						relayerMap[packet.LastAttemptBy] = map[string]interface{}{
+							"address": packet.LastAttemptBy,
+							"packets_relayed": 0,
+							"success_rate": 0.0,
+							"earnings_24h": "$0",
+						}
+					}
+					relayerMap[packet.LastAttemptBy]["packets_relayed"] = relayerMap[packet.LastAttemptBy]["packets_relayed"].(int) + packet.RelayAttempts
+				}
+			}
+		}
+		
+		topRelayers := []map[string]interface{}{}
+		for _, relayer := range relayerMap {
+			topRelayers = append(topRelayers, relayer)
+		}
+		
+		// Recent activity from stuck packets
+		recentActivity := []map[string]interface{}{}
+		if stuckPacketsResp != nil && len(stuckPacketsResp.Packets) > 0 {
+			limit := 10
+			if len(stuckPacketsResp.Packets) < limit {
+				limit = len(stuckPacketsResp.Packets)
+			}
+			
+			for i := 0; i < limit; i++ {
+				packet := stuckPacketsResp.Packets[i]
+				recentActivity = append(recentActivity, map[string]interface{}{
+					"from_chain": packet.ChainID,
+					"to_chain":   inferDestinationChain(packet.ChainID, packet.SrcChannel),
+					"channel":    packet.SrcChannel,
+					"status":     "pending",
+					"timestamp":  time.Now().Add(-time.Duration(packet.AgeSeconds) * time.Second),
+				})
+			}
+		}
+		
+		// Calculate system totals
+		totalStuckPackets := 0
+		if stuckPacketsResp != nil {
+			totalStuckPackets = stuckPacketsResp.Total
+		}
+		
+		data := map[string]interface{}{
+			"timestamp": time.Now(),
+			"chains": chains,
+			"top_relayers": topRelayers,
+			"recent_activity": recentActivity,
+			"channels": channels,
+			"system": map[string]interface{}{
+				"totalChains": len(chains),
+				"totalPackets": totalStuckPackets,
+				"totalErrors": 0, // TODO: Get from metrics
+				"uptime": 99.8, // TODO: Calculate from actual uptime
+				"lastSync": time.Now(),
+			},
+		}
+		
 		json.NewEncoder(w).Encode(data)
 	}).Methods("GET")
 
 	// Channel congestion endpoint
 	api.HandleFunc("/channels/congestion", func(w http.ResponseWriter, r *http.Request) {
-		chainpulseURL := os.Getenv("CHAINPULSE_URL")
-		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
-		}
-
-		resp, err := http.Get(fmt.Sprintf("%s/api/v1/channels/congestion", chainpulseURL))
-		if err == nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
-			
-			// Parse and forward the response
-			var data map[string]interface{}
-			if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
-				json.NewEncoder(w).Encode(data)
-				return
-			}
+		// Use Chainpulse client to get congestion data
+		congestionResp, err := chainpulseClient.GetChannelCongestion()
+		if err != nil {
+			log.Printf("Error fetching channel congestion: %v", err)
+			// Return empty channels on error
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"channels": []map[string]interface{}{},
+				"api_version": "1.0",
+			})
+			return
 		}
 		
-		// Fallback to mock data
-		congestion := map[string]interface{}{
-			"channels": []map[string]interface{}{
-				{
-					"src_channel": "channel-141",
-					"dst_channel": "channel-0",
-					"stuck_count": 2,
-					"oldest_stuck_age_seconds": 3600,
-					"total_value": map[string]string{
-						"uatom": "50000000",
-						"uosmo": "100000000",
-					},
-				},
-			},
-			"api_version": "1.0",
+		// Transform response to match expected format
+		channels := []map[string]interface{}{}
+		for _, ch := range congestionResp.Channels {
+			channels = append(channels, map[string]interface{}{
+				"src_channel": ch.SrcChannel,
+				"dst_channel": ch.DstChannel,
+				"stuck_count": ch.StuckCount,
+				"oldest_stuck_age_seconds": ch.OldestStuckAgeSeconds,
+				"total_value": ch.TotalValue,
+			})
 		}
-		json.NewEncoder(w).Encode(congestion)
+		
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"channels": channels,
+			"api_version": congestionResp.APIVersion,
+		})
 	}).Methods("GET")
 
 	// Packet details endpoint
@@ -469,28 +587,32 @@ func main() {
 		vars := mux.Vars(r)
 		chain := vars["chain"]
 		channel := vars["channel"]
-		sequence := vars["sequence"]
-
-		chainpulseURL := os.Getenv("CHAINPULSE_URL")
-		if chainpulseURL == "" {
-			chainpulseURL = "http://localhost:3001" // Correct port for Chainpulse
+		seqStr := vars["sequence"]
+		
+		// Parse sequence to int64
+		sequence, err := strconv.ParseInt(seqStr, 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid sequence number"})
+			return
 		}
 
-		resp, err := http.Get(fmt.Sprintf("%s/api/v1/packets/%s/%s/%s", chainpulseURL, chain, channel, sequence))
-		if err == nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
-			
-			// Forward the response
-			var data map[string]interface{}
-			if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
-				json.NewEncoder(w).Encode(data)
-				return
+		// Use Chainpulse client to get packet details
+		packet, err := chainpulseClient.GetPacketDetails(chain, channel, sequence)
+		if err != nil {
+			if strings.Contains(err.Error(), "not found") {
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Packet not found"})
+			} else {
+				log.Printf("Error fetching packet details: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch packet details"})
 			}
+			return
 		}
 		
-		// Return 404 if not found
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Packet not found"})
+		// Return packet data
+		json.NewEncoder(w).Encode(packet)
 	}).Methods("GET")
 
 	// Chain registry endpoint - returns known chain information
@@ -749,7 +871,146 @@ func main() {
 
 	// Monitoring metrics endpoint
 	api.HandleFunc("/monitoring/metrics", func(w http.ResponseWriter, r *http.Request) {
-		metrics := getMonitoringMetrics()
+		// Use Chainpulse API to get real data
+		stuckPacketsResp, err := chainpulseClient.GetStuckPackets(0, 1000) // Get more for metrics
+		if err != nil {
+			log.Printf("Error fetching stuck packets: %v", err)
+		}
+		
+		congestionResp, err := chainpulseClient.GetChannelCongestion()
+		if err != nil {
+			log.Printf("Error fetching channel congestion: %v", err)
+		}
+		
+		registry := config.DefaultChainRegistry()
+		
+		// Build chains data
+		chains := []map[string]interface{}{}
+		for chainID, chainConfig := range registry.Chains {
+			chains = append(chains, map[string]interface{}{
+				"chainId": chainID,
+				"chainName": chainConfig.ChainName,
+				"totalTxs": 0, // TODO: Parse from metrics
+				"totalPackets": 0, // TODO: Parse from metrics
+				"reconnects": 0, // TODO: Parse from metrics
+				"timeouts": 0, // TODO: Parse from metrics
+				"errors": 0, // TODO: Parse from metrics
+				"status": "connected",
+				"lastUpdate": time.Now(),
+			})
+		}
+		
+		// Build relayer stats
+		relayerMap := make(map[string]map[string]interface{})
+		if stuckPacketsResp != nil {
+			for _, packet := range stuckPacketsResp.Packets {
+				if packet.LastAttemptBy != "" {
+					if _, exists := relayerMap[packet.LastAttemptBy]; !exists {
+						relayerMap[packet.LastAttemptBy] = map[string]interface{}{
+							"address": packet.LastAttemptBy,
+							"totalPackets": 0,
+							"effectedPackets": 0,
+							"uneffectedPackets": 0,
+							"frontrunCount": 0,
+							"successRate": 0.0,
+							"memo": "",
+							"software": "Unknown",
+							"version": "Unknown",
+						}
+					}
+					stats := relayerMap[packet.LastAttemptBy]
+					stats["uneffectedPackets"] = stats["uneffectedPackets"].(int) + 1
+					stats["totalPackets"] = stats["totalPackets"].(int) + 1
+				}
+			}
+		}
+		
+		relayers := []map[string]interface{}{}
+		for _, stats := range relayerMap {
+			relayers = append(relayers, stats)
+		}
+		
+		// Build channel data
+		channels := []map[string]interface{}{}
+		if congestionResp != nil {
+			for _, ch := range congestionResp.Channels {
+				// Determine source/dest chains
+				srcChain := "unknown"
+				dstChain := "unknown"
+				
+				// Try to infer from stuck packets
+				if stuckPacketsResp != nil {
+					for _, packet := range stuckPacketsResp.Packets {
+						if packet.SrcChannel == ch.SrcChannel {
+							srcChain = packet.ChainID
+							dstChain = inferDestinationChain(packet.ChainID, packet.SrcChannel)
+							break
+						}
+					}
+				}
+				
+				channels = append(channels, map[string]interface{}{
+					"srcChain": srcChain,
+					"dstChain": dstChain,
+					"srcChannel": ch.SrcChannel,
+					"dstChannel": ch.DstChannel,
+					"srcPort": "transfer", // Assume transfer port
+					"dstPort": "transfer",
+					"totalPackets": ch.StuckCount,
+					"effectedPackets": 0, // TODO: Get from metrics
+					"uneffectedPackets": ch.StuckCount,
+					"successRate": 0.0, // TODO: Calculate
+					"status": "congested",
+				})
+			}
+		}
+		
+		// Recent packets
+		recentPackets := []map[string]interface{}{}
+		if stuckPacketsResp != nil && len(stuckPacketsResp.Packets) > 0 {
+			limit := 5
+			if len(stuckPacketsResp.Packets) < limit {
+				limit = len(stuckPacketsResp.Packets)
+			}
+			for i := 0; i < limit; i++ {
+				packet := stuckPacketsResp.Packets[i]
+				recentPackets = append(recentPackets, map[string]interface{}{
+					"sequence": packet.Sequence,
+					"srcChannel": packet.SrcChannel,
+					"dstChannel": packet.DstChannel,
+					"amount": packet.Amount,
+					"denom": packet.Denom,
+					"sender": packet.Sender,
+					"receiver": packet.Receiver,
+					"status": "stuck",
+					"ageSeconds": packet.AgeSeconds,
+				})
+			}
+		}
+		
+		totalStuckPackets := 0
+		if stuckPacketsResp != nil {
+			totalStuckPackets = stuckPacketsResp.Total
+		}
+		
+		metrics := map[string]interface{}{
+			"system": map[string]interface{}{
+				"totalChains": len(chains),
+				"totalTransactions": 0, // TODO: Get from metrics
+				"totalPackets": totalStuckPackets,
+				"totalErrors": 0, // TODO: Get from metrics
+				"uptime": 99.8, // TODO: Calculate
+				"lastSync": time.Now(),
+			},
+			"chains": chains,
+			"relayers": relayers,
+			"channels": channels,
+			"recentPackets": recentPackets,
+			"stuckPackets": recentPackets, // Same data for now
+			"frontrunEvents": []map[string]interface{}{}, // TODO: Parse from metrics
+			"timestamp": time.Now(),
+		}
+		
 		json.NewEncoder(w).Encode(metrics)
 	}).Methods("GET")
 
