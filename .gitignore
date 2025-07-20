@@ -256,6 +256,7 @@ tmp/
 temp/
 
 # Fly.io
+fly.toml
 fly.toml.backup
 .fly/
 
@@ -303,7 +304,8 @@ Cargo.lock
 *.orig
 
 # Claude/Cursor/LLM specific
-# .claude/ - Keep internal documentation
+.claude/
+CLAUDE.md
 .cursor/
 .cursorrules
 CLAUDE.local.md
