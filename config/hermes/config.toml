@@ -32,13 +32,13 @@ port = 3001
 latency_submitted = { start = 500, end = 20000, buckets = 10 }
 latency_confirmed = { start = 1000, end = 30000, buckets = 10 }
 
-# Cosmos Hub - Using Quokkastake endpoint (no auth required)
+# Cosmos Hub
 [[chains]]
 id = 'cosmoshub-4'
 type = 'CosmosSdk'
 rpc_addr = 'https://rpc.cosmos.quokkastake.io:443'
-grpc_addr = 'https://grpc.cosmos.quokkastake.io:443'
-event_source = { mode = 'push', url = 'wss://rpc.cosmos.quokkastake.io:443/websocket', batch_delay = '500ms' }
+grpc_addr = 'http://cosmoshub-4-skip-grpc.polkachu.com:14990'
+event_source = { mode = 'push', url = 'wss://rpc.cosmos.quokkastake.io/websocket', batch_delay = '500ms' }
 rpc_timeout = '10s'
 trusted_node = false
 account_prefix = 'cosmos'
@@ -66,7 +66,7 @@ compat_mode = '0.37'
 # type = 'CosmosSdk'
 # rpc_addr = 'https://osmosis-1-skip-rpc.polkachu.com:443'
 # grpc_addr = 'http://osmosis-1-skip-grpc.polkachu.com:12590'
-# event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# event_source = { mode = 'push', url = 'wss://osmosis-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 # rpc_timeout = '10s'
 # trusted_node = false
 # account_prefix = 'osmo'
@@ -93,7 +93,7 @@ compat_mode = '0.37'
 # type = 'CosmosSdk'
 # rpc_addr = 'https://noble-1-skip-rpc.polkachu.com:443'
 # grpc_addr = 'http://noble-1-skip-grpc.polkachu.com:21590'
-# event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# event_source = { mode = 'push', url = 'wss://noble-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 # rpc_timeout = '10s'
 # trusted_node = false
 # account_prefix = 'noble'
@@ -120,7 +120,7 @@ compat_mode = '0.37'
 # type = 'CosmosSdk'
 # rpc_addr = 'https://stride-rpc.lavenderfive.com:443'
 # grpc_addr = 'http://stride-grpc.lavenderfive.com:443'
-# event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com:443/websocket', batch_delay = '500ms' }
+# event_source = { mode = 'push', url = 'wss://stride-rpc.lavenderfive.com/websocket', batch_delay = '500ms' }
 # rpc_timeout = '10s'
 # trusted_node = false
 # account_prefix = 'stride'
@@ -147,7 +147,7 @@ compat_mode = '0.37'
 # type = 'CosmosSdk'
 # rpc_addr = 'https://jackal-1-skip-rpc.polkachu.com:443'
 # grpc_addr = 'http://jackal-1-skip-grpc.polkachu.com:17590'
-# event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# event_source = { mode = 'push', url = 'wss://jackal-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 # rpc_timeout = '10s'
 # trusted_node = false
 # account_prefix = 'jkl'
@@ -174,7 +174,7 @@ compat_mode = '0.37'
 # type = 'CosmosSdk'
 # rpc_addr = 'https://axelar-dojo-1-skip-rpc.polkachu.com:443'
 # grpc_addr = 'http://axelar-dojo-1-skip-grpc.polkachu.com:15190'
-# event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com:443/websocket', batch_delay = '500ms' }
+# event_source = { mode = 'push', url = 'wss://axelar-dojo-1-skip-rpc.polkachu.com/websocket', batch_delay = '500ms' }
 # rpc_timeout = '10s'
 # trusted_node = false
 # account_prefix = 'axelar'

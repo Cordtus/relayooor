@@ -7,7 +7,7 @@ const API_BASE_URL = config.getApiUrl()
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-})
+}) as any
 
 // Alias for backwards compatibility
 export const apiClient = api

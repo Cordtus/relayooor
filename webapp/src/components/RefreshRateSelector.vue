@@ -1,16 +1,15 @@
 <template>
-  <div class="flex items-center gap-2">
-    <label class="text-sm text-gray-600">Refresh Rate:</label>
-    <select
-      :value="refreshInterval"
+  <div class="flex items-center gap-3">
+    <label class="text-sm text-content-secondary">Refresh Rate:</label>
+    <Dropdown 
+      v-model="refreshInterval" 
+      :options="[...REFRESH_INTERVALS]" 
+      optionLabel="label" 
+      optionValue="value"
+      class="w-32"
       @change="updateRefreshRate"
-      class="text-sm border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
-    >
-      <option v-for="interval in REFRESH_INTERVALS" :key="interval.value" :value="interval.value">
-        {{ interval.label }}
-      </option>
-    </select>
-    <span v-if="lastUpdate" class="text-xs text-gray-500">
+    />
+    <span v-if="lastUpdate" class="text-xs text-content-tertiary">
       Last updated: {{ formatTimestamp(lastUpdate) }}
     </span>
   </div>
@@ -19,6 +18,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSettingsStore, REFRESH_INTERVALS } from '@/stores/settings'
+import Dropdown from 'primevue/dropdown'
 
 interface Props {
   lastUpdate?: Date
@@ -27,19 +27,20 @@ interface Props {
 defineProps<Props>()
 
 const settingsStore = useSettingsStore()
-const refreshInterval = computed(() => settingsStore.settings.refreshInterval)
+const refreshInterval = computed({
+  get: () => settingsStore.settings.refreshInterval,
+  set: (value) => settingsStore.updateSettings({ refreshInterval: value })
+})
 
-function updateRefreshRate(event: Event) {
-  const value = parseInt((event.target as HTMLSelectElement).value)
-  settingsStore.updateSettings({ refreshInterval: value })
+function updateRefreshRate(event: any) {
+  settingsStore.updateSettings({ refreshInterval: event.value })
 }
 
 function formatTimestamp(date: Date): string {
-  const now = new Date()
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-  
-  if (seconds < 60) return `${seconds}s ago`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  return `${Math.floor(seconds / 3600)}h ago`
+  return new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(date)
 }
 </script>

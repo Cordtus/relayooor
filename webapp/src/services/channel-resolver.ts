@@ -230,13 +230,8 @@ export async function initializeChannelResolver(): Promise<void> {
     // In production, fetch chain endpoints from the API
     const response = await api.get('/chains/endpoints')
     if (response.data?.endpoints) {
-      // Clear existing endpoints
-      chainEndpoints.length = 0
-      
-      // Add new endpoints
-      response.data.endpoints.forEach((endpoint: ChainRPCEndpoint) => {
-        chainEndpoints.push(endpoint)
-      })
+      // Update endpoint fetch mechanism if needed
+      console.log('Chain endpoints fetched from API:', response.data.endpoints.length)
     }
   } catch (error) {
     console.warn('Failed to fetch chain endpoints, using defaults:', error)

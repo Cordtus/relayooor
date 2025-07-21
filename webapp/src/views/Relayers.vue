@@ -300,7 +300,7 @@ const frontrunRate = computed(() => {
 
 const newRelayers = computed(() => {
   // Count relayers marked as new in the data
-  return relayers.value.filter(r => r.isNew).length
+  return relayers.value.filter((r: any) => r.isNew).length
 })
 
 const topRelayers = computed(() => {

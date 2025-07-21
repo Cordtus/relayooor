@@ -1,246 +1,135 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@layer components {
-  /* Card Components */
-  .card-base {
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    padding: 1.5rem;
+/* Layer order for proper styling cascade */
+@layer tailwind-base, primevue, tailwind-utilities;
+
+/* Global styles for dark theme */
+@layer tailwind-base {
+  :root {
+    color-scheme: dark;
   }
   
-  .card-hover {
-    transition-property: box-shadow;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
+  html, body {
+    @apply bg-neutral-900 text-neutral-100 antialiased;
   }
   
-  .card-hover:hover {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* Apply dark mode to PrimeVue components */
+  .dark-mode {
+    --p-primary-50: #eef2ff;
+    --p-primary-100: #e0e7ff;
+    --p-primary-200: #c7d2fe;
+    --p-primary-300: #a5b4fc;
+    --p-primary-400: #818cf8;
+    --p-primary-500: #6366f1;
+    --p-primary-600: #4f46e5;
+    --p-primary-700: #4338ca;
+    --p-primary-800: #3730a3;
+    --p-primary-900: #312e81;
+    --p-primary-950: #1e1b4b;
+    
+    --p-surface-0: #ffffff;
+    --p-surface-50: #fafafa;
+    --p-surface-100: #f4f4f5;
+    --p-surface-200: #e4e4e7;
+    --p-surface-300: #d4d4d8;
+    --p-surface-400: #a1a1aa;
+    --p-surface-500: #71717a;
+    --p-surface-600: #52525b;
+    --p-surface-700: #3f3f46;
+    --p-surface-800: #27272a;
+    --p-surface-900: #18181b;
+    --p-surface-950: #0f0f11;
+    
+    --p-content-color: #fafafa;
+    
+    --p-surface-ground: #0f0f11;
+    --p-surface-section: #18181b;
+    --p-surface-card: #18181b;
+    --p-surface-overlay: #18181b;
+    --p-surface-border: rgba(244, 244, 245, 0.1);
+    --p-surface-hover: rgba(244, 244, 245, 0.03);
   }
   
-  /* Button Base Styles */
-  .btn {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
-    outline: 2px solid transparent;
-    outline-offset: 2px;
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
   
-  .btn:focus {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-800;
   }
   
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-600 rounded-full;
   }
   
-  .btn-primary {
-    background-color: #0284c7;
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: #0369a1;
-  }
-  
-  .btn-primary:focus {
-    --tw-ring-color: #0ea5e9;
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  }
-  
-  .btn-secondary {
-    background-color: #f3f4f6;
-    color: #111827;
-  }
-  
-  .btn-secondary:hover {
-    background-color: #e5e7eb;
-  }
-  
-  .btn-secondary:focus {
-    --tw-ring-color: #6b7280;
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  }
-  
-  .btn-ghost {
-    background-color: transparent;
-    color: #6b7280;
-  }
-  
-  .btn-ghost:hover {
-    background-color: #f9fafb;
-    color: #111827;
-  }
-  
-  .btn-ghost:focus {
-    --tw-ring-color: #6b7280;
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  }
-  
-  .btn-danger {
-    background-color: #ef4444;
-    color: white;
-  }
-  
-  .btn-danger:hover {
-    background-color: #dc2626;
-  }
-  
-  .btn-danger:focus {
-    --tw-ring-color: #f87171;
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  }
-  
-  /* Badge Styles */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    font-weight: 500;
-  }
-  
-  .badge-success {
-    background-color: #d1fae5;
-    color: #059669;
-  }
-  
-  .badge-warning {
-    background-color: #fef3c7;
-    color: #d97706;
-  }
-  
-  .badge-error {
-    background-color: #fee2e2;
-    color: #dc2626;
-  }
-  
-  .badge-info {
-    background-color: #dbeafe;
-    color: #2563eb;
-  }
-  
-  /* Status Indicators */
-  .status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 9999px;
-  }
-  
-  .status-dot-success {
-    background-color: #10b981;
-  }
-  
-  .status-dot-warning {
-    background-color: #f59e0b;
-  }
-  
-  .status-dot-error {
-    background-color: #ef4444;
-  }
-  
-  /* Empty States */
-  .empty-state {
-    background-color: #f3f4f6;
-    border-radius: 0.5rem;
-    padding: 2rem;
-    text-align: center;
-  }
-  
-  .empty-state-icon {
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto 1rem;
-    color: #9ca3af;
-  }
-  
-  .empty-state-title {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-    font-weight: 500;
-    color: #111827;
-    margin-bottom: 0.5rem;
-  }
-  
-  .empty-state-description {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: #6b7280;
-  }
-  
-  /* Form Elements */
-  .input-base {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-  }
-  
-  .input-base:focus {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    --tw-ring-color: #0ea5e9;
-    --tw-border-opacity: 1;
-    border-color: #0ea5e9;
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-  }
-  
-  .label-base {
-    display: block;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    font-weight: 500;
-    color: #111827;
-    margin-bottom: 0.25rem;
-  }
-  
-  /* Layout Utilities */
-  .section-spacing > * + * {
-    margin-top: 2rem;
-  }
-  
-  .card-grid {
-    display: grid;
-    gap: 1.5rem;
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-500;
   }
 }
 
-@layer utilities {
-  /* Custom scrollbar */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #9ca3af transparent;
+@layer tailwind-utilities {
+  /* Custom utility classes that work with Tailwind v4 */
+  .card {
+    @apply bg-neutral-800 border border-neutral-700 rounded-lg p-6;
+    @apply transition-all duration-200;
   }
   
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  .card-hover {
+    @apply hover:bg-neutral-700 hover:border-neutral-600;
+    @apply hover:shadow-lg hover:shadow-black/20;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #9ca3af;
-    border-radius: 3px;
+  .btn-primary {
+    @apply bg-primary text-white;
+    @apply hover:bg-primary-hover active:bg-primary-active;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
+  .btn-secondary {
+    @apply bg-neutral-700 text-neutral-100;
+    @apply hover:bg-neutral-600 active:bg-neutral-800;
   }
+  
+  .input-base {
+    @apply w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg;
+    @apply text-neutral-100 placeholder-neutral-500;
+    @apply focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-success {
+    @apply bg-green-500/10 text-green-400 border border-green-500/20;
+  }
+  
+  .badge-warning {
+    @apply bg-amber-500/10 text-amber-400 border border-amber-500/20;
+  }
+  
+  .badge-error {
+    @apply bg-red-500/10 text-red-400 border border-red-500/20;
+  }
+  
+  .badge-info {
+    @apply bg-blue-500/10 text-blue-400 border border-blue-500/20;
+  }
+  
+  /* Fix for Tailwind v4 width/height utilities */
+  .w-4 { width: 1rem; }
+  .h-4 { height: 1rem; }
+  .w-5 { width: 1.25rem; }
+  .h-5 { height: 1.25rem; }
+  .w-6 { width: 1.5rem; }
+  .h-6 { height: 1.5rem; }
+  .w-8 { width: 2rem; }
+  .h-8 { height: 2rem; }
 }

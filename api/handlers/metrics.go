@@ -67,13 +67,13 @@ func GetMonitoringData(c *gin.Context) {
 	defer metricsResp.Body.Close()
 
 	// Parse metrics to extract data
-	metricsBody, err := io.ReadAll(metricsResp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("Failed to read metrics: %v", err),
-		})
-		return
-	}
+	// metricsBody, err := io.ReadAll(metricsResp.Body)
+	//if err != nil {
+	//	c.JSON(http.StatusInternalServerError, gin.H{
+	//		"error": fmt.Sprintf("Failed to read metrics: %v", err),
+	//	})
+	//	return
+	//}
 
 	// Note: The actual implementation that parses Chainpulse metrics and returns
 	// structured monitoring data is in api/cmd/server/main.go

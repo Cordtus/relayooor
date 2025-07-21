@@ -15,7 +15,7 @@
         <button
           v-for="type in searchTypes"
           :key="type.value"
-          @click="searchType = type.value"
+          @click="searchType = type.value as 'wallet' | 'chain' | 'advanced'"
           :class="[
             'px-4 py-2 rounded-lg transition-all',
             searchType === type.value

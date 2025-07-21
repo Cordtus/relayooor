@@ -118,8 +118,8 @@ import { computed } from 'vue'
 interface Props {
   flows?: {
     nodes: Array<{ id: string; name: string }>
-    links: Array<{ source: string; target: string; value: number }>
-  } | Array<{ source: string; target: string; value: number }>
+    links: Array<{ source: string; target: string; value: number; trend?: number }>
+  } | Array<{ source: string; target: string; value: number; trend?: number }>
 }
 
 const props = defineProps<Props>()

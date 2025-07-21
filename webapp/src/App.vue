@@ -1,23 +1,23 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="dark-mode min-h-screen bg-surface">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b">
+    <nav class="bg-surface-secondary shadow-lg border-b border-border">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex">
             <div class="flex-shrink-0 flex items-center">
-              <h1 class="text-xl font-bold text-gray-900">Relayooor</h1>
+              <h1 class="text-xl font-bold text-primary">Relayooor</h1>
             </div>
-            <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div class="hidden sm:ml-8 sm:flex sm:space-x-2">
               <router-link
                 v-for="item in navigation"
                 :key="item.name"
                 :to="item.href"
                 :class="[
                   $route.path === item.href
-                    ? 'border-primary-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                  'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
+                    ? 'bg-surface-tertiary text-primary border-primary'
+                    : 'text-content-secondary hover:bg-surface-tertiary hover:text-content',
+                  'inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200'
                 ]"
               >
                 <component :is="item.icon" class="w-4 h-4 mr-2" />
@@ -34,7 +34,7 @@
     </nav>
 
     <!-- Main content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto">
       <router-view />
     </main>
   </div>
